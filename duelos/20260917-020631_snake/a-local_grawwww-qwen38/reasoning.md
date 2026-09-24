@@ -1,1 +1,0 @@
-Create a simple snake game HTML file. Smooth 60fps: use a fixed-timestep accumulator with requestAnimationFrame. Score at top center, arrow keys, spacebar to restart, starts automatically, snake starts in the center facing right, random food, walls/self are collision detection.

@@ -1,1 +1,0 @@
-Create a single HTML file that includes a snake game on canvas. 60fps: use requestAnimationFrame with an accumulator to advance the snake at a fixed timestep. Include a score, arrow key controls, and Space for restart, with auto-start.

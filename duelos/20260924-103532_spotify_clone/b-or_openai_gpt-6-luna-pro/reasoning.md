@@ -1,3 +1,0 @@
-**Considering SVG design limitations**
-
-I’m realizing that common SVG text title lines are somewhat limited. Maybe placing the title lower would help? I’m thinking about using decorative types and incorporating color strings derived from data. Also, it looks like I should ensure that SVG internal definitions have unique gradient IDs. Lastly, I should remember that SVG markup needs to be all self-contained to maintain integrity. I’ll keep all these thoughts in mind while working on this!

@@ -1,3 +1,0 @@
-**Improving path tracing**
-
-I'm exploring techniques for a basic path tracer, particularly how to sample diffuse bounces and manage noise. Emissive windows have low probability, which can introduce challenges. I could add direct sunlight through analytic light sampling at diffuse surfaces, considering the window's area sample and visibility. Plus, factoring in the sun's direction could help if the line passes through the window. Overall, I need to refine these ideas for better output in my rendering process.

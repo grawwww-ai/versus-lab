@@ -1,7 +1,0 @@
-**Exploring light dynamics**
-
-I’m thinking about how light behaves in this scenario, particularly when it passes along a curved path. It seems like the foreground and rear disk are created naturally in this process. The color procedural turbulence appears when there’s an impact, leading to the accumulation of radiance. Specifically, I’m curious about how the photon ring emits a glow close to the impact parameter or horizon. It's interesting to consider the effects and visuals created in this context!**Evaluating disk orientation**
-
-I’m pondering the formation of disks and how their surfaces might interact with a crossing plane. It seems important to consider the thickness of the disk when modeling plane crossings. I need to avoid having the camera close to the plane at the beginning, especially since the camera height is at 2.4. I might want to detect the Y-sign across steps and interpolate, especially at crossings where the path bends. There's a lot to think about here!**Considering visual elements**
-
-I'm thinking about how to represent different visual elements. If there's a disk hit, I might want to change the color. If the hole is black, I might need to consider something else like stars. Maybe I should add a ring to the stars or think about the edge of the hole? There are definitely some interesting possibilities to explore here regarding the overall design!
