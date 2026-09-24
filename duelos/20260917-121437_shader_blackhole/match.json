@@ -1,0 +1,106 @@
+{
+  "id": "20260917-121437_shader_blackhole",
+  "challenge": {
+    "id": "shader_blackhole",
+    "category": "shader",
+    "title_es": "Agujero negro",
+    "title_en": "Black Hole",
+    "prompt": "Create a full-window WebGL2 animation of a black hole, written as a single fragment shader rendered on a full-screen quad (raw WebGL2, no libraries). Requirements: a glowing, turbulent accretion disk with hot orange-white inner edge and cooler red outer regions; visible gravitational lensing (the far side of the disk bends over and under the event horizon, like the Interstellar render); a pitch-black event horizon with a thin photon ring; a starfield background that is also distorted by the lensing; the disk rotates and the camera slowly orbits and tilts over time. Use the requestAnimationFrame timestamp for time. The canvas must always fill the window and handle resizing. Starts automatically, no interaction needed."
+  },
+  "prompt": "Create a full-window WebGL2 animation of a black hole, written as a single fragment shader rendered on a full-screen quad (raw WebGL2, no libraries). Requirements: a glowing, turbulent accretion disk with hot orange-white inner edge and cooler red outer regions; visible gravitational lensing (the far side of the disk bends over and under the event horizon, like the Interstellar render); a pitch-black event horizon with a thin photon ring; a starfield background that is also distorted by the lensing; the disk rotates and the camera slowly orbits and tilts over time. Use the requestAnimationFrame timestamp for time. The canvas must always fill the window and handle resizing. Starts automatically, no interaction needed.\n\nRequirements: deliver everything in ONE self-contained HTML file (inline CSS and JavaScript; no external resources, CDNs, fonts or images). Reply with the complete file in a single ```html code block.",
+  "contestants": [
+    {
+      "contestant": "local:grawwww-qwen38",
+      "first_token_s": 229.601,
+      "first_answer_s": 325.282,
+      "total_s": 393.103,
+      "prompt_tokens": 194,
+      "completion_tokens": 7771,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": "stop",
+      "error": null,
+      "side": "a",
+      "dir": "a-local-grawwww-qwen38",
+      "tokens_per_s": 47.5,
+      "validation": {
+        "checks": {
+          "renders": false,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": false,
+          "self_contained": true,
+          "moves": false
+        },
+        "errors": [
+          "console: ERROR: 0:67: 'void' : cannot construct this type\nERROR: 0:67: ')' : syntax error\n",
+          "console: Fragment shader is not compiled.\n"
+        ],
+        "score": 45,
+        "load_s": 0.36,
+        "visual": {
+          "contrast": 0.0,
+          "detail_pct": 0.0
+        },
+        "motion": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "external_requests": []
+      }
+    },
+    {
+      "contestant": "local:grawwww-qwen38",
+      "first_token_s": 0.538,
+      "first_answer_s": 166.648,
+      "total_s": 229.236,
+      "prompt_tokens": 194,
+      "completion_tokens": 10740,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": "stop",
+      "error": null,
+      "side": "b",
+      "dir": "b-local-grawwww-qwen38",
+      "tokens_per_s": 47.0,
+      "validation": {
+        "checks": {
+          "renders": false,
+          "no_js_errors": false,
+          "no_freeze": true,
+          "has_content": false,
+          "self_contained": true,
+          "moves": false
+        },
+        "errors": [
+          "console: ERROR: 0:104: 'dot' : no matching overloaded function found\n",
+          "pageerror: Shader compile failed"
+        ],
+        "score": 25,
+        "load_s": 0.37,
+        "visual": {
+          "contrast": 0.0,
+          "detail_pct": 0.0
+        },
+        "motion": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "external_requests": []
+      }
+    }
+  ],
+  "winner": "local:grawwww-qwen38",
+  "winner_side": "a",
+  "decided_by": "score"
+}

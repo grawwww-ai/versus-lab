@@ -1,0 +1,78 @@
+{
+  "id": "20260917-020028_pelican_bike",
+  "challenge": {
+    "id": "pelican_bike",
+    "category": "svg",
+    "title_es": "Pelícano en Bicicleta",
+    "title_en": "Pelican on Bike",
+    "prompt": "Return ONLY a valid SVG string, 800x600 viewBox. Draw a detailed pelican riding a bicycle. The pelican must have a large beak, wings, and tail feathers. The bicycle must have two wheels, frame, pedals, and handlebars. The pelican's feet must be on the pedals. Use paths, circles, and rects. No external images. Colors: blue pelican, red bike. Include subtle shading using opacity or gradients if possible, but keep it static."
+  },
+  "prompt": "Return ONLY a valid SVG string, 800x600 viewBox. Draw a detailed pelican riding a bicycle. The pelican must have a large beak, wings, and tail feathers. The bicycle must have two wheels, frame, pedals, and handlebars. The pelican's feet must be on the pedals. Use paths, circles, and rects. No external images. Colors: blue pelican, red bike. Include subtle shading using opacity or gradients if possible, but keep it static.\n\nReply with the complete SVG in a single ```svg code block.",
+  "contestants": [
+    {
+      "contestant": "local:grawwww-qwen38",
+      "first_token_s": 244.196,
+      "total_s": 325.466,
+      "prompt_tokens": 128,
+      "completion_tokens": 4742,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": "stop",
+      "error": null,
+      "side": "a",
+      "dir": "a-local-grawwww-qwen38",
+      "tokens_per_s": 58.3,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.02,
+        "visual": {
+          "contrast": 43.96,
+          "detail_pct": 3.54
+        },
+        "external_requests": []
+      }
+    },
+    {
+      "contestant": "local:grawwww-qwen38",
+      "first_token_s": 104.914,
+      "total_s": 226.155,
+      "prompt_tokens": 128,
+      "completion_tokens": 10688,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": "stop",
+      "error": null,
+      "side": "b",
+      "dir": "b-local-grawwww-qwen38",
+      "tokens_per_s": 88.2,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.02,
+        "visual": {
+          "contrast": 34.23,
+          "detail_pct": 3.82
+        },
+        "external_requests": []
+      }
+    }
+  ],
+  "winner": "local:grawwww-qwen38",
+  "decided_by": "speed",
+  "winner_side": "b"
+}

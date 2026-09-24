@@ -1,0 +1,1118 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Halo — Real-time Translation Smart Glasses</title>
+<style>
+:root {
+  --bg-light: #fafafa;
+  --bg-dark: #0e0e10;
+  --fg-light: #1d1d1f;
+  --fg-dark: #f5f5f7;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --muted-light: #86868b;
+  --muted-dark: #98989d;
+  --card-light: #ffffff;
+  --card-dark: #1c1c1e;
+  --border-light: #d2d2d7;
+  --border-dark: #38383a;
+  --shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-dark: 0 4px 24px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2);
+  --radius: 24px;
+  --radius-sm: 16px;
+  --transition: 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --transition-fast: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  color: var(--fg-light);
+  background: var(--bg-light);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Layout */
+.section { position: relative; padding: 6rem 1.5rem; }
+.container { max-width: 1180px; margin: 0 auto; }
+
+/* Typography */
+.headline {
+  font-size: clamp(2.5rem, 6vw, 5.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.subhead {
+  font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  color: var(--muted-light);
+}
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+.section-title {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.section-subtitle {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: var(--muted-light);
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 4rem;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+.btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,113,227,0.3); }
+.btn-secondary {
+  background: var(--card-light);
+  color: var(--fg-light);
+  border: 1px solid var(--border-light);
+}
+.btn-secondary:hover { background: var(--bg-light); border-color: var(--muted-light); }
+.btn-lg { padding: 1rem 2.5rem; font-size: 1.125rem; }
+
+/* Dark section variants */
+.dark {
+  background: var(--bg-dark);
+  color: var(--fg-dark);
+}
+.dark .subhead { color: var(--muted-dark); }
+.dark .section-subtitle { color: var(--muted-dark); }
+.dark .btn-secondary { background: var(--card-dark); color: var(--fg-dark); border-color: var(--border-dark); }
+.dark .btn-secondary:hover { background: #2c2c2e; border-color: var(--muted-dark); }
+.dark .feature-card { background: var(--card-dark); border-color: var(--border-dark); }
+.dark .compare-card { background: var(--card-dark); border-color: var(--border-dark); }
+.dark .stat-card { background: var(--card-dark); border-color: var(--border-dark); }
+
+/* Hero */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0,113,227,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-content { position: relative; z-index: 1; max-width: 900px; padding: 2rem 1.5rem; }
+.hero .eyebrow { display: inline-block; animation: fadeUp 0.8s var(--transition) both; }
+.hero .headline { margin: 1rem 0; animation: fadeUp 0.8s var(--transition) 0.1s both; }
+.hero .subhead { max-width: 600px; margin: 0 auto 2.5rem; animation: fadeUp 0.8s var(--transition) 0.2s both; }
+.hero-cta { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; animation: fadeUp 0.8s var(--transition) 0.3s both; }
+
+.hero-illustration {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1200px;
+  height: 60vh;
+  pointer-events: none;
+  z-index: 0;
+}
+.hero-illustration svg { width: 100%; height: 100%; }
+
+/* Sticky Showcase */
+.showcase {
+  position: relative;
+  min-height: 200vh;
+  padding: 0;
+}
+.showcase-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1000px;
+}
+.showcase-product {
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  transform-origin: center center;
+  will-change: transform;
+  filter: drop-shadow(0 30px 60px rgba(0,0,0,0.15));
+}
+.showcase-content {
+  position: absolute;
+  width: 100%;
+  max-width: 1180px;
+  padding: 0 1.5rem;
+  pointer-events: none;
+}
+.showcase-panel {
+  position: absolute;
+  max-width: 480px;
+  padding: 2rem;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-light);
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all var(--transition);
+  pointer-events: auto;
+}
+.showcase-panel.visible { opacity: 1; transform: translateY(0); }
+.showcase-panel.left { left: 0; }
+.showcase-panel.right { right: 0; }
+.dark .showcase-panel { background: rgba(28,28,30,0.9); border-color: var(--border-dark); box-shadow: var(--shadow-dark); }
+
+/* Features */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+.feature-card {
+  padding: 2.5rem;
+  background: var(--card-light);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  transition: all var(--transition-fast);
+}
+.feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: transparent; }
+.feature-icon { width: 48px; height: 48px; margin-bottom: 1.25rem; opacity: 0.9; }
+.feature-card h3 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0.5rem; }
+.feature-card p { font-size: 1rem; color: var(--muted-light); line-height: 1.6; }
+
+/* Stats */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+.stat-card {
+  padding: 3rem 2rem;
+  background: var(--card-light);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  text-align: center;
+  transition: all var(--transition-fast);
+}
+.stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: transparent; }
+.stat-number {
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--fg-light), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.stat-label { font-size: 1rem; color: var(--muted-light); margin-top: 0.75rem; font-weight: 500; }
+
+/* Comparison */
+.compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+.compare-card {
+  padding: 2.5rem;
+  background: var(--card-light);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  position: relative;
+}
+.compare-card.featured { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--shadow); }
+.compare-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.25rem 1rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  background: var(--accent);
+  color: white;
+  border-radius: 999px;
+}
+.compare-card h3 { font-size: 1.5rem; font-weight: 600; text-align: center; margin-bottom: 0.25rem; }
+.compare-price { text-align: center; margin-bottom: 2rem; }
+.compare-price .amount { font-size: 3rem; font-weight: 700; letter-spacing: -0.02em; }
+.compare-price .period { font-size: 1rem; color: var(--muted-light); }
+.compare-specs { list-style: none; margin-bottom: 2rem; }
+.compare-specs li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 0.95rem;
+}
+.compare-specs li:last-child { border-bottom: none; }
+.compare-specs .spec-name { color: var(--muted-light); }
+.compare-specs .spec-value { font-weight: 600; }
+
+/* Pre-order */
+.preorder {
+  text-align: center;
+  padding: 6rem 1.5rem;
+  background: linear-gradient(180deg, var(--bg-light) 0%, #f0f0f5 100%);
+}
+.dark .preorder { background: linear-gradient(180deg, var(--bg-dark) 0%, #1a1a1d 100%); }
+.preorder .headline { margin-bottom: 1rem; }
+.preorder .subhead { max-width: 600px; margin: 0 auto 2.5rem; }
+.preorder-form { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; max-width: 520px; margin: 0 auto; }
+.preorder-form input {
+  flex: 1;
+  min-width: 240px;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  font-family: inherit;
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  background: var(--card-light);
+  color: var(--fg-light);
+  transition: all var(--transition-fast);
+}
+.preorder-form input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(0,113,227,0.15); }
+.dark .preorder-form input { background: var(--card-dark); border-color: var(--border-dark); color: var(--fg-dark); }
+.preorder-note { font-size: 0.85rem; color: var(--muted-light); margin-top: 1.5rem; }
+
+/* Footer */
+.footer {
+  padding: 4rem 1.5rem;
+  background: var(--bg-light);
+  border-top: 1px solid var(--border-light);
+}
+.dark .footer { background: var(--bg-dark); border-color: var(--border-dark); }
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr repeat(3, 1fr);
+  gap: 3rem;
+  max-width: 1180px;
+  margin: 0 auto 3rem;
+}
+.footer-brand .logo { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 1rem; }
+.footer-brand p { color: var(--muted-light); font-size: 0.9rem; line-height: 1.6; max-width: 280px; }
+.footer-col h4 { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted-light); margin-bottom: 1rem; }
+.footer-col ul { list-style: none; }
+.footer-col li { margin-bottom: 0.5rem; }
+.footer-col a { font-size: 0.9rem; color: var(--fg-light); transition: color var(--transition-fast); }
+.dark .footer-col a { color: var(--fg-dark); }
+.footer-col a:hover { color: var(--accent); }
+.footer-bottom {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--muted-light);
+}
+
+/* Animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-scale { opacity: 0; transform: scale(0.9); transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.reveal-scale.visible { opacity: 1; transform: scale(1); }
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+.reveal-delay-5 { transition-delay: 0.5s; }
+.reveal-delay-6 { transition-delay: 0.6s; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal-scale, .showcase-panel, .hero .eyebrow, .hero .headline, .hero .subhead, .hero-cta {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .showcase-panel { max-width: 380px; padding: 1.5rem; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .footer-brand { grid-column: span 2; }
+}
+@media (max-width: 768px) {
+  .section { padding: 4rem 1rem; }
+  .showcase { min-height: 150vh; }
+  .showcase-panel { position: relative; max-width: 100%; margin: 1.5rem auto; opacity: 1; transform: none; }
+  .showcase-sticky { position: relative; height: auto; min-height: 60vh; }
+  .features-grid { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .compare { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr; }
+  .footer-brand { grid-column: auto; }
+  .preorder-form { flex-direction: column; align-items: stretch; }
+  .preorder-form input { width: 100%; }
+  .hero-illustration { height: 40vh; }
+}
+@media (max-width: 480px) {
+  .stats { grid-template-columns: 1fr; }
+  .btn { width: 100%; justify-content: center; }
+  .hero-cta { flex-direction: column; align-items: stretch; }
+}
+
+/* Focus visible */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* Selection */
+::selection { background: var(--accent); color: white; }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-illustration" aria-hidden="true">
+    <svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="lensGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#0071e3" stop-opacity="0.15"/>
+          <stop offset="50%" stop-color="#00c6ff" stop-opacity="0.08"/>
+          <stop offset="100%" stop-color="#0071e3" stop-opacity="0.15"/>
+        </linearGradient>
+        <linearGradient id="frameGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#1d1d1f"/>
+          <stop offset="50%" stop-color="#0e0e10"/>
+          <stop offset="100%" stop-color="#1d1d1f"/>
+        </linearGradient>
+        <radialGradient id="glowGrad" cx="50%" cy="30%" r="60%">
+          <stop offset="0%" stop-color="#0071e3" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#0071e3" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="8" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <filter id="innerShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feOffset dx="0" dy="2"/>
+          <feGaussianBlur stdDeviation="2" result="blur"/>
+          <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+      </defs>
+      
+      <!-- Subtle ambient glow -->
+      <ellipse cx="600" cy="350" rx="400" ry="120" fill="url(#glowGrad)" filter="url(#softGlow)"/>
+      
+      <!-- Glasses Group -->
+      <g transform="translate(600, 280)" id="glassesGroup">
+        <!-- Left Temple -->
+        <g id="leftTemple">
+          <path d="M-520 -10 L-200 -10" stroke="url(#frameGrad)" stroke-width="14" stroke-linecap="round" fill="none"/>
+          <path d="M-520 -10 L-200 -10" stroke="#2a2a2e" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.5"/>
+          <!-- Hinge -->
+          <circle cx="-200" cy="-10" r="10" fill="url(#frameGrad)"/>
+          <circle cx="-200" cy="-10" r="6" fill="#2a2a2e"/>
+          <!-- Charging contacts -->
+          <rect x="-500" y="-18" width="4" height="8" rx="2" fill="#3a3a3e"/>
+          <rect x="-490" y="-18" width="4" height="8" rx="2" fill="#3a3a3e"/>
+          <rect x="-480" y="-18" width="4" height="8" rx="2" fill="#3a3a3e"/>
+          <!-- Sensor dot -->
+          <circle cx="-450" cy="-10" r="3" fill="#0071e3" opacity="0.8"/>
+        </g>
+        
+        <!-- Right Temple -->
+        <g id="rightTemple">
+          <path d="M200 -10 L520 -10" stroke="url(#frameGrad)" stroke-width="14" stroke-linecap="round" fill="none"/>
+          <path d="M200 -10 L520 -10" stroke="#2a2a2e" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.5"/>
+          <!-- Hinge -->
+          <circle cx="200" cy="-10" r="10" fill="url(#frameGrad)"/>
+          <circle cx="200" cy="-10" r="6" fill="#2a2a2e"/>
+          <!-- Touch sensor area -->
+          <rect x="320" y="-20" width="120" height="10" rx="5" fill="#2a2a2e" opacity="0.3"/>
+          <!-- LED indicator -->
+          <circle cx="480" cy="-10" r="3" fill="#34c759" opacity="0.9"/>
+        </g>
+        
+        <!-- Front Frame -->
+        <g id="frontFrame">
+          <!-- Left lens frame -->
+          <path d="M-200 -80 Q-200 -110 -150 -120 Q-80 -120 -50 -100 Q-50 -60 -80 -40 Q-120 -20 -160 -30 Q-190 -35 -200 -50 Z" 
+                fill="url(#frameGrad)" filter="url(#innerShadow)"/>
+          <!-- Right lens frame -->
+          <path d="M200 -80 Q200 -110 150 -120 Q80 -120 50 -100 Q50 -60 80 -40 Q120 -20 160 -30 Q190 -35 200 -50 Z" 
+                fill="url(#frameGrad)" filter="url(#innerShadow)"/>
+          <!-- Bridge -->
+          <path d="M-50 -80 Q-50 -95 0 -100 Q50 -95 50 -80 Q50 -60 0 -50 Q-50 -60 -50 -80 Z" 
+                fill="url(#frameGrad)" filter="url(#innerShadow)"/>
+          <!-- Nose pads -->
+          <ellipse cx="-30" cy="-55" rx="8" ry="4" fill="#1a1a1c"/>
+          <ellipse cx="30" cy="-55" rx="8" ry="4" fill="#1a1a1c"/>
+        </g>
+        
+        <!-- Lenses -->
+        <g id="lenses">
+          <!-- Left lens -->
+          <path d="M-195 -75 Q-195 -105 -148 -115 Q-85 -115 -55 -95 Q-55 -58 -80 -40 Q-115 -22 -155 -30 Q-188 -33 -195 -50 Z" 
+                fill="url(#lensGrad)" opacity="0.9" filter="url(#softGlow)">
+            <animate attributeName="opacity" values="0.9;0.6;0.9" dur="4s" repeatCount="indefinite"/>
+          </path>
+          <!-- Right lens -->
+          <path d="M195 -75 Q195 -105 148 -115 Q85 -115 55 -95 Q55 -58 80 -40 Q115 -22 155 -30 Q188 -33 195 -50 Z" 
+                fill="url(#lensGrad)" opacity="0.9" filter="url(#softGlow)">
+            <animate attributeName="opacity" values="0.9;0.6;0.9" dur="4s" repeatCount="indefinite" begin="2s"/>
+          </path>
+        </g>
+        
+        <!-- Micro camera modules -->
+        <g id="cameras">
+          <circle cx="-180" cy="-105" r="5" fill="#0a0a0c"/>
+          <circle cx="-180" cy="-105" r="3" fill="#1a1a1e"/>
+          <circle cx="180" cy="-105" r="5" fill="#0a0a0c"/>
+          <circle cx="180" cy="-105" r="3" fill="#1a1a1e"/>
+        </g>
+        
+        <!-- Microphone holes -->
+        <g id="mics">
+          <g transform="translate(-480, -10)">
+            <circle cx="0" cy="0" r="1.5" fill="#1a1a1c"/>
+            <circle cx="0" cy="6" r="1.5" fill="#1a1a1c"/>
+            <circle cx="0" cy="12" r="1.5" fill="#1a1a1c"/>
+          </g>
+          <g transform="translate(480, -10)">
+            <circle cx="0" cy="0" r="1.5" fill="#1a1a1c"/>
+            <circle cx="0" cy="6" r="1.5" fill="#1a1a1c"/>
+            <circle cx="0" cy="12" r="1.5" fill="#1a1a1c"/>
+          </g>
+        </g>
+        
+        <!-- Projection indicator (subtle) -->
+        <g id="projection" opacity="0.3">
+          <path d="M-50 20 L-200 150 L-150 150 L20 20 Z" fill="#0071e3" fill-opacity="0.15"/>
+          <path d="M50 20 L200 150 L150 150 L-20 20 Z" fill="#0071e3" fill-opacity="0.15"/>
+        </g>
+      </g>
+    </svg>
+  </div>
+  
+  <div class="hero-content">
+    <span class="eyebrow">Introducing Halo</span>
+    <h1 id="hero-title" class="headline">Understand<br>every voice.</h1>
+    <p class="subhead">Real-time translation in 120 languages. Whisper-quiet bone conduction. All in frames you'll forget you're wearing.</p>
+    <div class="hero-cta">
+      <button class="btn btn-primary btn-lg" id="preorderHero">Pre-order for $699</button>
+      <button class="btn btn-secondary btn-lg" id="learnMoreHero">Learn more</button>
+    </div>
+  </div>
+</section>
+
+<!-- Sticky Showcase -->
+<section class="showcase dark" aria-labelledby="showcase-title">
+  <div class="showcase-sticky">
+    <svg class="showcase-product" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <defs>
+        <linearGradient id="frameGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#2a2a2e"/>
+          <stop offset="50%" stop-color="#0e0e10"/>
+          <stop offset="100%" stop-color="#2a2a2e"/>
+        </linearGradient>
+        <linearGradient id="lensGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#0071e3" stop-opacity="0.2"/>
+          <stop offset="50%" stop-color="#00c6ff" stop-opacity="0.1"/>
+          <stop offset="100%" stop-color="#0071e3" stop-opacity="0.2"/>
+        </linearGradient>
+        <radialGradient id="rimLight" cx="50%" cy="0%" r="80%">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      
+      <!-- Glasses centered -->
+      <g transform="translate(400, 200)">
+        <!-- Left Temple -->
+        <path id="stLeftTemple" d="M-320 0 L-100 0" stroke="url(#frameGrad2)" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <circle cx="-100" cy="0" r="8" fill="url(#frameGrad2)"/>
+        <circle cx="-100" cy="0" r="4" fill="#3a3a3e"/>
+        
+        <!-- Right Temple -->
+        <path id="stRightTemple" d="M100 0 L320 0" stroke="url(#frameGrad2)" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <circle cx="100" cy="0" r="8" fill="url(#frameGrad2)"/>
+        <circle cx="100" cy="0" r="4" fill="#3a3a3e"/>
+        
+        <!-- Front Frame -->
+        <path id="stLeftFrame" d="M-100 -60 Q-100 -90 -60 -100 Q0 -100 0 -80 Q0 -40 -30 -30 Q-70 -20 -100 -35 Z" fill="url(#frameGrad2)"/>
+        <path id="stRightFrame" d="M100 -60 Q100 -90 60 -100 Q0 -100 0 -80 Q0 -40 30 -30 Q70 -20 100 -35 Z" fill="url(#frameGrad2)"/>
+        <path id="stBridge" d="M-30 -60 Q-30 -75 0 -80 Q30 -75 30 -60 Q30 -40 0 -30 Q-30 -40 -30 -60 Z" fill="url(#frameGrad2)"/>
+        
+        <!-- Lenses -->
+        <path id="stLeftLens" d="M-95 -55 Q-95 -85 -58 -95 Q0 -95 0 -75 Q0 -40 -30 -30 Q-65 -22 -95 -35 Z" fill="url(#lensGrad2)" opacity="0.85"/>
+        <path id="stRightLens" d="M95 -55 Q95 -85 58 -95 Q0 -95 0 -75 Q0 -40 30 -30 Q65 -22 95 -35 Z" fill="url(#lensGrad2)" opacity="0.85"/>
+        
+        <!-- Rim highlights -->
+        <path id="stLeftRim" d="M-95 -55 Q-95 -85 -58 -95 Q0 -95 0 -75" fill="none" stroke="url(#rimLight)" stroke-width="1.5" stroke-linecap="round"/>
+        <path id="stRightRim" d="M95 -55 Q95 -85 58 -95 Q0 -95 0 -75" fill="none" stroke="url(#rimLight)" stroke-width="1.5" stroke-linecap="round"/>
+        
+        <!-- Sensors -->
+        <circle cx="-90" cy="-95" r="3.5" fill="#0a0a0c"/>
+        <circle cx="-90" cy="-95" r="2" fill="#1a1a1e"/>
+        <circle cx="90" cy="-95" r="3.5" fill="#0a0a0c"/>
+        <circle cx="90" cy="-95" r="2" fill="#1a1a1e"/>
+        
+        <!-- Nose pads -->
+        <ellipse cx="-18" cy="-35" rx="6" ry="3" fill="#1a1a1c"/>
+        <ellipse cx="18" cy="-35" rx="6" ry="3" fill="#1a1a1c"/>
+      </g>
+    </svg>
+    
+    <div class="showcase-content">
+      <!-- Panel 1 -->
+      <div class="showcase-panel left reveal" style="top: 15%;" data-panel="0">
+        <h2 style="font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.75rem;">See what they're saying</h2>
+        <p style="color: var(--muted-light); line-height: 1.6; margin-bottom: 1.5rem;">Dual micro-cameras capture speech, on-device neural engine translates instantly, and directional bone-conduction audio delivers it privately to you.</p>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <span style="padding: 0.5rem 1rem; background: var(--bg-light); border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: var(--fg-light);">Sub-100ms latency</span>
+          <span style="padding: 0.5rem 1rem; background: var(--bg-light); border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: var(--fg-light);">Offline capable</span>
+          <span style="padding: 0.5rem 1rem; background: var(--bg-light); border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: var(--fg-light);">Speaker ID</span>
+        </div>
+      </div>
+      
+      <!-- Panel 2 -->
+      <div class="showcase-panel right reveal" style="top: 50%;" data-panel="1">
+        <h2 style="font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.75rem;">Hear without ears</h2>
+        <p style="color: var(--muted-light); line-height: 1.6; margin-bottom: 1.5rem;">Bone conduction leaves your ears open to the world. Hear translations, navigation, and calls while staying present in your surroundings.</p>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <span style="padding: 0.5rem 1rem; background: var(--bg-light); border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: var(--fg-light);">Open-ear design</span>
+          <span style="padding: 0.5rem 1rem; background: var(--bg-light); border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: var(--fg-light);">Adaptive volume</span>
+          <span style="padding: 0.5rem 1rem; background: var(--bg-light); border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: var(--fg-light);">Wind rejection</span>
+        </div>
+      </div>
+      
+      <!-- Panel 3 -->
+      <div class="showcase-panel left reveal" style="bottom: 15%;" data-panel="2">
+        <h2 style="font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.75rem;">All day. Every day.</h2>
+        <p style="color: var(--muted-light); line-height: 1.6; margin-bottom: 1.5rem;">18 hours continuous translation. 72 hours standby. Magnetic snap-charge in 90 minutes. Weighs less than a pair of premium sunglasses.</p>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <span style="padding: 0.5rem 1rem; background: var(--bg-light); border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: var(--fg-light);">18h active</span>
+          <span style="padding: 0.5rem 1rem; background: var(--bg-light); border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: var(--fg-light);">38g total</span>
+          <span style="padding: 0.5rem 1rem; background: var(--bg-light); border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: var(--fg-light);">IP54 rated</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section" aria-labelledby="features-title">
+  <div class="container">
+    <span class="eyebrow" style="display: block; text-align: center;">Core Technologies</span>
+    <h2 id="features-title" class="section-title">Built for conversation</h2>
+    <p class="section-subtitle">Every component engineered to disappear — so language never gets in the way.</p>
+    
+    <div class="features-grid" id="featuresGrid">
+      <!-- Feature 1 -->
+      <article class="feature-card reveal reveal-delay-1">
+        <svg class="feature-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4zm0 2c9.94 0 18 8.06 18 18S33.94 40 24 40 6 31.94 6 24 14.06 6 24 6zm0 30c6.63 0 12-5.37 12-12S30.63 14 24 14 12 19.37 12 24s5.37 12 12 12z" fill="currentColor"/>
+          <path d="M24 16v8l5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h3>Neural Translation Engine</h3>
+        <p>Custom silicon runs transformer models locally. No cloud required for 40 core languages. Cloud boost adds 80 more with context-aware nuance.</p>
+      </article>
+      
+      <!-- Feature 2 -->
+      <article class="feature-card reveal reveal-delay-2">
+        <svg class="feature-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4zm0 2c9.94 0 18 8.06 18 18S33.94 40 24 40 6 31.94 6 24 14.06 6 24 6zm-4 16v-4h8v4h-8zm0-10v-4h8v4h-8z" fill="currentColor"/>
+        </svg>
+        <h3>Dual Beamforming Mics</h3>
+        <p>Two MEMS microphones with adaptive beamforming isolate the speaker's voice in noisy rooms, wind, or crowded streets.</p>
+      </article>
+      
+      <!-- Feature 3 -->
+      <article class="feature-card reveal reveal-delay-3">
+        <svg class="feature-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4zm0 2c9.94 0 18 8.06 18 18S33.94 40 24 40 6 31.94 6 24 14.06 6 24 6zm-4 28v-4h8v4h-8zm-4-12h16v-4H16v4z" fill="currentColor"/>
+        </svg>
+        <h3>Bone Conduction Audio</h3>
+        <p>Precision transducers send sound through your temporal bone. Crystal-clear translation without blocking ambient awareness.</p>
+      </article>
+      
+      <!-- Feature 4 -->
+      <article class="feature-card reveal reveal-delay-4">
+        <svg class="feature-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <ellipse cx="24" cy="24" rx="20" ry="20" fill="currentColor"/>
+          <path d="M24 14v10l7 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h3>All-Day Power</h3>
+        <p>Custom lithium-polymer cells woven into temples. 18 hours translation, 72 standby. Magnetic pogo-pin charge to 80% in 45 minutes.</p>
+      </article>
+      
+      <!-- Feature 5 -->
+      <article class="feature-card reveal reveal-delay-5">
+        <svg class="feature-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4zm0 2c9.94 0 18 8.06 18 18S33.94 40 24 40 6 31.94 6 24 14.06 6 24 6zm0 28c-6.63 0-12-5.37-12-12S17.37 14 24 14s12 5.37 12 12-5.37 12-12 12zm-4-20v-4h8v4h-8zm0-10v-4h8v4h-8z" fill="currentColor"/>
+        </svg>
+        <h3>Privacy First</h3>
+        <p>All voice processing on-device. Optional cloud mode encrypts end-to-end. No audio stored. Physical mic/camera kill switch.</p>
+      </article>
+      
+      <!-- Feature 6 -->
+      <article class="feature-card reveal reveal-delay-6">
+        <svg class="feature-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4zm0 2c9.94 0 18 8.06 18 18S33.94 40 24 40 6 31.94 6 24 14.06 6 24 6zm-8 16h16v4H16v-4zm0-10h16v4H16v-4z" fill="currentColor"/>
+        </svg>
+        <h3>Prescription Ready</h3>
+        <p>Lenses pop out for any prescription. Partner opticians in 12 countries. Magnetic clip-on sunglasses included with Pro.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="section dark" aria-labelledby="stats-title">
+  <div class="container">
+    <span class="eyebrow" style="display: block; text-align: center; color: var(--accent);">By the numbers</span>
+    <h2 id="stats-title" class="section-title" style="color: var(--fg-dark);">Designed to disappear</h2>
+    <p class="section-subtitle">Every gram justified. Every hour optimized.</p>
+    
+    <div class="stats" id="statsGrid">
+      <article class="stat-card reveal reveal-delay-1">
+        <div class="stat-number" data-target="18" data-suffix="h">0</div>
+        <div class="stat-label">Active Translation</div>
+      </article>
+      <article class="stat-card reveal reveal-delay-2">
+        <div class="stat-number" data-target="120" data-suffix="+">0</div>
+        <div class="stat-label">Languages Supported</div>
+      </article>
+      <article class="stat-card reveal reveal-delay-3">
+        <div class="stat-number" data-target="38" data-suffix="g">0</div>
+        <div class="stat-label">Total Weight</div>
+      </article>
+      <article class="stat-card reveal reveal-delay-4">
+        <div class="stat-number" data-target="90" data-suffix="min">0</div>
+        <div class="stat-label">Fast Charge (0–80%)</div>
+      </article>
+      <article class="stat-card reveal reveal-delay-5">
+        <div class="stat-number" data-target="40" data-suffix="+">0</div>
+        <div class="stat-label">Offline Languages</div>
+      </article>
+      <article class="stat-card reveal reveal-delay-6">
+        <div class="stat-number" data-target="2" data-suffix="μm">0</div>
+        <div class="stat-label">Process Node</div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- Comparison -->
+<section class="section" aria-labelledby="compare-title">
+  <div class="container">
+    <span class="eyebrow" style="display: block; text-align: center;">Choose your Halo</span>
+    <h2 id="compare-title" class="section-title">Two models. Same magic.</h2>
+    <p class="section-subtitle">Halo Air for everyday. Halo Pro for power users.</p>
+    
+    <div class="compare" id="compareGrid">
+      <!-- Halo Air -->
+      <article class="compare-card reveal reveal-delay-1">
+        <h3>Halo Air</h3>
+        <div class="compare-price">
+          <span class="amount">$699</span>
+          <span class="period">One-time</span>
+        </div>
+        <ul class="compare-specs">
+          <li><span class="spec-name">Weight</span><span class="spec-value">38g</span></li>
+          <li><span class="spec-name">Battery (active)</span><span class="spec-value">18h</span></li>
+          <li><span class="spec-name">Offline languages</span><span class="spec-value">40</span></li>
+          <li><span class="spec-name">Cloud languages</span><span class="spec-value">80</span></li>
+          <li><span class="spec-name">Storage</span><span class="spec-value">32GB</span></li>
+          <li><span class="spec-name">Frame material</span><span class="spec-value">Titanium composite</span></li>
+          <li><span class="spec-name">Lens options</span><span class="spec-value">Clear, Transitions®</span></li>
+          <li><span class="spec-name">Water resistance</span><span class="spec-value">IP54</span></li>
+          <li><span class="spec-name">Colorways</span><span class="spec-value">3 (Silver, Graphite, Gold)</span></li>
+        </ul>
+        <button class="btn btn-primary" style="width: 100%; justify-content: center;">Pre-order Air</button>
+      </article>
+      
+      <!-- Halo Pro -->
+      <article class="compare-card featured reveal reveal-delay-2">
+        <span class="compare-badge">Most Popular</span>
+        <h3>Halo Pro</h3>
+        <div class="compare-price">
+          <span class="amount">$1,199</span>
+          <span class="period">One-time</span>
+        </div>
+        <ul class="compare-specs">
+          <li><span class="spec-name">Weight</span><span class="spec-value">42g</span></li>
+          <li><span class="spec-name">Battery (active)</span><span class="spec-value">24h</span></li>
+          <li><span class="spec-name">Offline languages</span><span class="spec-value">60</span></li>
+          <li><span class="spec-name">Cloud languages</span><span class="spec-value">120</span></li>
+          <li><span class="spec-name">Storage</span><span class="spec-value">128GB</span></li>
+          <li><span class="spec-name">Frame material</span><span class="spec-value">Grade 5 Titanium</span></li>
+          <li><span class="spec-name">Lens options</span><span class="spec-value">Clear, Transitions®, Polarized clip-on</span></li>
+          <li><span class="spec-name">Water resistance</span><span class="spec-value">IP67</span></li>
+          <li><span class="spec-name">Colorways</span><span class="spec-value">5 (+ Matte Black, White)</span></li>
+          <li><span class="spec-name">Exclusive</span><span class="spec-value">Simultaneous dual-language</span></li>
+          <li><span class="spec-name">Exclusive</span><span class="spec-value">Real-time transcription export</span></li>
+        </ul>
+        <button class="btn btn-primary" style="width: 100%; justify-content: center;">Pre-order Pro</button>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- Pre-order -->
+<section class="preorder" aria-labelledby="preorder-title">
+  <div class="container">
+    <span class="eyebrow" style="display: block;">Reserve yours</span>
+    <h2 id="preorder-title" class="headline" style="text-align: center; max-width: 800px; margin: 0 auto 1rem;">Shipping begins Spring 2026</h2>
+    <p class="subhead" style="max-width: 600px; margin: 0 auto 2.5rem;">Join the waitlist. Early reservists receive complimentary magnetic clip-on sunglasses and priority colorway selection.</p>
+    
+    <form class="preorder-form" id="preorderForm" onsubmit="handlePreorder(event)">
+      <input type="email" placeholder="Email address" required aria-label="Email address" autocomplete="email">
+      <button type="submit" class="btn btn-primary btn-lg">Reserve now</button>
+    </form>
+    <p class="preorder-note">No charge today. We'll email you to configure and confirm before shipping. Cancel anytime.</p>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer" role="contentinfo">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div class="logo">Halo</div>
+      <p>Real-time translation smart glasses. Designed in California. Assembled with precision in Japan and the USA.</p>
+    </div>
+    <nav class="footer-col" aria-label="Product">
+      <h4>Product</h4>
+      <ul>
+        <li><a href="#hero">Halo Air</a></li>
+        <li><a href="#hero">Halo Pro</a></li>
+        <li><a href="#features">Technologies</a></li>
+        <li><a href="#compare">Compare</a></li>
+        <li><a href="#">Accessories</a></li>
+      </ul>
+    </nav>
+    <nav class="footer-col" aria-label="Support">
+      <h4>Support</h4>
+      <ul>
+        <li><a href="#">Getting Started</a></li>
+        <li><a href="#">Language Packs</a></li>
+        <li><a href="#">Prescription Lenses</a></li>
+        <li><a href="#">Repair & Service</a></li>
+        <li><a href="#">Contact Us</a></li>
+      </ul>
+    </nav>
+    <nav class="footer-col" aria-label="Company">
+      <h4>Company</h4>
+      <ul>
+        <li><a href="#">About Halo</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Environment</a></li>
+        <li><a href="#">Careers</a></li>
+        <li><a href="#">Press Kit</a></li>
+      </ul>
+    </nav>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2025 Halo Technologies, Inc. All rights reserved.</p>
+    <div style="display: flex; gap: 1.5rem;">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Legal</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// IntersectionObserver for scroll reveal animations
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, {
+  rootMargin: '0px 0px -10% 0px',
+  threshold: 0.1
+});
+
+document.querySelectorAll('.reveal, .reveal-scale').forEach(el => {
+  revealObserver.observe(el);
+});
+
+// Sticky showcase product rotation/transformation
+const showcaseSticky = document.querySelector('.showcase-sticky');
+const showcaseProduct = document.querySelector('.showcase-product');
+const panels = document.querySelectorAll('.showcase-panel');
+
+if (showcaseSticky && showcaseProduct) {
+  const showcaseHeight = showcaseSticky.offsetHeight;
+  const maxScroll = showcaseSticky.parentElement.offsetHeight - showcaseHeight;
+  
+  let ticking = false;
+  
+  function updateShowcase() {
+    const scrollY = window.scrollY;
+    const showcaseTop = showcaseSticky.parentElement.getBoundingClientRect().top + scrollY;
+    const progress = Math.max(0, Math.min(1, (scrollY - showcaseTop) / maxScroll));
+    
+    // Rotate and scale the product
+    const rotateY = progress * 360;
+    const rotateX = Math.sin(progress * Math.PI * 2) * 15;
+    const scale = 1 - progress * 0.15;
+    const translateY = progress * -50;
+    
+    showcaseProduct.style.transform = `
+      translateY(${translateY}px)
+      scale(${scale})
+      rotateX(${rotateX}deg)
+      rotateY(${rotateY}deg)
+    `;
+    
+    // Panel visibility based on scroll progress
+    panels.forEach((panel, index) => {
+      const panelProgress = progress - (index * 0.3);
+      if (panelProgress > 0.1 && panelProgress < 0.8) {
+        panel.classList.add('visible');
+      } else {
+        panel.classList.remove('visible');
+      }
+    });
+    
+    ticking = false;
+  }
+  
+  function requestTick() {
+    if (!ticking) {
+      requestAnimationFrame(updateShowcase);
+      ticking = true;
+    }
+  }
+  
+  window.addEventListener('scroll', requestTick, { passive: true });
+  // Initial call
+  updateShowcase();
+}
+
+// Animated counters for stats
+const statObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      animateCounter(entry.target);
+      statObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('.stat-number[data-target]').forEach(el => {
+  statObserver.observe(el);
+});
+
+function animateCounter(el) {
+  const target = parseFloat(el.dataset.target);
+  const suffix = el.dataset.suffix || '';
+  const duration = 2000;
+  const startTime = performance.now();
+  
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // Easing: easeOutCubic
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = target * eased;
+    
+    if (Number.isInteger(target)) {
+      el.textContent = Math.floor(current) + suffix;
+    } else {
+      el.textContent = current.toFixed(1) + suffix;
+    }
+    
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      el.textContent = target + suffix;
+    }
+  }
+  
+  requestAnimationFrame(update);
+}
+
+// Pre-order form handling
+function handlePreorder(e) {
+  e.preventDefault();
+  const form = e.target;
+  const email = form.querySelector('input[type="email"]').value;
+  const btn = form.querySelector('button[type="submit"]');
+  
+  // Simple validation
+  if (!email || !email.includes('@')) {
+    form.querySelector('input').focus();
+    return;
+  }
+  
+  btn.disabled = true;
+  btn.textContent = 'Reserving...';
+  
+  // Simulate API call
+  setTimeout(() => {
+    btn.textContent = 'Reserved!';
+    btn.style.background = '#34c759';
+    form.querySelector('input').value = '';
+    form.querySelector('input').disabled = true;
+    
+    setTimeout(() => {
+      btn.textContent = 'Reserve now';
+      btn.style.background = '';
+      btn.disabled = false;
+      form.querySelector('input').disabled = false;
+    }, 3000);
+  }, 1000);
+}
+
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function(e) {
+    const targetId = this.getAttribute('href');
+    if (targetId === '#') return;
+    const target = document.querySelector(targetId);
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// Parallax for hero illustration
+const heroIllustration = document.querySelector('.hero-illustration');
+if (heroIllustration) {
+  let heroTicking = false;
+  
+  function updateHero() {
+    const scrollY = window.scrollY;
+    const hero = document.querySelector('.hero');
+    const heroHeight = hero.offsetHeight;
+    const progress = Math.max(0, Math.min(1, scrollY / heroHeight));
+    
+    // Subtle parallax and fade
+    const translateY = progress * 100;
+    const opacity = 1 - progress * 0.8;
+    const scale = 1 - progress * 0.1;
+    
+    heroIllustration.style.transform = `translateX(-50%) translateY(${translateY}px) scale(${scale})`;
+    heroIllustration.style.opacity = opacity;
+    
+    heroTicking = false;
+  }
+  
+  function requestHeroTick() {
+    if (!heroTicking) {
+      requestAnimationFrame(updateHero);
+      heroTicking = true;
+    }
+  }
+  
+  window.addEventListener('scroll', requestHeroTick, { passive: true });
+}
+
+// Keyboard navigation for pre-order buttons
+document.querySelectorAll('#preorderHero, #learnMoreHero').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    if (btn.id === 'preorderHero') {
+      e.preventDefault();
+      document.querySelector('#preorderForm input').focus();
+      document.querySelector('.preorder').scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+});
+
+// Respect prefers-reduced-motion for showcase animation
+const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+if (mediaQuery.matches) {
+  // Disable showcase scroll animation
+  window.removeEventListener('scroll', requestTick);
+  if (showcaseProduct) {
+    showcaseProduct.style.transform = 'none';
+  }
+  panels.forEach(p => p.classList.add('visible'));
+}
+
+mediaQuery.addEventListener('change', (e) => {
+  if (e.matches) {
+    window.removeEventListener('scroll', requestTick);
+    if (showcaseProduct) showcaseProduct.style.transform = 'none';
+    panels.forEach(p => p.classList.add('visible'));
+  } else {
+    window.addEventListener('scroll', requestTick, { passive: true });
+  }
+});
+</script>
+</body>
+</html>
+```

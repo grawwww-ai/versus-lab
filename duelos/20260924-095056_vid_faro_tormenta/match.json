@@ -1,0 +1,373 @@
+{
+  "id": "20260924-095056_vid_faro_tormenta",
+  "challenge": {
+    "id": "vid_faro_tormenta",
+    "category": "video",
+    "cerebro": "fisica",
+    "title_es": "Tormenta en el faro",
+    "title_en": "Lighthouse storm",
+    "segundos": 5,
+    "prompt": "Cinematic wide shot at night of an old stone lighthouse on a rocky cliff during a violent storm. Huge waves crash against the rocks and explode into white spray, heavy rain slants in the wind, the lighthouse beam sweeps slowly across the sea. A bolt of lightning strikes the ocean in the distance and lights up the whole scene for an instant. Sound: roaring waves, howling wind, rain, and a loud thunderclap right after the lightning.",
+    "excelente": "Olas que rompen de verdad contra las rocas y se deshacen en espuma, lluvia inclinada por el viento, el haz del faro barriendo el mar y un relámpago que ilumina toda la escena, con el trueno sonando justo después. Parece un plano de película, sin nada que se deforme.",
+    "rubric": [
+      {
+        "id": "olas",
+        "c": "Las olas rompen",
+        "es": "Las olas rompen contra las rocas y se deshacen en espuma blanca, con un movimiento de agua creíble",
+        "w": 3
+      },
+      {
+        "id": "faro",
+        "c": "El faro y su haz",
+        "es": "Hay un faro de piedra sobre un acantilado y se ve el haz de luz barriendo el mar",
+        "w": 2
+      },
+      {
+        "id": "relampago",
+        "c": "El relámpago",
+        "es": "Un relámpago ilumina la escena en algún momento",
+        "w": 2
+      },
+      {
+        "id": "lluvia",
+        "c": "Lluvia y viento",
+        "es": "Llueve con fuerza y la lluvia va inclinada por el viento",
+        "w": 1
+      },
+      {
+        "id": "estable",
+        "c": "Sin deformarse",
+        "es": "El faro, las rocas y el horizonte se mantienen estables, sin deformarse ni cambiar de forma entre momentos",
+        "w": 3
+      }
+    ],
+    "nivel": 2,
+    "tema": "video"
+  },
+  "prompt": "Cinematic wide shot at night of an old stone lighthouse on a rocky cliff during a violent storm. Huge waves crash against the rocks and explode into white spray, heavy rain slants in the wind, the lighthouse beam sweeps slowly across the sea. A bolt of lightning strikes the ocean in the distance and lights up the whole scene for an instant. Sound: roaring waves, howling wind, rain, and a loud thunderclap right after the lightning.",
+  "contestants": [
+    {
+      "first_token_s": null,
+      "first_answer_s": null,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": null,
+      "max_tokens": 0,
+      "cuts": [],
+      "tokens_per_s": null,
+      "contestant": "vid:minimax-h3",
+      "side": "a",
+      "dir": "a-vid-minimax-h3",
+      "error": null,
+      "familia": "video",
+      "total_s": 680.8,
+      "segundos_por_pieza": 331.0,
+      "ficha": {
+        "nombre": "MiniMax H3",
+        "casa": "MiniMax",
+        "pasos": 20,
+        "licencia": "MiniMax Community",
+        "salida": "2026-07",
+        "id": "minimax-h3",
+        "familia": "video"
+      },
+      "piezas": [
+        {
+          "modelo": "minimax-h3",
+          "nombre": "MiniMax H3",
+          "fichero": "vid_0.mp4",
+          "seed": 7,
+          "pasos": 20,
+          "ancho": 1280,
+          "alto": 720,
+          "segundos_pedidos": 5.0,
+          "segundos": 349.1
+        },
+        {
+          "modelo": "minimax-h3",
+          "nombre": "MiniMax H3",
+          "fichero": "vid_1.mp4",
+          "seed": 21,
+          "pasos": 20,
+          "ancho": 1280,
+          "alto": 720,
+          "segundos_pedidos": 5.0,
+          "segundos": 331.0
+        }
+      ],
+      "validation": {
+        "checks": {
+          "genera": true,
+          "duracion": true,
+          "con_sonido": true,
+          "sin_negro": true,
+          "medida": true
+        },
+        "errors": [],
+        "score": 100,
+        "piezas": 2,
+        "duraciones": [
+          5.17,
+          5.17
+        ]
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 91,
+        "raw": 91.0,
+        "base_score": 100,
+        "requirements": {
+          "ok": 5,
+          "total": 5,
+          "pct": 100
+        },
+        "quality": 8.0,
+        "fps": null,
+        "faults": [
+          "(leve) La composición del plano cambia drásticamente entre el primer clip (fotogramas 1-4, faro a la derecha) y el segundo (fotogramas 5-8, faro a la izquierda), rompiendo la continuidad visual del conjunto."
+        ],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "olas",
+            "es": "Las olas rompen contra las rocas y se deshacen en espuma blanca, con un movimiento de agua creíble",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Fotograma 2 y 5: se ven grandes crestas de espuma blanca impactando contra las rocas del acantilado, con un aspecto de agua creíble y violento."
+          },
+          {
+            "id": "faro",
+            "es": "Hay un faro de piedra sobre un acantilado y se ve el haz de luz barriendo el mar",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Todos los fotogramas: el faro es de piedra, está sobre un acantilado y se observa claramente su haz de luz barriendo el mar (ej. Fotograma 4 y 6)."
+          },
+          {
+            "id": "relampago",
+            "es": "Un relámpago ilumina la escena en algún momento",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Fotograma 2 y 8: se ve un destello de relámpago brillante que ilumina la escena y las nubes."
+          },
+          {
+            "id": "lluvia",
+            "es": "Llueve con fuerza y la lluvia va inclinada por el viento",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Fotograma 6 y 8: se aprecian líneas de lluvia inclinadas por el viento cruzando el haz del faro y el cielo."
+          },
+          {
+            "id": "estable",
+            "es": "El faro, las rocas y el horizonte se mantienen estables, sin deformarse ni cambiar de forma entre momentos",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "El faro y el acantilado mantienen la misma forma y posición en todos los fotogramas, sin deformaciones visibles."
+          }
+        ],
+        "probe": {},
+        "evidence": [
+          "evidence/c0_00.png",
+          "evidence/c0_01.png",
+          "evidence/c0_02.png",
+          "evidence/c0_03.png",
+          "evidence/c1_00.png",
+          "evidence/c1_01.png",
+          "evidence/c1_02.png",
+          "evidence/c1_03.png"
+        ]
+      }
+    },
+    {
+      "first_token_s": null,
+      "first_answer_s": null,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": null,
+      "max_tokens": 0,
+      "cuts": [],
+      "tokens_per_s": null,
+      "contestant": "vid:ltx-2.5",
+      "side": "b",
+      "dir": "b-vid-ltx-2-5",
+      "error": null,
+      "familia": "video",
+      "total_s": 85.3,
+      "segundos_por_pieza": 32.1,
+      "ficha": {
+        "nombre": "LTX-2.5",
+        "casa": "Lightricks",
+        "pasos": 11,
+        "licencia": "LTX (propia)",
+        "salida": "2026-08",
+        "id": "ltx-2.5",
+        "familia": "video"
+      },
+      "piezas": [
+        {
+          "modelo": "ltx-2.5",
+          "nombre": "LTX-2.5",
+          "fichero": "vid_0.mp4",
+          "seed": 7,
+          "pasos": 11,
+          "ancho": 1280,
+          "alto": 720,
+          "segundos_pedidos": 5.0,
+          "segundos": 52.4
+        },
+        {
+          "modelo": "ltx-2.5",
+          "nombre": "LTX-2.5",
+          "fichero": "vid_1.mp4",
+          "seed": 21,
+          "pasos": 11,
+          "ancho": 1280,
+          "alto": 720,
+          "segundos_pedidos": 5.0,
+          "segundos": 32.1
+        }
+      ],
+      "validation": {
+        "checks": {
+          "genera": true,
+          "duracion": true,
+          "con_sonido": true,
+          "sin_negro": true,
+          "medida": false
+        },
+        "errors": [],
+        "score": 91,
+        "piezas": 2,
+        "duraciones": [
+          5.04,
+          5.04
+        ]
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 93,
+        "raw": 93.2,
+        "base_score": 91,
+        "requirements": {
+          "ok": 5,
+          "total": 5,
+          "pct": 100
+        },
+        "quality": 8.5,
+        "fps": null,
+        "faults": [],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "olas",
+            "es": "Las olas rompen contra las rocas y se deshacen en espuma blanca, con un movimiento de agua creíble",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Fotogramas 1 y 6: Se observan grandes olas rompiendo con violencia contra el acantilado, generando una masa de espuma blanca y salpicaduras creíbles."
+          },
+          {
+            "id": "faro",
+            "es": "Hay un faro de piedra sobre un acantilado y se ve el haz de luz barriendo el mar",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Fotogramas 5, 6 y 7: El faro de piedra es nítido y se aprecia claramente el haz de luz barriendo el mar en diferentes ángulos."
+          },
+          {
+            "id": "relampago",
+            "es": "Un relámpago ilumina la escena en algún momento",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Fotograma 1: Un relámpago brillante en el horizonte ilumina la escena de forma instantánea y contundente."
+          },
+          {
+            "id": "lluvia",
+            "es": "Llueve con fuerza y la lluvia va inclinada por el viento",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Fotograma 2: Se ven claramente las líneas diagonales de la lluvia cayendo con fuerza, inclinadas por el viento."
+          },
+          {
+            "id": "estable",
+            "es": "El faro, las rocas y el horizonte se mantienen estables, sin deformarse ni cambiar de forma entre momentos",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "En todas las tomas, el faro y el acantilado mantienen una geometría sólida y coherente, sin deformaciones ni cambios de forma."
+          }
+        ],
+        "probe": {},
+        "evidence": [
+          "evidence/c0_00.png",
+          "evidence/c0_01.png",
+          "evidence/c0_02.png",
+          "evidence/c0_03.png",
+          "evidence/c1_00.png",
+          "evidence/c1_01.png",
+          "evidence/c1_02.png",
+          "evidence/c1_03.png"
+        ]
+      }
+    }
+  ],
+  "comparison": {
+    "winner": "a",
+    "margin": "ligera",
+    "items": {
+      "olas": "a",
+      "faro": null,
+      "relampago": null,
+      "lluvia": null,
+      "estable": null
+    },
+    "why": [
+      "Ambos resultados muestran un faro, olas y tormenta, pero ninguno incluye el relámpago ni el barrido del haz de luz que pedía el reto.",
+      "El Resultado 2 presenta una composición más cinematográfica y un detalle superior en la espuma de las olas, mientras que el 1 se ve más oscuro y con la espuma algo difusa."
+    ],
+    "raw": {
+      "parejas": [
+        null,
+        null,
+        null,
+        "a"
+      ]
+    },
+    "judged_by": [
+      "local-gpu"
+    ]
+  },
+  "winner": "vid:minimax-h3",
+  "winner_side": "a",
+  "decided_by": "comparison"
+}

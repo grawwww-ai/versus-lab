@@ -1,0 +1,249 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Black Hole</</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+
+const canvas = document.getElementById("c");
+const gl = canvas.getContext("webgl2", { antialias: false, alpha: false });
+if (!gl) { document.body.innerHTML = "<p style='color:#fff;font-family:sans-serif'>WebGL2 not supported</p>"; }
+
+const VS = `#version 300 es
+precision highp float;
+const vec2 POS[4] = vec2[4](vec2(-1.0,-1.0), vec2(1.0,-1.0), vec2(-1.0,1.0), vec2(1.0,1.0));
+out vec2 vUV;
+void main() {
+  vec2 p = POS[gl_VertexID];
+  vUV = p;
+  gl_Position = vec4(p, 0.0, 1.0);
+}`;
+
+const FS = `#version 300 es
+precision highp float;
+uniform vec2 uRes;
+uniform float uTime;
+in vec2 vUV;
+out vec4 fragColor;
+
+// ---------- hash / noise ----------
+float hash31(vec3 p) {
+  p = fract(p * 0.3183099 + 0.1);
+  p *= 17.0;
+  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+vec3 hash33(vec3 p) {
+  return fract(vec3(
+    hash31(p + 11.1),
+    hash31(p + 27.3),
+    hash31(p + 43.7)
+  ));
+}
+float noise3(vec3 p) {
+  vec3 i = floor(p);
+  vec3 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(
+    mix(mix(hash31(i + vec3(0,0,0)), hash31(i + vec3(1,0,0)), f.x),
+        mix(hash31(i + vec3(0,1,0)), hash31(i + vec3(1,1,0)), f.x), f.y),
+    mix(mix(hash31(i + vec3(0,0,1)), hash31(i + vec3(1,0,1)), f.x),
+        mix(hash31(i + vec3(0,1,1)), hash31(i + vec3(1,1,1)), f.x), f.y),
+    f.z);
+}
+float fbm(vec3 p) {
+  float s = 0.0;
+  float a = 0.5;
+  for (int i = 0; i < 4; i++) {
+    s += a * noise3(p);
+    p *= 2.03;
+    a *= 0.5;
+  }
+  return s;
+}
+
+// ---------- accretion disk ----------
+vec3 diskSample(float r, float a, vec3 rd) {
+  const float RI = 1.6;
+  const float RO = 6.0;
+  float t = clamp((RO - r) / (RO - RI), 0.0, 1.0); // 1 = inner (hot)
+
+  vec3 cool = vec3(0.45, 0.04, 0.01);   // deep red outer
+  vec3 warm = vec3(1.00, 0.42, 0.08);   // orange
+  vec3 hot  = vec3(1.40, 1.28, 1.08);   // white-hot inner
+  vec3 col = mix(cool, warm, smoothstep(0.10, 0.55, t));
+  col = mix(col, hot, smoothstep(0.55, 0.95, t));
+
+  // co-rotating frame -> Keplerian streaks
+  float om = 0.9 / pow(r, 1.5);
+  float aa = a - uTime * om;
+  vec3 sp = vec3(cos(aa), sin(aa), r);
+  float turb   = fbm(sp * vec3(6.0,  6.0,  2.0) + vec3(10.0));
+  float streak = fbm(sp * vec3(14.0, 14.0, 4.0) + vec3(31.0));
+  float fine   = noise3(sp * vec3(40.0, 40.0, 12.0));
+
+  float lum = (0.30 + 1.1 * turb) * (0.35 + 1.8 * streak * streak) * (0.5 + fine);
+  lum *= pow(t, 1.6); // brightness rises inward
+
+  // relativistic Doppler / beaming asymmetry
+  vec2 hrd = rd.xy; (void)hrd;
+  vec2 tangent = vec2(-sin(a), cos(a));
+  vec2 hdir = rd.xz;
+  float l = length(hdir);
+  float dop = (l > 1e-4) ? dot(hdir / l, tangent) : 0.0;
+  lum *= max(0.0, 1.0 + 1.4 * dop);      // approaching side brightens
+  col *= mix(vec3(0.95, 0.80, 0.65), vec3(1.05, 1.00, 1.10), clamp(dop * 0.5 + 0.5, 0.0, 1.0));
+
+  float fade = smoothstep(RI, RI + 0.25, r) * (1.0 - smoothstep(RO - 0.9, RO, r));
+  return col * lum * fade;
+}
+
+// ---------- background sky (sampled with the *lensed* ray direction) ----------
+vec3 stars(vec3 d, float scale) {
+  vec3 p = d * scale;
+  vec3 i = floor(p);
+  vec3 f = fract(p) - 0.5 + (vec3(hash31(i+1.0), hash31(i+2.0), hash31(i+3.0)) - 0.5) * 0.8;
+  float h = hash31(i);
+  float s1 = h * exp(-dot(f, f) * 350.0);
+  float s2 = smoothstep(0.80, 1.0, h) * 45.0 * exp(-dot(f, f) * 1100.0);
+  float star = max(s1, s2);
+  vec3 tint = mix(vec3(0.75, 0.85, 1.0), vec3(1.0, 0.85, 0.65), hash31(i + 9.0));
+  return star * tint;
+}
+vec3 sky(vec3 d) {
+  vec3 c = vec3(0);
+  float neb = fbm(d * 2.5 + vec3(3.7));
+  c += vec3(0.012, 0.018, 0.035) * neb * neb * 6.0;
+  c += vec3(0.040, 0.030, 0.055) * pow(max(fbm(d * 4.0 + vec3(8.2)), 0.0), 3.0) * 0.6;
+  c += stars(d, 70.0) * 0.8;
+  c += stars(d, 140.0) * 1.2;
+  return c;
+}
+
+void main() {
+  vec2 uv = (2.0 * gl_FragCoord.xy - uRes) / uRes.y; // aspect-corrected
+
+  // ---- slowly orbiting, tilting camera ----
+  float orbit = uTime * 0.05;
+  float pitch = 0.16 + 0.11 * sin(uTime * 0.045) + 0.03 * sin(uTime * 0.013);
+  float dist  = 10.0;
+  vec3 camPos = vec3(cos(orbit) * dist, sin(pitch) * dist, sin(orbit) * dist);
+  vec3 fwd    = normalize(-camPos);
+  vec3 right  = normalize(cross(fwd, vec3(0.0, 1.0, 0.0)));
+  vec3 up     = cross(right, fwd);
+  float tanHalf = 1.15; // fov
+  vec3 rd = normalize(fwd + right * uv.x * tanHalf + up * uv.y * tanHalf);
+
+  // ---- photon geodesic integration ----
+  vec3 pos = camPos;
+  vec3 col = vec3(0.0);
+  float rmin = 1e9;
+  bool captured = false;
+  float prevY = pos.y;
+  int crossings = 0;
+  const float DT = 0.06;
+
+  for (int i = 0; i < 240; i++) {
+    pos += rd * DT;
+    float r = length(pos);
+    rmin = min(rmin, r);
+
+    if (r < 0.95) { captured = true; break; } // event horizon
+
+    // disk plane crossing (equatorial plane y = 0)
+    if (prevY * pos.y < 0.0 && r > 1.5 && r < 6.2) {
+      float a = atan(pos.z, pos.x);
+      col += diskSample(r, a, rd) * pow(0.28, float(crossings)); // images dimmer each pass
+      crossings++;
+    }
+    prevY = pos.y;
+
+    if (r > 22.0) break; // escaped to infinity
+
+    // geodesic bend:  a = -1.5 h^2 r / r^5
+    vec3 rvec = pos;
+    float h2 = dot(cross(rd, rvec), cross(rd, rvec));
+    rd -= (1.5 * h2 / (r * r * r * r * r)) * rvec * DT;
+    rd = normalize(rd);
+  }
+
+  if (!captured) {
+    col += sky(normalize(rd)); // starfield seen through the lensing field
+  }
+
+  // thin photon ring at r = 1.5 (light that grazed the photon sphere)
+  float ring = (rmin < 3.0) ? exp(-abs(rmin - 1.5) * 32.0) : 0.0;
+  col += vec3(1.0, 0.78, 0.48) * ring * 1.1;
+
+  // tone map + gamma
+  col = 1.0 - exp(-col * 1.9);
+  col = pow(max(col, vec3(0.0)), vec3(1.0 / 2.2));
+
+  // subtle vignette
+  vec2 q = gl_FragCoord.xy / uRes - 0.5;
+  col *= 1.0 - 0.35 * dot(q, q);
+
+  fragColor = vec4(col, 1.0);
+}`;
+
+function makeShader(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(s));
+  }
+  return s;
+}
+
+const prog = gl.createProgram();
+gl.attachShader(prog, makeShader(gl.VERTEX_SHADER, VS));
+gl.attachShader(prog, makeShader(gl.FRAGMENT_SHADER, FS));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+  console.error(gl.getProgramInfoLog(prog));
+}
+gl.useProgram(prog);
+
+const uRes = gl.getUniformLocation(prog, "uRes");
+const uTime = gl.getUniformLocation(prog, "uTime");
+
+// full-screen quad via gl_VertexID (no buffers needed)
+const vao = gl.createVertexArray();
+gl.bindVertexArray(vao);
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.floor(window.innerWidth * dpr);
+  const h = Math.floor(window.innerHeight * dpr);
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+    gl.viewport(0, 0, w, h);
+  }
+}
+window.addEventListener("resize", resize);
+resize();
+
+const t0 = performance.now();
+function frame(t) {
+  resize();
+  gl.uniform2f(uRes, canvas.width, canvas.height);
+  gl.uniform1f(uTime, (t - t0) * 0.001);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
+```

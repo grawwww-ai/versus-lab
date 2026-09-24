@@ -1,0 +1,391 @@
+{
+  "id": "20260921-140841_cyberpunk_city",
+  "challenge": {
+    "id": "cyberpunk_city",
+    "category": "svg",
+    "title_es": "Ciudad Cyberpunk",
+    "title_en": "Cyberpunk City",
+    "prompt": "Return ONLY a valid SVG string, 800x600 viewBox. Draw a futuristic cyberpunk cityscape at night. Include skyscrapers with neon lights (pink, cyan, purple). Add a large moon or planet in the background. Include flying vehicles (simple shapes) and holographic billboards (rectangles with text-like lines). Use gradients for sky and building reflections. No external images. Static scene, highly detailed with many small elements. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.",
+    "rubric": [
+      {
+        "id": "edificios",
+        "c": "Muchos edificios",
+        "es": "Hay muchos rascacielos a distintas alturas, con detalle",
+        "w": 2
+      },
+      {
+        "id": "neones",
+        "c": "Neones",
+        "es": "Hay luces de neón rosa, cian y morado en los edificios",
+        "w": 2
+      },
+      {
+        "id": "luna",
+        "c": "Luna o planeta",
+        "es": "Hay una luna o un planeta grande en el cielo",
+        "w": 1
+      },
+      {
+        "id": "vehiculos",
+        "c": "Vehículos voladores",
+        "es": "Hay vehículos voladores",
+        "w": 1
+      },
+      {
+        "id": "carteles",
+        "c": "Carteles holográficos",
+        "es": "Hay carteles holográficos con líneas que imitan texto",
+        "w": 1
+      },
+      {
+        "id": "degradados",
+        "c": "Degradados y reflejos",
+        "es": "El cielo y los edificios usan degradados o reflejos que dan profundidad",
+        "w": 1
+      },
+      {
+        "id": "detalle",
+        "c": "Muy detallado",
+        "es": "La escena está llena de pequeños elementos, no es un dibujo simple",
+        "w": 2
+      }
+    ],
+    "excelente": "Ilustración rica y coherente: muchos edificios a distintas alturas, neones rosa, cian y morado que se reflejan, una luna o planeta grande, vehículos y carteles holográficos con detalle, degradados que dan profundidad. Composición equilibrada, parece un póster."
+  },
+  "prompt": "Return ONLY a valid SVG string, 800x600 viewBox. Draw a futuristic cyberpunk cityscape at night. Include skyscrapers with neon lights (pink, cyan, purple). Add a large moon or planet in the background. Include flying vehicles (simple shapes) and holographic billboards (rectangles with text-like lines). Use gradients for sky and building reflections. No external images. Static scene, highly detailed with many small elements. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.\n\nReply with the complete SVG in a single ```svg code block.",
+  "contestants": [
+    {
+      "contestant": "or:deepseek/deepseek-v4.1-flash",
+      "first_token_s": 0.873,
+      "first_answer_s": 34.879,
+      "total_s": 65.132,
+      "prompt_tokens": 165,
+      "completion_tokens": 14460,
+      "reasoning_tokens": 5511,
+      "cost": 0.0174015,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 384000,
+      "cuts": [
+        "1092 s: {'code': 502, 'message': 'Upstream error from DigitalOcean: stream failed', 'metadata': {'error_type': 'provider_unavail"
+      ],
+      "side": "a",
+      "dir": "a-or-deepseek-deepseek-v4-1-flash",
+      "tokens_per_s": 225.0,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.03,
+        "visual": {
+          "contrast": 111.4,
+          "detail_pct": 17.68,
+          "box": [
+            0.153,
+            0.039,
+            0.847,
+            0.961
+          ]
+        },
+        "external_requests": [],
+        "capture": {
+          "frames": 0,
+          "errors": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 82,
+        "raw": 81.5,
+        "base_score": 100,
+        "requirements": {
+          "ok": 7,
+          "total": 7,
+          "pct": 95
+        },
+        "quality": 6.5,
+        "fps": null,
+        "faults": [
+          "(leve) La luna/planeta está parcialmente oculta por un edificio y se ve un poco tosca"
+        ],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "edificios",
+            "es": "Hay muchos rascacielos a distintas alturas, con detalle",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Varios rascacielos de distinta altura y anchura con patrones de ventanas visibles en la captura 1."
+          },
+          {
+            "id": "neones",
+            "es": "Hay luces de neón rosa, cian y morado en los edificios",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Líneas y ventanas en rosa, cian y morado claramente visibles en toda la escena (captura 1)."
+          },
+          {
+            "id": "luna",
+            "es": "Hay una luna o un planeta grande en el cielo",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Gran forma circular morada en la parte superior derecha que representa un planeta o luna (captura 1)."
+          },
+          {
+            "id": "vehiculos",
+            "es": "Hay vehículos voladores",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "Hay una forma triangular flotando arriba, pero no se distinguen claramente vehículos voladores con forma de nave (captura 1)."
+          },
+          {
+            "id": "carteles",
+            "es": "Hay carteles holográficos con líneas que imitan texto",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Rectángulos con líneas horizontales que simulan texto en los edificios (captura 1)."
+          },
+          {
+            "id": "degradados",
+            "es": "El cielo y los edificios usan degradados o reflejos que dan profundidad",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "El cielo tiene un degradado oscuro y los edificios tienen reflejos y brillos que dan profundidad (captura 1)."
+          },
+          {
+            "id": "detalle",
+            "es": "La escena está llena de pequeños elementos, no es un dibujo simple",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "La escena está llena de ventanas, líneas, luces y pequeños elementos (captura 1)."
+          }
+        ],
+        "probe": {
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png",
+          "evidence/15.png"
+        ]
+      }
+    },
+    {
+      "contestant": "or:z-ai/glm-5.3-flash",
+      "first_token_s": 2.615,
+      "first_answer_s": 630.238,
+      "total_s": 743.368,
+      "prompt_tokens": 142,
+      "completion_tokens": 66621,
+      "reasoning_tokens": 45060,
+      "cost": 0.0333318,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 131072,
+      "cuts": [
+        "1168 s: corte del proveedor: la respuesta terminó sin cerrarse"
+      ],
+      "side": "b",
+      "dir": "b-or-z-ai-glm-5-3-flash",
+      "tokens_per_s": 89.9,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.03,
+        "visual": {
+          "contrast": 107.9,
+          "detail_pct": 23.48,
+          "box": [
+            0.153,
+            0.039,
+            0.847,
+            0.961
+          ]
+        },
+        "external_requests": [],
+        "capture": {
+          "frames": 0,
+          "errors": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 91,
+        "raw": 91.0,
+        "base_score": 100,
+        "requirements": {
+          "ok": 7,
+          "total": 7,
+          "pct": 100
+        },
+        "quality": 8.0,
+        "fps": null,
+        "faults": [],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "edificios",
+            "es": "Hay muchos rascacielos a distintas alturas, con detalle",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Se observan múltiples rascacielos verticales de distintas alturas con ventanas detalladas y bordes definidos."
+          },
+          {
+            "id": "neones",
+            "es": "Hay luces de neón rosa, cian y morado en los edificios",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Los bordes de los edificios y los carteles brillan con colores rosa, cian y morado, cumpliendo el requisito de neones."
+          },
+          {
+            "id": "luna",
+            "es": "Hay una luna o un planeta grande en el cielo",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Un gran planeta morado con anillos domina el fondo del cielo en la parte superior derecha."
+          },
+          {
+            "id": "vehiculos",
+            "es": "Hay vehículos voladores",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Capturas 1-16: Pequeñas formas ovaladas (naves) son visibles volando entre los edificios, cambiando ligeramente de posición en las secuencias."
+          },
+          {
+            "id": "carteles",
+            "es": "Hay carteles holográficos con líneas que imitan texto",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Varios rectángulos flotantes con líneas horizontales blancas que simulan texto o código holográfico."
+          },
+          {
+            "id": "degradados",
+            "es": "El cielo y los edificios usan degradados o reflejos que dan profundidad",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: El cielo tiene un degradado oscuro y el planeta presenta sombreado suave, además de los reflejos de color en los edificios."
+          },
+          {
+            "id": "detalle",
+            "es": "La escena está llena de pequeños elementos, no es un dibujo simple",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: La escena incluye lluvia animada, múltiples ventanas, luces de tráfico y elementos decorativos variados, no es un dibujo simple."
+          }
+        ],
+        "probe": {
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png",
+          "evidence/15.png"
+        ]
+      }
+    }
+  ],
+  "winner": "or:z-ai/glm-5.3-flash",
+  "winner_side": "b",
+  "decided_by": "score",
+  "comparison": {
+    "winner": null,
+    "margin": null,
+    "items": {
+      "edificios": null,
+      "neones": null,
+      "luna": "b",
+      "vehiculos": null,
+      "carteles": null,
+      "degradados": "b",
+      "detalle": null
+    },
+    "why": [
+      "El resultado 2 presenta una composición más completa y coherente, incluyendo un planeta prominente, lluvia atmosférica y vehículos voladores claramente visibles, mientras que el resultado 1 parece un fragmento recortado y desequilibrado de la escena.",
+      "El resultado 1 gana en coherencia estética con una composición más equilibrada y un cielo con degradados superiores, mientras que el 2 destaca por la mayor densidad de ventanas y un primer plano más detallado, resultando en una igualdad técnica."
+    ],
+    "raw": {
+      "a_izquierda": "2",
+      "b_izquierda": "igual"
+    },
+    "judged_by": [
+      "local-gpu"
+    ]
+  }
+}

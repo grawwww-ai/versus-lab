@@ -1,0 +1,389 @@
+{
+  "id": "20260924-025851_img_cartel_panaderia",
+  "challenge": {
+    "id": "img_cartel_panaderia",
+    "category": "imagen",
+    "cerebro": "lenguaje",
+    "title_es": "El cartel de la panadería",
+    "title_en": "The bakery sign",
+    "aspecto": "16:9",
+    "prompt": "Photograph of a small neighbourhood bakery in a Spanish city at dusk, shot on a 35mm lens. The shop sign above the window reads exactly \"PANADERÍA LA AURORA\" in warm golden letters, and a black chalkboard leaning by the door reads exactly \"HOY: PAN DE PUEBLO 2,50 €\" in white handwritten chalk. Loaves and ensaimadas are visible in the lit window, an old woman with a shopping trolley walks past, wet pavement reflects the shop light. Natural evening light, realistic colours, sharp focus on the signs.",
+    "excelente": "Se lee «PANADERÍA LA AURORA» y «HOY: PAN DE PUEBLO 2,50 €» sin una sola letra rara, con tipografías creíbles, y la escena parece una foto real de un barrio español al atardecer.",
+    "rubric": [
+      {
+        "id": "cartel",
+        "c": "El rótulo, exacto",
+        "es": "El rótulo dice exactamente «PANADERÍA LA AURORA», sin letras inventadas, repetidas ni cambiadas",
+        "w": 3
+      },
+      {
+        "id": "pizarra",
+        "c": "La pizarra, exacta",
+        "es": "La pizarra dice exactamente «HOY: PAN DE PUEBLO 2,50 €», con la tilde y el símbolo del euro bien",
+        "w": 3
+      },
+      {
+        "id": "tipografia",
+        "c": "Letras bien hechas",
+        "es": "Las letras están bien dibujadas y alineadas, sin deformarse ni cortarse",
+        "w": 2
+      },
+      {
+        "id": "escena",
+        "c": "La panadería",
+        "es": "Se ve una panadería con pan en el escaparate, la señora con el carro y el suelo mojado reflejando",
+        "w": 2
+      },
+      {
+        "id": "foto",
+        "c": "Parece una foto",
+        "es": "Parece una fotografía real al atardecer, no un dibujo ni un montaje",
+        "w": 2
+      }
+    ],
+    "nivel": 2,
+    "tema": "imagen"
+  },
+  "prompt": "Photograph of a small neighbourhood bakery in a Spanish city at dusk, shot on a 35mm lens. The shop sign above the window reads exactly \"PANADERÍA LA AURORA\" in warm golden letters, and a black chalkboard leaning by the door reads exactly \"HOY: PAN DE PUEBLO 2,50 €\" in white handwritten chalk. Loaves and ensaimadas are visible in the lit window, an old woman with a shopping trolley walks past, wet pavement reflects the shop light. Natural evening light, realistic colours, sharp focus on the signs.",
+  "contestants": [
+    {
+      "contestant": "z-image-turbo",
+      "side": "a",
+      "dir": "a-z-image-turbo",
+      "error": null,
+      "total_s": 28.4,
+      "ficha": {
+        "nombre": "Z-Image Turbo",
+        "casa": "Alibaba (Tongyi)",
+        "params": "6B",
+        "pasos": 8,
+        "licencia": "Apache 2.0",
+        "salida": "2026-08",
+        "id": "z-image-turbo"
+      },
+      "validation": {
+        "checks": {
+          "genera": true,
+          "sin_vacias": true,
+          "medida": true
+        },
+        "errors": [],
+        "score": 100,
+        "imagenes": 4
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 89,
+        "raw": 88.7,
+        "base_score": 100,
+        "requirements": {
+          "ok": 5,
+          "total": 5,
+          "pct": 92
+        },
+        "quality": 8.5,
+        "fps": null,
+        "faults": [
+          "(leve) Faltan las ensaimadas en el escaparate, solo se distinguen barras y panes redondos.",
+          "(leve) El reflejo de la luz de la tienda en el suelo mojado es muy sutil o casi inexistente en varias tomas.",
+          "(leve) En la imagen 4 aparece una segunda pizarra pegada a la puerta que no se ve en las demás, lo que resta coherencia al conjunto."
+        ],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "cartel",
+            "es": "El rótulo dice exactamente «PANADERÍA LA AURORA», sin letras inventadas, repetidas ni cambiadas",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "En las 4 imágenes el texto 'PANADERÍA LA AURORA' es perfectamente legible, con las mayúsculas y la tilde correctas, sin deformaciones."
+          },
+          {
+            "id": "pizarra",
+            "es": "La pizarra dice exactamente «HOY: PAN DE PUEBLO 2,50 €», con la tilde y el símbolo del euro bien",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "El texto 'HOY: PAN DE PUEBLO 2,50 €' aparece correctamente en las pizarras de las 4 imágenes, incluyendo el símbolo de euro y la coma decimal."
+          },
+          {
+            "id": "tipografia",
+            "es": "Las letras están bien dibujadas y alineadas, sin deformarse ni cortarse",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Las letras del cartel están uniformes y las de la pizarra simulan bien la caligrafía a mano sin errores de trazos."
+          },
+          {
+            "id": "escena",
+            "es": "Se ve una panadería con pan en el escaparate, la señora con el carro y el suelo mojado reflejando",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "Se ve la panadería, la señora y el suelo, pero faltan las ensaimadas mencionadas en el prompt y el reflejo del suelo mojado es muy tenue o casi invisible en las imágenes 1, 2 y 3."
+          },
+          {
+            "id": "foto",
+            "es": "Parece una fotografía real al atardecer, no un dibujo ni un montaje",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "La iluminación de atardecer, la textura de la piedra y la profundidad de campo son realistas, simulan una fotografía de 35mm."
+          }
+        ],
+        "probe": {},
+        "evidence": [
+          "evidence/0.png",
+          "evidence/1.png",
+          "evidence/2.png",
+          "evidence/3.png"
+        ]
+      },
+      "first_token_s": null,
+      "first_answer_s": null,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": null,
+      "max_tokens": 0,
+      "cuts": [],
+      "tokens_per_s": null,
+      "familia": "imagen",
+      "piezas": [
+        {
+          "modelo": "z-image-turbo",
+          "nombre": "Z-Image Turbo",
+          "fichero": "img_0.png",
+          "seed": 7,
+          "pasos": 8,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 16.1
+        },
+        {
+          "modelo": "z-image-turbo",
+          "nombre": "Z-Image Turbo",
+          "fichero": "img_1.png",
+          "seed": 21,
+          "pasos": 8,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 4.0
+        },
+        {
+          "modelo": "z-image-turbo",
+          "nombre": "Z-Image Turbo",
+          "fichero": "img_2.png",
+          "seed": 42,
+          "pasos": 8,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 4.0
+        },
+        {
+          "modelo": "z-image-turbo",
+          "nombre": "Z-Image Turbo",
+          "fichero": "img_3.png",
+          "seed": 99,
+          "pasos": 8,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 4.0
+        }
+      ],
+      "segundos_por_pieza": 4.0
+    },
+    {
+      "contestant": "krea-2-turbo",
+      "side": "b",
+      "dir": "b-krea-2-turbo",
+      "error": null,
+      "total_s": 42.4,
+      "ficha": {
+        "nombre": "Krea 2 Turbo",
+        "casa": "Krea",
+        "params": "—",
+        "pasos": 8,
+        "licencia": "pesos abiertos (no comercial)",
+        "salida": "2026-08",
+        "id": "krea-2-turbo"
+      },
+      "validation": {
+        "checks": {
+          "genera": true,
+          "sin_vacias": true,
+          "medida": true
+        },
+        "errors": [],
+        "score": 100,
+        "imagenes": 4
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 93,
+        "raw": 93.2,
+        "base_score": 100,
+        "requirements": {
+          "ok": 5,
+          "total": 5,
+          "pct": 100
+        },
+        "quality": 8.5,
+        "fps": null,
+        "faults": [
+          "(leve) En la imagen 2, el carrito de la compra parece fusionarse ligeramente con el pie de la mujer, con una integración de las ruedas poco natural."
+        ],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "cartel",
+            "es": "El rótulo dice exactamente «PANADERÍA LA AURORA», sin letras inventadas, repetidas ni cambiadas",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "En las 4 imágenes el rótulo superior se lee claramente 'PANADERÍA LA AURORA' sin errores tipográficos."
+          },
+          {
+            "id": "pizarra",
+            "es": "La pizarra dice exactamente «HOY: PAN DE PUEBLO 2,50 €», con la tilde y el símbolo del euro bien",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "En las 4 imágenes la pizarra muestra 'HOY: PAN DE PUEBLO 2,50 €' con la tilde y el símbolo de euro correctos."
+          },
+          {
+            "id": "tipografia",
+            "es": "Las letras están bien dibujadas y alineadas, sin deformarse ni cortarse",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Las letras del cartel son uniformes y la letra de tiza de la pizarra es legible y coherente en todas las capturas."
+          },
+          {
+            "id": "escena",
+            "es": "Se ve una panadería con pan en el escaparate, la señora con el carro y el suelo mojado reflejando",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Se observa el escaparate lleno de pan, una anciana con carrito en la acera y el pavimento mojado refleja la luz en las 4 imágenes."
+          },
+          {
+            "id": "foto",
+            "es": "Parece una fotografía real al atardecer, no un dibujo ni un montaje",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Las imágenes tienen la estética de una fotografía real al atardecer, con iluminación natural y texturas creíbles."
+          }
+        ],
+        "probe": {},
+        "evidence": [
+          "evidence/0.png",
+          "evidence/1.png",
+          "evidence/2.png",
+          "evidence/3.png"
+        ]
+      },
+      "first_token_s": null,
+      "first_answer_s": null,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": null,
+      "max_tokens": 0,
+      "cuts": [],
+      "tokens_per_s": null,
+      "familia": "imagen",
+      "piezas": [
+        {
+          "modelo": "krea-2-turbo",
+          "nombre": "Krea 2 Turbo",
+          "fichero": "img_0.png",
+          "seed": 7,
+          "pasos": 8,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 18.1
+        },
+        {
+          "modelo": "krea-2-turbo",
+          "nombre": "Krea 2 Turbo",
+          "fichero": "img_1.png",
+          "seed": 21,
+          "pasos": 8,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 8.1
+        },
+        {
+          "modelo": "krea-2-turbo",
+          "nombre": "Krea 2 Turbo",
+          "fichero": "img_2.png",
+          "seed": 42,
+          "pasos": 8,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 8.1
+        },
+        {
+          "modelo": "krea-2-turbo",
+          "nombre": "Krea 2 Turbo",
+          "fichero": "img_3.png",
+          "seed": 99,
+          "pasos": 8,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 8.1
+        }
+      ],
+      "segundos_por_pieza": 8.1
+    }
+  ],
+  "winner": "krea-2-turbo",
+  "winner_side": "b",
+  "decided_by": "score",
+  "comparison": {
+    "winner": null,
+    "margin": null,
+    "items": {
+      "cartel": null,
+      "pizarra": null,
+      "tipografia": null,
+      "escena": null,
+      "foto": null
+    },
+    "why": [
+      "Ambos resultados son visualmente idénticos en cada detalle, mostrando exactamente la misma imagen duplicada.",
+      "Ambos resultados son fotográficamente perfectos, con textos exactos y sin errores de IA, por lo que es imposible distinguir cuál de los dos modelos ha generado cada imagen."
+    ],
+    "raw": {
+      "a_izquierda": "igual",
+      "b_izquierda": "igual"
+    },
+    "judged_by": [
+      "local-gpu"
+    ]
+  }
+}

@@ -1,0 +1,396 @@
+{
+  "id": "20260924-073504_img_manos_guitarra",
+  "challenge": {
+    "id": "img_manos_guitarra",
+    "category": "imagen",
+    "cerebro": "anatomia",
+    "title_es": "Manos en la guitarra",
+    "title_en": "Hands on the guitar",
+    "aspecto": "16:9",
+    "prompt": "Extreme close-up photograph of a woman's hands playing a classical guitar: the left hand pressing a chord on the fretboard with clearly separated fingers, the right hand plucking the strings above the sound hole. Six strings, visible frets, warm wood grain, a silver ring on the index finger, short natural nails. Shallow depth of field, soft window light from the left, editorial photography.",
+    "excelente": "Dos manos correctas con cinco dedos cada una, colocadas como se toca de verdad, seis cuerdas bien tensadas y trastes coherentes; parece una foto de revista.",
+    "rubric": [
+      {
+        "id": "dedos",
+        "c": "Cinco dedos por mano",
+        "es": "Cada mano tiene cinco dedos bien formados, sin dedos de más, fundidos ni torcidos",
+        "w": 3
+      },
+      {
+        "id": "postura",
+        "c": "Postura creíble",
+        "es": "La izquierda pisa el mástil y la derecha toca sobre la boca, como se toca de verdad",
+        "w": 3
+      },
+      {
+        "id": "guitarra",
+        "c": "La guitarra, bien",
+        "es": "Seis cuerdas rectas y continuas, trastes y boca coherentes, sin piezas fundidas",
+        "w": 2
+      },
+      {
+        "id": "detalle",
+        "c": "Detalle de piel y madera",
+        "es": "Se ve el detalle de la piel, las uñas y la veta de la madera",
+        "w": 2
+      },
+      {
+        "id": "luz",
+        "c": "Luz de foto",
+        "es": "Luz suave de ventana y fondo desenfocado, como una fotografía real",
+        "w": 1
+      }
+    ],
+    "nivel": 3,
+    "tema": "imagen"
+  },
+  "prompt": "Extreme close-up photograph of a woman's hands playing a classical guitar: the left hand pressing a chord on the fretboard with clearly separated fingers, the right hand plucking the strings above the sound hole. Six strings, visible frets, warm wood grain, a silver ring on the index finger, short natural nails. Shallow depth of field, soft window light from the left, editorial photography.",
+  "contestants": [
+    {
+      "contestant": "img:qwen-image-2.1",
+      "side": "a",
+      "dir": "a-img-qwen-image-2-1",
+      "error": null,
+      "total_s": 32.4,
+      "ficha": {
+        "nombre": "Qwen-Image 2.1",
+        "casa": "Alibaba",
+        "params": "7B",
+        "pasos": 25,
+        "licencia": "Qwen Research (uso comercial con acuerdo aparte)",
+        "salida": "2026-09-20",
+        "id": "qwen-image-2.1"
+      },
+      "validation": {
+        "checks": {
+          "genera": true,
+          "sin_vacias": true,
+          "medida": true
+        },
+        "errors": [],
+        "score": 100,
+        "imagenes": 4
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 61,
+        "raw": 61.0,
+        "base_score": 100,
+        "requirements": {
+          "ok": 4,
+          "total": 5,
+          "pct": 73
+        },
+        "quality": 6.0,
+        "fps": null,
+        "faults": [
+          "(grave) Posición de las manos invertida: la mano con el anillo (izquierda) está en la zona de púa y la otra en la de cejilla, contradiciendo el prompt.",
+          "(leve) La mano derecha en la imagen 1 está desenfocada de forma excesiva, perdiendo definición.",
+          "(leve) La mano izquierda en varias capturas (1 y 3) se posiciona sobre la boca de resonancia en lugar del mástil, rompiendo la lógica de la postura de ejecución.",
+          "(leve) Definición anatómica inconsistente en los dedos de la mano derecha (captura 2), donde no se distinguen claramente los cinco dedos."
+        ],
+        "penalty": 6,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [
+          "postura"
+        ],
+        "items": [
+          {
+            "id": "dedos",
+            "es": "Cada mano tiene cinco dedos bien formados, sin dedos de más, fundidos ni torcidos",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "En la imagen 1, la mano derecha (desenfocada) parece fundirse con la madera y no se distinguen bien los dedos. En la imagen 3, el anular de la mano izquierda parece corto o deformado."
+          },
+          {
+            "id": "postura",
+            "es": "La izquierda pisa el mástil y la derecha toca sobre la boca, como se toca de verdad",
+            "w": 3,
+            "how": "vision",
+            "ok": null,
+            "grade": null,
+            "prueba": "1ª: no (En las 4 imágenes, la mano izquierda (con el anillo) está tocando las cuerdas sobre la boca del instrumento (zona de púa), mientras que la mano derecha (sin anillo) está sobre el mástil (zona de cejilla). Se ha invertido la posición de las manos respecto al prompt.) · 2ª: basico (Imagen 1 y 3: La mano izquierda parece estar tocando o apoyada sobre la boca de resonancia en lugar de presionar el mástil en posición correcta de acorde; no se ve la separación típica de la mano izquierda.)"
+          },
+          {
+            "id": "guitarra",
+            "es": "Seis cuerdas rectas y continuas, trastes y boca coherentes, sin piezas fundidas",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Las 6 cuerdas son visibles, rectas y continuas. El trastero y la boca del instrumento son coherentes en todas las capturas."
+          },
+          {
+            "id": "detalle",
+            "es": "Se ve el detalle de la piel, las uñas y la veta de la madera",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Se aprecian bien las texturas de la piel, las uñas y la veta de la madera en las zonas enfocadas (ej. Imagen 1 y 3)."
+          },
+          {
+            "id": "luz",
+            "es": "Luz suave de ventana y fondo desenfocado, como una fotografía real",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Se observa una luz suave lateral y un fondo desenfocado (bokeh) que simula una fotografía editorial."
+          }
+        ],
+        "probe": {},
+        "evidence": [
+          "evidence/0.png",
+          "evidence/1.png",
+          "evidence/2.png",
+          "evidence/3.png"
+        ]
+      },
+      "first_token_s": null,
+      "first_answer_s": null,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": null,
+      "max_tokens": 0,
+      "cuts": [],
+      "tokens_per_s": null,
+      "familia": "imagen",
+      "piezas": [
+        {
+          "modelo": "qwen-image-2.1",
+          "nombre": "Qwen-Image 2.1",
+          "fichero": "img_0.png",
+          "seed": 7,
+          "pasos": 25,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 14.1
+        },
+        {
+          "modelo": "qwen-image-2.1",
+          "nombre": "Qwen-Image 2.1",
+          "fichero": "img_1.png",
+          "seed": 21,
+          "pasos": 25,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 6.1
+        },
+        {
+          "modelo": "qwen-image-2.1",
+          "nombre": "Qwen-Image 2.1",
+          "fichero": "img_2.png",
+          "seed": 42,
+          "pasos": 25,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 6.1
+        },
+        {
+          "modelo": "qwen-image-2.1",
+          "nombre": "Qwen-Image 2.1",
+          "fichero": "img_3.png",
+          "seed": 99,
+          "pasos": 25,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 6.0
+        }
+      ],
+      "segundos_por_pieza": 6.1
+    },
+    {
+      "contestant": "img:krea-2-turbo",
+      "side": "b",
+      "dir": "b-img-krea-2-turbo",
+      "error": null,
+      "total_s": 42.5,
+      "ficha": {
+        "nombre": "Krea 2 Turbo",
+        "casa": "Krea",
+        "params": "—",
+        "pasos": 8,
+        "licencia": "pesos abiertos (no comercial)",
+        "salida": "2026-08",
+        "id": "krea-2-turbo"
+      },
+      "validation": {
+        "checks": {
+          "genera": true,
+          "sin_vacias": true,
+          "medida": true
+        },
+        "errors": [],
+        "score": 100,
+        "imagenes": 4
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 84,
+        "raw": 83.5,
+        "base_score": 100,
+        "requirements": {
+          "ok": 5,
+          "total": 5,
+          "pct": 86
+        },
+        "quality": 8.0,
+        "fps": null,
+        "faults": [
+          "(leve) La mano izquierda en la imagen 1 parece tener una estructura digital poco clara, con dedos que se funden entre sí.",
+          "(leve) El anillo aparece en la mano izquierda en la imagen 1, mientras que el prompt lo situaba en el índice de la mano derecha (aunque esto podría ser una variación del prompt)."
+        ],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "dedos",
+            "es": "Cada mano tiene cinco dedos bien formados, sin dedos de más, fundidos ni torcidos",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "En la imagen 1, la mano izquierda (plumante) parece tener los dedos muy pegados o fundidos entre sí, perdiendo la separación clara exigida. La mano derecha en la imagen 3 tiene un pulgar que no encaja anatómicamente con la postura."
+          },
+          {
+            "id": "postura",
+            "es": "La izquierda pisa el mástil y la derecha toca sobre la boca, como se toca de verdad",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "La mano izquierda está sobre la boca de resonancia y la derecha presiona el mástil, cumpliendo con la postura de ejecución."
+          },
+          {
+            "id": "guitarra",
+            "es": "Seis cuerdas rectas y continuas, trastes y boca coherentes, sin piezas fundidas",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Se observan claramente 6 cuerdas rectas, trastes metálicos coherentes y la boca de la guitarra es anatómicamente correcta en todas las capturas."
+          },
+          {
+            "id": "detalle",
+            "es": "Se ve el detalle de la piel, las uñas y la veta de la madera",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Se aprecia la veta de la madera en la tapa, la textura de la piel de las manos y el anillo de plata es visible y detallado (img 1 y 2)."
+          },
+          {
+            "id": "luz",
+            "es": "Luz suave de ventana y fondo desenfocado, como una fotografía real",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "La luz es suave y difusa, con un desenfoque de fondo (bokeh) que simula una fotografía editorial con poca profundidad de campo."
+          }
+        ],
+        "probe": {},
+        "evidence": [
+          "evidence/0.png",
+          "evidence/1.png",
+          "evidence/2.png",
+          "evidence/3.png"
+        ]
+      },
+      "first_token_s": null,
+      "first_answer_s": null,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": null,
+      "max_tokens": 0,
+      "cuts": [],
+      "tokens_per_s": null,
+      "familia": "imagen",
+      "piezas": [
+        {
+          "modelo": "krea-2-turbo",
+          "nombre": "Krea 2 Turbo",
+          "fichero": "img_0.png",
+          "seed": 7,
+          "pasos": 8,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 18.1
+        },
+        {
+          "modelo": "krea-2-turbo",
+          "nombre": "Krea 2 Turbo",
+          "fichero": "img_1.png",
+          "seed": 21,
+          "pasos": 8,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 8.0
+        },
+        {
+          "modelo": "krea-2-turbo",
+          "nombre": "Krea 2 Turbo",
+          "fichero": "img_2.png",
+          "seed": 42,
+          "pasos": 8,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 8.1
+        },
+        {
+          "modelo": "krea-2-turbo",
+          "nombre": "Krea 2 Turbo",
+          "fichero": "img_3.png",
+          "seed": 99,
+          "pasos": 8,
+          "ancho": 1344,
+          "alto": 768,
+          "segundos": 8.2
+        }
+      ],
+      "segundos_por_pieza": 8.1
+    }
+  ],
+  "comparison": {
+    "winner": null,
+    "margin": null,
+    "items": {
+      "dedos": null,
+      "postura": null,
+      "guitarra": null,
+      "detalle": null,
+      "luz": null
+    },
+    "why": [
+      "Ambas imágenes son idénticas, mostrando exactamente la misma composición, iluminación, posición de las manos y defectos anatómicos.",
+      "Ambos resultados presentan un error anatómico grave y evidente: el anillo plateado está en el dedo meñique en lugar del índice, y ambos sufren de deformidades en los dedos (el pulgar del resultado 1 está fundido y el del resultado 2 parece un dedo extra)."
+    ],
+    "raw": {
+      "parejas": [
+        null,
+        null,
+        null
+      ]
+    },
+    "judged_by": [
+      "local-gpu"
+    ]
+  },
+  "winner": "img:krea-2-turbo",
+  "winner_side": "b",
+  "decided_by": "score"
+}

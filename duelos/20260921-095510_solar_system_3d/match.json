@@ -1,0 +1,428 @@
+{
+  "id": "20260921-095510_solar_system_3d",
+  "challenge": {
+    "id": "solar_system_3d",
+    "category": "3d",
+    "title_es": "Sistema solar en 3D",
+    "title_en": "3D Solar System",
+    "prompt": "Using three.js, build a beautiful 3D model of the Solar System with a cinematic tour. Requirements: the Sun glowing at the centre (emissive, with a halo) lighting the planets; the 8 planets in the correct order (Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune), with relative sizes that make sense (Jupiter the largest, Mercury the smallest), procedural textures on canvas (Jupiter's bands, Earth's oceans and continents, Mars red), Saturn with its rings, the Moon orbiting the Earth; faint orbit lines; planets orbiting at different speeds; a starfield background; a camera that travels from planet to planet showing each one close up with its name on screen. Use the requestAnimationFrame timestamp for animation time. Full-window canvas that handles resizing. Starts automatically, no interaction needed. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.",
+    "rubric": [
+      {
+        "id": "sol",
+        "c": "Sol brillante",
+        "es": "El Sol brilla en el centro (resplandor o halo) e ilumina los planetas",
+        "w": 1
+      },
+      {
+        "id": "ocho",
+        "c": "Ocho planetas en orden",
+        "es": "Se ven los planetas en el orden correcto desde el Sol (no faltan ni están cambiados)",
+        "w": 2
+      },
+      {
+        "id": "tamanos",
+        "c": "Tamaños con sentido",
+        "es": "Júpiter es el más grande y los planetas rocosos son pequeños",
+        "w": 1
+      },
+      {
+        "id": "texturas",
+        "c": "Texturas reconocibles",
+        "es": "Se reconocen las texturas: bandas de Júpiter, océanos de la Tierra, Marte rojo",
+        "w": 2
+      },
+      {
+        "id": "saturno",
+        "c": "Anillos de Saturno",
+        "es": "Saturno tiene anillos",
+        "w": 1
+      },
+      {
+        "id": "luna",
+        "c": "La Luna",
+        "es": "Se ve la Luna junto a la Tierra",
+        "w": 1
+      },
+      {
+        "id": "viaje",
+        "c": "Viaje entre planetas",
+        "es": "La cámara viaja de un planeta a otro y los muestra de cerca con su nombre",
+        "w": 2
+      },
+      {
+        "id": "orbitas",
+        "c": "Órbitas y estrellas",
+        "es": "Hay líneas de órbita y fondo de estrellas",
+        "w": 1
+      },
+      {
+        "id": "fluido",
+        "c": "Fluido (30+ fps)",
+        "es": "Va fluido (al menos 30 fotogramas por segundo)",
+        "probe": "fps",
+        "arg": 30,
+        "w": 1
+      }
+    ],
+    "excelente": "Un viaje por el sistema solar en 3D: Sol que ilumina, los ocho planetas en orden con texturas reconocibles, anillos de Saturno, la Luna, órbitas y estrellas, y una cámara que visita cada planeta de cerca con su nombre."
+  },
+  "prompt": "Using three.js, build a beautiful 3D model of the Solar System with a cinematic tour. Requirements: the Sun glowing at the centre (emissive, with a halo) lighting the planets; the 8 planets in the correct order (Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune), with relative sizes that make sense (Jupiter the largest, Mercury the smallest), procedural textures on canvas (Jupiter's bands, Earth's oceans and continents, Mars red), Saturn with its rings, the Moon orbiting the Earth; faint orbit lines; planets orbiting at different speeds; a starfield background; a camera that travels from planet to planet showing each one close up with its name on screen. Use the requestAnimationFrame timestamp for animation time. Full-window canvas that handles resizing. Starts automatically, no interaction needed. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.\n\nthree.js (r186) is available as an ES module: use `import * as THREE from 'three'` and addons from 'three/addons/...' (e.g. 'three/addons/controls/OrbitControls.js') inside <script type=\"module\">. An import map is provided for you: do not add your own import map or any CDN URL.\n\nRequirements: deliver everything in ONE self-contained HTML file (inline CSS and JavaScript; no external resources, CDNs, fonts or images). Reply with the complete file in a single ```html code block.",
+  "contestants": [
+    {
+      "contestant": "or:deepseek/deepseek-v4.1-flash",
+      "first_token_s": 2.308,
+      "first_answer_s": 288.846,
+      "total_s": 345.099,
+      "prompt_tokens": 351,
+      "completion_tokens": 43305,
+      "reasoning_tokens": 33805,
+      "cost": 0.03813181299,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 384000,
+      "cuts": [],
+      "side": "a",
+      "dir": "a-or-deepseek-deepseek-v4-1-flash",
+      "tokens_per_s": 126.3,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.41,
+        "visual": {
+          "contrast": 30.22,
+          "detail_pct": 1.35,
+          "box": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ]
+        },
+        "motion": [
+          103983,
+          221189,
+          232195,
+          132246,
+          113664,
+          89245,
+          183748,
+          211334,
+          51387,
+          38169,
+          78693,
+          145140,
+          79823,
+          6133,
+          82283,
+          16751
+        ],
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 76,
+        "raw": 75.9,
+        "base_score": 100,
+        "requirements": {
+          "ok": 9,
+          "total": 9,
+          "pct": 92
+        },
+        "quality": 7.0,
+        "fps": 60.5,
+        "faults": [
+          "(grave) Faltan los nombres de los planetas en pantalla durante las tomas de cerca.",
+          "(leve) Las texturas de algunos planetas (como en la captura 4) se ven algo planas o poco definidas.",
+          "(leve) Faltan los nombres de los planetas en pantalla durante el viaje de la cámara (requisito explícito).",
+          "(leve) La textura de la Tierra (captura 11) es muy oscura y poco detallada, apenas se distinguen continentes u océanos."
+        ],
+        "penalty": 6,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "sol",
+            "es": "El Sol brilla en el centro (resplandor o halo) e ilumina los planetas",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 6: Se ve claramente el Sol central con un halo naranja brillante que ilumina los planetas cercanos."
+          },
+          {
+            "id": "ocho",
+            "es": "Se ven los planetas en el orden correcto desde el Sol (no faltan ni están cambiados)",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Capturas 1 y 16: Se distinguen los 8 planetas dispuestos en órbitas concéntricas alrededor del Sol."
+          },
+          {
+            "id": "tamanos",
+            "es": "Júpiter es el más grande y los planetas rocosos son pequeños",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Júpiter y Saturno son claramente los más grandes y los planetas interiores pequeños."
+          },
+          {
+            "id": "texturas",
+            "es": "Se reconocen las texturas: bandas de Júpiter, océanos de la Tierra, Marte rojo",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 9 (bandas de Júpiter), 8 (Marte rojo) y 6 (Tierra azul con continentes) muestran texturas procedurales claras."
+          },
+          {
+            "id": "saturno",
+            "es": "Saturno tiene anillos",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 12: Se ve Saturno con sus anillos en detalle."
+          },
+          {
+            "id": "luna",
+            "es": "Se ve la Luna junto a la Tierra",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 6: Se observa una pequeña esfera (Luna) orbitando muy cerca de la Tierra."
+          },
+          {
+            "id": "viaje",
+            "es": "La cámara viaja de un planeta a otro y los muestra de cerca con su nombre",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "La cámara se acerca a varios planetas (ej. capturas 4, 9, 13), pero no se ve ningún nombre en pantalla en ninguna captura."
+          },
+          {
+            "id": "orbitas",
+            "es": "Hay líneas de órbita y fondo de estrellas",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Todas las capturas muestran líneas de órbita tenues y un fondo de estrellas."
+          },
+          {
+            "id": "fluido",
+            "es": "Va fluido (al menos 30 fotogramas por segundo)",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "grade": 2,
+            "prueba": "fps: 60.5"
+          }
+        ],
+        "probe": {
+          "fps": 60.5,
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png",
+          "evidence/15.png"
+        ]
+      }
+    },
+    {
+      "contestant": "or:z-ai/glm-5.3-flash",
+      "first_token_s": 3.676,
+      "first_answer_s": 36.322,
+      "total_s": 175.408,
+      "prompt_tokens": 330,
+      "completion_tokens": 4750,
+      "reasoning_tokens": 677,
+      "cost": 0.0016955,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 131072,
+      "cuts": [],
+      "side": "b",
+      "dir": "b-or-z-ai-glm-5-3-flash",
+      "tokens_per_s": 27.7,
+      "validation": {
+        "checks": {
+          "renders": false,
+          "no_js_errors": false,
+          "no_freeze": true,
+          "has_content": false,
+          "self_contained": true,
+          "moves": false
+        },
+        "errors": [
+          "pageerror: missing ) after argument list"
+        ],
+        "score": 25,
+        "load_s": 0.03,
+        "visual": {
+          "contrast": 0.0,
+          "detail_pct": 0.0,
+          "box": null
+        },
+        "motion": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "external_requests": []
+      },
+      "judge": {
+        "formula": 2,
+        "works": false,
+        "score": 5,
+        "raw": 0.0,
+        "base_score": 25,
+        "requirements": {
+          "ok": 0,
+          "total": 9,
+          "pct": 0
+        },
+        "quality": 0,
+        "fps": null,
+        "faults": [],
+        "penalty": 0,
+        "judged_by": [],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "sol",
+            "es": "El Sol brilla en el centro (resplandor o halo) e ilumina los planetas",
+            "w": 1,
+            "how": "vision",
+            "ok": false,
+            "grade": 0,
+            "prueba": "no funciona"
+          },
+          {
+            "id": "ocho",
+            "es": "Se ven los planetas en el orden correcto desde el Sol (no faltan ni están cambiados)",
+            "w": 2,
+            "how": "vision",
+            "ok": false,
+            "grade": 0,
+            "prueba": "no funciona"
+          },
+          {
+            "id": "tamanos",
+            "es": "Júpiter es el más grande y los planetas rocosos son pequeños",
+            "w": 1,
+            "how": "vision",
+            "ok": false,
+            "grade": 0,
+            "prueba": "no funciona"
+          },
+          {
+            "id": "texturas",
+            "es": "Se reconocen las texturas: bandas de Júpiter, océanos de la Tierra, Marte rojo",
+            "w": 2,
+            "how": "vision",
+            "ok": false,
+            "grade": 0,
+            "prueba": "no funciona"
+          },
+          {
+            "id": "saturno",
+            "es": "Saturno tiene anillos",
+            "w": 1,
+            "how": "vision",
+            "ok": false,
+            "grade": 0,
+            "prueba": "no funciona"
+          },
+          {
+            "id": "luna",
+            "es": "Se ve la Luna junto a la Tierra",
+            "w": 1,
+            "how": "vision",
+            "ok": false,
+            "grade": 0,
+            "prueba": "no funciona"
+          },
+          {
+            "id": "viaje",
+            "es": "La cámara viaja de un planeta a otro y los muestra de cerca con su nombre",
+            "w": 2,
+            "how": "vision",
+            "ok": false,
+            "grade": 0,
+            "prueba": "no funciona"
+          },
+          {
+            "id": "orbitas",
+            "es": "Hay líneas de órbita y fondo de estrellas",
+            "w": 1,
+            "how": "vision",
+            "ok": false,
+            "grade": 0,
+            "prueba": "no funciona"
+          },
+          {
+            "id": "fluido",
+            "es": "Va fluido (al menos 30 fotogramas por segundo)",
+            "w": 1,
+            "how": "probe",
+            "ok": false,
+            "grade": 0,
+            "prueba": "no funciona"
+          }
+        ],
+        "probe": {},
+        "evidence": []
+      }
+    }
+  ],
+  "winner": "or:deepseek/deepseek-v4.1-flash",
+  "winner_side": "a",
+  "decided_by": "score"
+}

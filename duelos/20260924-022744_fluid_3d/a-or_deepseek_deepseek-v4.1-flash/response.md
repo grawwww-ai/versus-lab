@@ -1,0 +1,1224 @@
+Here's a self-contained WebGL2 fluid simulation in one HTML file. It renders a 320×160 water grid with GPU particles, a refracting surface, foam, and orbiting camera—no external dependencies.
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WebGL2 Fluid Tank</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;background:#05070c;overflow:hidden}
+  #c{display:block;width:100vw;height:100vh}
+  #hud{position:fixed;top:10px;left:12px;
+       font:12px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+       color:#bfe3ff;text-shadow:0 1px 3px #000a;pointer-events:none;letter-spacing:.3px}
+  #hud b{color:#fff;font-weight:600}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<script>
+"use strict";
+
+/* ==========================================================================
+   WebGL2 fluid tank
+   - shallow-water solver on a 320x160 GPU grid (51,200 fluid cells)
+   - surface mesh rendered with screen-space refraction + specular + foam
+   - GPU spray/droplet particles via transform feedback
+   ========================================================================== */
+
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl2', {
+  antialias: false, alpha: false, depth: true, powerPreference: 'high-performance'
+});
+if (!gl) {
+  document.body.innerHTML = '<p style="color:#fff;font-family:sans-serif;padding:20px">WebGL2 is required.</p>';
+  throw new Error('no webgl2');
+}
+
+/* ---------- float render target support ---------- */
+const extCBF  = gl.getExtension('EXT_color_buffer_float');
+const extCBHF = gl.getExtension('EXT_color_buffer_half_float');
+let SIM_FMT, SIM_TYPE;
+if (extCBF)       { SIM_FMT = gl.RGBA32F; SIM_TYPE = gl.FLOAT; }
+else if (extCBHF) { SIM_FMT = gl.RGBA16F; SIM_TYPE = gl.HALF_FLOAT; }
+else              { SIM_FMT = gl.RGBA8;   SIM_TYPE = gl.UNSIGNED_BYTE; }
+
+/* ---------- constants ---------- */
+const NX = 320, NZ = 160;
+const LX = 2.4, LZ = 1.2;
+const DX = LX / NX;                 // 0.0075 (cells are square)
+const GRAV = 9.81;
+const TANK_H = 0.90;
+const TW = LX * 0.5, TD = LZ * 0.5;
+const DT_SUB = 1.0 / 600.0;
+const MAX_SUBSTEPS = 24;
+const RESTART_TIME = 7.0;
+const DROP_N = 4096;
+
+/* ==========================================================================
+   tiny GL helpers
+   ========================================================================== */
+function createProgram(vsSrc, fsSrc, tfVaryings) {
+  const vs = gl.createShader(gl.VERTEX_SHADER);
+  gl.shaderSource(vs, vsSrc); gl.compileShader(vs);
+  if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS))
+    console.error('VS ERROR\n' + gl.getShaderInfoLog(vs) + '\n' + vsSrc);
+  const fs = gl.createShader(gl.FRAGMENT_SHADER);
+  gl.shaderSource(fs, fsSrc); gl.compileShader(fs);
+  if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS))
+    console.error('FS ERROR\n' + gl.getShaderInfoLog(fs) + '\n' + fsSrc);
+  const p = gl.createProgram();
+  gl.attachShader(p, vs); gl.attachShader(p, fs);
+  if (tfVaryings) gl.transformFeedbackVaryings(p, tfVaryings, gl.INTERLEAVED_ATTRIBS);
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS))
+    console.error('LINK ERROR\n' + gl.getProgramInfoLog(p));
+  const o = { p: p, loc: {} };
+  o.u = function (n) {
+    if (!(n in o.loc)) o.loc[n] = gl.getUniformLocation(p, n);
+    return o.loc[n];
+  };
+  return o;
+}
+
+function makeTex(w, h, internal, format, type, filter) {
+  const t = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, internal, w, h, 0, format, type, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return t;
+}
+
+function makeFBO(texs, depthRB) {
+  const f = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+  const bufs = [];
+  for (let i = 0; i < texs.length; i++) {
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, texs[i], 0);
+    bufs.push(gl.COLOR_ATTACHMENT0 + i);
+  }
+  if (depthRB) gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthRB);
+  if (bufs.length > 1) gl.drawBuffers(bufs);
+  const st = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+  if (st !== gl.FRAMEBUFFER_COMPLETE) console.error('FBO incomplete: 0x' + st.toString(16));
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return f;
+}
+
+/* ---------- matrix helpers (column major) ---------- */
+function perspective(out, fovy, aspect, near, far) {
+  const f = 1 / Math.tan(fovy / 2);
+  out[0]=f/aspect; out[1]=0; out[2]=0;  out[3]=0;
+  out[4]=0;        out[5]=f; out[6]=0;  out[7]=0;
+  out[8]=0;        out[9]=0; out[10]=(far+near)/(near-far); out[11]=-1;
+  out[12]=0;       out[13]=0; out[14]=2*far*near/(near-far); out[15]=0;
+  return out;
+}
+function lookAt(out, ex, ey, ez, cx, cy, cz) {
+  let zx = ex-cx, zy = ey-cy, zz = ez-cz;
+  let l = Math.hypot(zx, zy, zz) || 1; zx/=l; zy/=l; zz/=l;
+  let xx = 1*zz - 0*zy, xy = 0*zx - 0*zz, xz = 0*zy - 1*zx;
+  l = Math.hypot(xx, xy, xz) || 1; xx/=l; xy/=l; xz/=l;
+  const yx = zy*xz - zz*xy, yy = zz*xx - zx*xz, yz = zx*xy - zy*xx;
+  out[0]=xx; out[1]=yx; out[2]=zx; out[3]=0;
+  out[4]=xy; out[5]=yy; out[6]=zy; out[7]=0;
+  out[8]=xz; out[9]=yz; out[10]=zz; out[11]=0;
+  out[12]=-(xx*ex+xy*ey+xz*ez);
+  out[13]=-(yx*ex+yy*ey+yz*ez);
+  out[14]=-(zx*ex+zy*ey+zz*ez);
+  out[15]=1;
+  return out;
+}
+function matMul(out, a, b) {
+  for (let c = 0; c < 4; c++) {
+    const b0=b[c*4], b1=b[c*4+1], b2=b[c*4+2], b3=b[c*4+3];
+    out[c*4+0] = a[0]*b0 + a[4]*b1 + a[8]*b2  + a[12]*b3;
+    out[c*4+1] = a[1]*b0 + a[5]*b1 + a[9]*b2  + a[13]*b3;
+    out[c*4+2] = a[2]*b0 + a[6]*b1 + a[10]*b2 + a[14]*b3;
+    out[c*4+3] = a[3]*b0 + a[7]*b1 + a[11]*b2 + a[15]*b3;
+  }
+  return out;
+}
+function trs(out, tx, ty, tz, sx, sy, sz) {
+  out[0]=sx; out[1]=0;  out[2]=0;  out[3]=0;
+  out[4]=0;  out[5]=sy; out[6]=0;  out[7]=0;
+  out[8]=0;  out[9]=0;  out[10]=sz; out[11]=0;
+  out[12]=tx; out[13]=ty; out[14]=tz; out[15]=1;
+  return out;
+}
+
+/* ==========================================================================
+   SHADERS
+   ========================================================================== */
+const GLSL_TERRAIN = `
+float terrainH(vec2 p){
+  float b = 0.0;
+  b = max(b, step(length(p - vec2(-0.15, 0.00)), 0.15) * 0.34);
+  b = max(b, step(length(p - vec2( 0.50, 0.28)), 0.11) * 0.26);
+  b = max(b, step(length(p - vec2( 0.50,-0.28)), 0.11) * 0.26);
+  b = max(b, step(abs(p.x - 0.90), 0.05) * 0.16);
+  return b;
+}
+`;
+
+const VS_QUAD = `#version 300 es
+layout(location=0) in vec2 aPos;
+out vec2 vNDC;
+out vec2 vUV;
+void main(){
+  vNDC = aPos;
+  vUV  = aPos * 0.5 + 0.5;
+  gl_Position = vec4(aPos, 0.0, 1.0);
+}`;
+
+/* ---- reset pass ---- */
+const FS_RESET = `#version 300 es
+precision highp float;
+uniform vec2 uGrid;
+uniform vec2 uWorld;
+uniform float uDx;
+${GLSL_TERRAIN}
+layout(location=0) out vec4 outH;
+layout(location=1) out vec4 outF;
+void main(){
+  vec2 uv = gl_FragCoord.xy / uGrid;
+  vec2 p  = (uv - 0.5) * uWorld;
+  float b = terrainH(p);
+  float h = (p.x < -0.70) ? 0.70 : 0.0;
+  outH = vec4(h, b, 0.0, 0.0);
+  float u0 = (h > 0.0) ? 1.10 : 0.0;
+  outF = vec4(0.0, u0 * h * uDx, 0.0, 0.0);
+}`;
+
+/* ---- flux pass ---- */
+const FS_FLUX = `#version 300 es
+precision highp float;
+uniform sampler2D uHeight;
+uniform sampler2D uFlux;
+uniform vec2  uTexel;
+uniform vec2  uGrid;
+uniform float uDt, uDx, uG, uDamp;
+out vec4 outFlux;
+
+void main(){
+  vec2 ij = floor(gl_FragCoord.xy);
+  vec2 uv = (ij + 0.5) * uTexel;
+
+  vec4 c  = texture(uHeight, uv);
+  float Hc = c.r + c.g;
+  vec4 f  = texture(uFlux, uv) * uDamp;
+
+  float k = uDt * uG * uDx;
+
+  float fr = 0.0, fl = 0.0, ft = 0.0, fb = 0.0;
+
+  if (ij.x < uGrid.x - 1.0) {
+    vec4 cr = texture(uHeight, uv + vec2(uTexel.x, 0.0));
+    fr = max(0.0, f.y + k * (Hc - (cr.r + cr.g)));
+  }
+  if (ij.x > 0.0) {
+    vec4 cl = texture(uHeight, uv - vec2(uTexel.x, 0.0));
+    fl = max(0.0, f.x + k * (Hc - (cl.r + cl.g)));
+  }
+  if (ij.y < uGrid.y - 1.0) {
+    vec4 ct = texture(uHeight, uv + vec2(0.0, uTexel.y));
+    ft = max(0.0, f.w + k * (Hc - (ct.r + ct.g)));
+  }
+  if (ij.y > 0.0) {
+    vec4 cb = texture(uHeight, uv - vec2(0.0, uTexel.y));
+    fb = max(0.0, f.z + k * (Hc - (cb.r + cb.g)));
+  }
+
+  float tot   = fr + fl + ft + fb;
+  float A     = uDx * uDx;
+  float avail = c.r * A;
+  if (tot * uDt > avail && tot > 0.0) {
+    float K = avail / (tot * uDt);
+    fr *= K; fl *= K; ft *= K; fb *= K;
+  }
+  outFlux = vec4(fl, fr, fb, ft);
+}`;
+
+/* ---- height + foam + velocity pass ---- */
+const FS_HEIGHT = `#version 300 es
+precision highp float;
+uniform sampler2D uHeight;
+uniform sampler2D uFlux;
+uniform vec2  uTexel;
+uniform vec2  uGrid;
+uniform float uDt, uDx;
+layout(location=0) out vec4 outH;
+layout(location=1) out vec4 outV;
+
+void main(){
+  vec2 ij = floor(gl_FragCoord.xy);
+  vec2 uv = (ij + 0.5) * uTexel;
+
+  vec4 c = texture(uHeight, uv);
+  vec4 f = texture(uFlux, uv);
+  float A = uDx * uDx;
+
+  float inL = (ij.x > 0.0)             ? texture(uFlux, uv - vec2(uTexel.x, 0.0)).y : 0.0;
+  float inR = (ij.x < uGrid.x - 1.0)   ? texture(uFlux, uv + vec2(uTexel.x, 0.0)).x : 0.0;
+  float inB = (ij.y > 0.0)             ? texture(uFlux, uv - vec2(0.0, uTexel.y)).w : 0.0;
+  float inT = (ij.y < uGrid.y - 1.0)   ? texture(uFlux, uv + vec2(0.0, uTexel.y)).z : 0.0;
+
+  float outL = f.x, outR = f.y, outB = f.z, outT = f.w;
+
+  float net = (inL + inR + inB + inT) - (outL + outR + outB + outT);
+
+  float h = c.r + uDt * net / A;
+  h = clamp(h, 0.0, max(0.0, 0.92 - c.g));
+
+  float hh = max(h, 0.02);
+  float ux = (outR - outL) / (uDx * hh);
+  float uz = (outT - outB) / (uDx * hh);
+  float sp = min(length(vec2(ux, uz)), 8.0);
+
+  float comp = max(0.0, net / A);            // rate of surface rise (m/s)
+
+  float src = smoothstep(0.75, 2.20, sp);
+  src = max(src, smoothstep(0.25, 1.20, comp) * 0.95);
+  src = max(src, smoothstep(0.9, 2.4, sp) * smoothstep(0.07, 0.005, h));
+
+  float foam = max(c.b - uDt * 0.75, src);
+  foam = clamp(foam, 0.0, 1.0);
+
+  outH = vec4(h, c.g, foam, 0.0);
+  outV = vec4(ux, uz, sp, 0.0);
+}`;
+
+/* ---- water surface ---- */
+const VS_WATER = `#version 300 es
+precision highp float;
+uniform sampler2D uHeight;
+uniform vec2 uTexel;
+uniform vec2 uGrid;
+uniform vec2 uWorld;
+uniform mat4 uVP;
+in vec2 aGrid;
+out vec3  vWorld;
+out vec3  vNrm;
+out float vFoam;
+out float vDepth;
+
+void main(){
+  vec2 uv = (aGrid + 0.5) * uTexel;
+  vec4 c  = texture(uHeight, uv);
+
+  vec4 cL = texture(uHeight, uv - vec2(uTexel.x, 0.0));
+  vec4 cR = texture(uHeight, uv + vec2(uTexel.x, 0.0));
+  vec4 cB = texture(uHeight, uv - vec2(0.0, uTexel.y));
+  vec4 cT = texture(uHeight, uv + vec2(0.0, uTexel.y));
+
+  float sC = c.r + c.g;
+  float sL = cL.r + cL.g, sR = cR.r + cR.g;
+  float sB = cB.r + cB.g, sT = cT.r + cT.g;
+
+  float dx = uWorld.x / uGrid.x;
+  float dz = uWorld.y / uGrid.y;
+  vec3 n = normalize(vec3(-(sR - sL) / (2.0 * dx), 1.0, -(sT - sB) / (2.0 * dz)));
+
+  vec2 p = (uv - 0.5) * uWorld;
+  vWorld = vec3(p.x, sC, p.y);
+  vNrm   = n;
+  vFoam  = c.b;
+  vDepth = c.r;
+  gl_Position = uVP * vec4(vWorld, 1.0);
+}`;
+
+const FS_WATER = `#version 300 es
+precision highp float;
+in vec3  vWorld;
+in vec3  vNrm;
+in float vFoam;
+in float vDepth;
+uniform sampler2D uScene;
+uniform vec2  uRes;
+uniform vec3  uCam;
+uniform vec3  uLight;
+out vec4 outColor;
+
+vec3 skyCol(vec3 d){
+  float t = clamp(d.y * 0.5 + 0.5, 0.0, 1.0);
+  vec3 c = mix(vec3(0.025, 0.045, 0.085), vec3(0.30, 0.47, 0.74), pow(t, 0.8));
+  float s = max(dot(normalize(d), uLight), 0.0);
+  c += vec3(1.0, 0.88, 0.66) * pow(s, 140.0) * 2.2;
+  c += vec3(1.0, 0.92, 0.78) * pow(s, 9.0) * 0.10;
+  return c;
+}
+
+void main(){
+  if (vDepth < 0.0008) discard;
+
+  vec3 N = normalize(vNrm);
+  vec3 V = normalize(uCam - vWorld);
+
+  float fres = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 5.0);
+  float F    = 0.02 + 0.98 * fres;
+
+  float dep = clamp(vDepth, 0.0, 0.6);
+
+  vec2 suv  = gl_FragCoord.xy / uRes;
+  vec2 offs = N.xz * (0.004 + 0.028 * dep);
+  vec3 refr = texture(uScene, clamp(suv + offs, vec2(0.001), vec2(0.999))).rgb;
+  refr *= exp(-vec3(1.9, 0.55, 0.26) * dep * 2.2);
+
+  vec3 R    = reflect(-V, N);
+  vec3 refl = skyCol(R);
+
+  vec3 H    = normalize(uLight + V);
+  float spc = pow(max(dot(N, H), 0.0), 520.0) * 2.6;
+
+  vec3 col = mix(refr, refl, F) + vec3(1.0, 0.97, 0.90) * spc;
+
+  float foam = clamp(vFoam * 1.2, 0.0, 1.0);
+  col = mix(col, vec3(0.95, 0.97, 1.0), foam * 0.82);
+
+  float alpha = max(smoothstep(0.0008, 0.006, vDepth), foam * 0.85);
+  outColor = vec4(col, alpha);
+}`;
+
+/* ---- sky ---- */
+const FS_SKY = `#version 300 es
+precision highp float;
+in vec2 vNDC;
+uniform vec3  uForward, uRight, uUp;
+uniform float uTanX, uTanY;
+uniform vec3  uLight;
+out vec4 outColor;
+vec3 skyCol(vec3 d){
+  float t = clamp(d.y * 0.5 + 0.5, 0.0, 1.0);
+  vec3 c = mix(vec3(0.025, 0.045, 0.085), vec3(0.30, 0.47, 0.74), pow(t, 0.8));
+  float s = max(dot(normalize(d), uLight), 0.0);
+  c += vec3(1.0, 0.88, 0.66) * pow(s, 140.0) * 2.2;
+  c += vec3(1.0, 0.92, 0.78) * pow(s, 9.0) * 0.10;
+  return c;
+}
+void main(){
+  vec3 d = normalize(uForward + uRight * vNDC.x * uTanX + uUp * vNDC.y * uTanY);
+  outColor = vec4(skyCol(d), 1.0);
+}`;
+
+/* ---- copy / blit ---- */
+const FS_COPY = `#version 300 es
+precision highp float;
+in vec2 vUV;
+uniform sampler2D uTex;
+out vec4 outColor;
+void main(){ outColor = vec4(texture(uTex, vUV).rgb, 1.0); }`;
+
+/* ---- opaque scene ---- */
+const VS_SCENE = `#version 300 es
+precision highp float;
+layout(location=0) in vec3 aPos;
+layout(location=1) in vec3 aNrm;
+uniform mat4 uVP, uModel;
+uniform mat3 uNrmMat;
+out vec3 vN;
+out vec3 vW;
+void main(){
+  vec4 w = uModel * vec4(aPos, 1.0);
+  vW = w.xyz;
+  vN = uNrmMat * aNrm;
+  gl_Position = uVP * w;
+}`;
+
+const FS_SCENE = `#version 300 es
+precision highp float;
+in vec3 vN;
+in vec3 vW;
+uniform vec3  uCam, uLight, uBase;
+uniform float uPattern;
+out vec4 outColor;
+void main(){
+  vec3 N = normalize(vN);
+  vec3 L = normalize(uLight);
+  vec3 V = normalize(uCam - vW);
+  vec3 H = normalize(L + V);
+
+  float diff = max(dot(N, L), 0.0);
+  float spc  = pow(max(dot(N, H), 0.0), 72.0);
+
+  vec3 amb = mix(vec3(0.05, 0.065, 0.09), vec3(0.22, 0.27, 0.34), N.y * 0.5 + 0.5);
+  vec3 col = uBase * (amb + diff * 0.95) + vec3(1.0, 0.97, 0.92) * spc * 0.45;
+
+  if (uPattern > 0.5) {
+    vec2 g = abs(fract(vW.xz * 2.0) - 0.5);
+    float line = smoothstep(0.035, 0.0, min(g.x, g.y));
+    col = mix(col, vec3(0.55, 0.78, 0.95), line * 0.30);
+  }
+  outColor = vec4(col, 1.0);
+}`;
+
+/* ---- glass ---- */
+const FS_GLASS = `#version 300 es
+precision highp float;
+in vec3 vN;
+in vec3 vW;
+uniform vec3  uCam, uLight, uBase;
+uniform float uAlpha;
+out vec4 outColor;
+void main(){
+  vec3 N = normalize(vN);
+  vec3 V = normalize(uCam - vW);
+  float f = pow(1.0 - abs(dot(N, V)), 3.0);
+  vec3 L = normalize(uLight);
+  float s = pow(max(dot(reflect(-V, N), L), 0.0), 80.0);
+  vec3 col = uBase * (0.22 + 0.78 * f) + vec3(1.0) * s * 0.9;
+  outColor = vec4(col, uAlpha * (0.18 + 0.82 * f));
+}`;
+
+/* ---- droplets : transform feedback ---- */
+const VS_DROP_SIM = `#version 300 es
+precision highp float;
+uniform sampler2D uHeight;
+uniform sampler2D uVel;
+uniform float uDt, uGen, uReset;
+uniform vec2  uGrid, uWorld, uTexel;
+in  vec3  aPos;
+in  vec3  aVel;
+in  float aLife;
+in  float aSeed;
+out vec3  vPos;
+out vec3  vVel;
+out float vLife;
+out float vSeed;
+
+float hash(float n){ return fract(sin(n * 12.9898) * 43758.5453123); }
+
+void main(){
+  vec3  p    = aPos;
+  vec3  v    = aVel;
+  float life = aLife;
+  float seed = aSeed;
+
+  if (uReset > 0.5) life = 0.0;
+
+  if (life <= 0.0) {
+    float r1 = hash(seed * 1.13 + uGen * 0.017);
+    float r2 = hash(seed * 2.71 + uGen * 0.031);
+    float r3 = hash(seed * 3.37 + uGen * 0.011);
+
+    vec2 uv = vec2(r1, r2);
+    vec4 hc = texture(uHeight, uv);
+    vec4 vc = texture(uVel, uv);
+
+    float h = hc.r, b = hc.g, foam = hc.b;
+    float sp = length(vc.xy);
+
+    if (foam > 0.28 && sp > 0.55 && h > 0.008 && r3 < 0.42) {
+      vec2 xz = (uv - 0.5) * uWorld;
+      p = vec3(xz.x, b + h + 0.012, xz.y);
+      float a1 = hash(seed * 5.7 + uGen * 0.023) * 6.2831853;
+      float a2 = hash(seed * 9.1 + uGen * 0.041);
+      v = vec3(vc.x * 0.55 + cos(a1) * 0.55,
+               0.85 + a2 * 1.55,
+               vc.y * 0.55 + sin(a1) * 0.55);
+      life = 0.55 + hash(seed * 7.7 + uGen * 0.013) * 0.95;
+      seed = hash(seed + uGen * 0.37) * 1000.0;
+    }
+  } else {
+    v.y -= 9.81 * uDt;
+    p   += v * uDt;
+    life -= uDt;
+    if (p.y < 0.012) life = 0.0;
+  }
+
+  vPos = p; vVel = v; vLife = life; vSeed = seed;
+  gl_Position = vec4(0.0);
+  gl_PointSize = 1.0;
+}`;
+
+const VS_DROP_DRAW = `#version 300 es
+precision highp float;
+uniform mat4 uVP;
+uniform vec3 uCam;
+in  vec3  aPos;
+in  vec3  aVel;
+in  float aLife;
+in  float aSeed;
+out float vLife;
+void main(){
+  if (aLife <= 0.0) {
+    gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+    gl_PointSize = 0.0;
+    vLife = 0.0;
+    return;
+  }
+  gl_Position = uVP * vec4(aPos, 1.0);
+  float d = length(uCam - aPos);
+  gl_PointSize = clamp(120.0 / max(d, 0.2), 1.6, 16.0);
+  vLife = aLife;
+}`;
+
+const FS_DROP_DRAW = `#version 300 es
+precision highp float;
+in float vLife;
+out vec4 outColor;
+void main(){
+  vec2 d = gl_PointCoord - 0.5;
+  float r = length(d);
+  if (r > 0.5) discard;
+  float a = smoothstep(0.5, 0.22, r);
+  vec3 col = mix(vec3(0.72, 0.88, 1.0), vec3(1.0), a);
+  outColor = vec4(col, a * 0.85 * clamp(vLife * 3.0, 0.0, 1.0));
+}`;
+
+/* ==========================================================================
+   PROGRAMS
+   ========================================================================== */
+const progReset  = createProgram(VS_QUAD, FS_RESET);
+const progFlux   = createProgram(VS_QUAD, FS_FLUX);
+const progHeight = createProgram(VS_QUAD, FS_HEIGHT);
+const progSky    = createProgram(VS_QUAD, FS_SKY);
+const progCopy   = createProgram(VS_QUAD, FS_COPY);
+const progWater  = createProgram(VS_WATER, FS_WATER);
+const progScene  = createProgram(VS_SCENE, FS_SCENE);
+const progGlass  = createProgram(VS_SCENE, FS_GLASS);
+const progDropSim  = createProgram(VS_DROP_SIM,  '#version 300 es\nprecision highp float;\nout vec4 o;\nvoid main(){o=vec4(1.0);}',
+                                   ['vPos', 'vVel', 'vLife', 'vSeed']);
+const progDropDraw = createProgram(VS_DROP_DRAW, FS_DROP_DRAW);
+
+/* ==========================================================================
+   SIMULATION TEXTURES
+   ========================================================================== */
+function makeSimTex() {
+  return makeTex(NX, NZ, SIM_FMT, gl.RGBA, SIM_TYPE, gl.NEAREST);
+}
+const heightTex = [makeSimTex(), makeSimTex()];
+const fluxTex   = [makeSimTex(), makeSimTex()];
+const velTex    = makeSimTex();
+
+const fboFlux   = [makeFBO([fluxTex[0]]), makeFBO([fluxTex[1]])];
+const fboHeight = [makeFBO([heightTex[0], velTex]), makeFBO([heightTex[1], velTex])];
+const fboReset  = makeFBO([heightTex[0], fluxTex[0]]);
+
+/* ---------- fullscreen triangle ---------- */
+const quadVAO = gl.createVertexArray();
+gl.bindVertexArray(quadVAO);
+const quadBuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0);
+gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+gl.bindVertexArray(null);
+
+/* ==========================================================================
+   WATER MESH
+   ========================================================================== */
+const waterVAO = gl.createVertexArray();
+gl.bindVertexArray(waterVAO);
+{
+  const verts = new Float32Array(NX * NZ * 2);
+  for (let j = 0; j < NZ; j++)
+    for (let i = 0; i < NX; i++) {
+      const k = (j * NX + i) * 2;
+      verts[k] = i; verts[k + 1] = j;
+    }
+  const vb = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+  gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+  const idx = new Uint32Array((NX - 1) * (NZ - 1) * 6);
+  let p = 0;
+  for (let j = 0; j < NZ - 1; j++)
+    for (let i = 0; i < NX - 1; i++) {
+      const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1;
+      idx[p++] = a; idx[p++] = c; idx[p++] = b;
+      idx[p++] = b; idx[p++] = c; idx[p++] = d;
+    }
+  const ib = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idx, gl.STATIC_DRAW);
+  waterVAO.count = idx.length;
+}
+gl.bindVertexArray(null);
+
+/* ==========================================================================
+   SCENE GEOMETRY
+   ========================================================================== */
+function createMesh(interleaved, indices, indexType) {
+  const vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
+  const vb = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+  gl.bufferData(gl.ARRAY_BUFFER, interleaved, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
+  gl.enableVertexAttribArray(1);
+  gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12);
+  const ib = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+  gl.bindVertexArray(null);
+  return { vao: vao, count: indices.length, type: indexType || gl.UNSIGNED_SHORT };
+}
+
+function buildCube() {
+  const faces = [
+    { n: [0, 0, 1],  v: [[-.5,-.5,.5],[.5,-.5,.5],[.5,.5,.5],[-.5,.5,.5]] },
+    { n: [0, 0, -1], v: [[.5,-.5,-.5],[-.5,-.5,-.5],[-.5,.5,-.5],[.5,.5,-.5]] },
+    { n: [1, 0, 0],  v: [[.5,-.5,.5],[.5,-.5,-.5],[.5,.5,-.5],[.5,.5,.5]] },
+    { n: [-1, 0, 0], v: [[-.5,-.5,-.5],[-.5,-.5,.5],[-.5,.5,.5],[-.5,.5,-.5]] },
+    { n: [0, 1, 0],  v: [[-.5,.5,.5],[.5,.5,.5],[.5,.5,-.5],[-.5,.5,-.5]] },
+    { n: [0, -1, 0], v: [[-.5,-.5,-.5],[.5,-.5,-.5],[.5,-.5,.5],[-.5,-.5,.5]] }
+  ];
+  const verts = [], idx = [];
+  let base = 0;
+  for (const f of faces) {
+    for (const p of f.v) verts.push(p[0], p[1], p[2], f.n[0], f.n[1], f.n[2]);
+    idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+    base += 4;
+  }
+  return createMesh(new Float32Array(verts), new Uint16Array(idx));
+}
+
+function buildCylinder(seg) {
+  const verts = [], idx = [];
+  // side
+  for (let i = 0; i <= seg; i++) {
+    const a = i / seg * Math.PI * 2;
+    const x = Math.cos(a), z = Math.sin(a);
+    verts.push(x, 0, z, x, 0, z);
+    verts.push(x, 1, z, x, 0, z);
+  }
+  for (let i = 0; i < seg; i++) {
+    const b = i * 2;
+    idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+  }
+  // top cap
+  const cTop = verts.length / 6;
+  verts.push(0, 1, 0, 0, 1, 0);
+  const sTop = verts.length / 6;
+  for (let i = 0; i <= seg; i++) {
+    const a = i / seg * Math.PI * 2;
+    verts.push(Math.cos(a), 1, Math.sin(a), 0, 1, 0);
+  }
+  for (let i = 0; i < seg; i++) idx.push(cTop, sTop + i, sTop + i + 1);
+  // bottom cap
+  const cBot = verts.length / 6;
+  verts.push(0, 0, 0, 0, -1, 0);
+  const sBot = verts.length / 6;
+  for (let i = 0; i <= seg; i++) {
+    const a = i / seg * Math.PI * 2;
+    verts.push(Math.cos(a), 0, Math.sin(a), 0, -1, 0);
+  }
+  for (let i = 0; i < seg; i++) idx.push(cBot, sBot + i + 1, sBot + i);
+  return createMesh(new Float32Array(verts), new Uint16Array(idx));
+}
+
+const cubeMesh = buildCube();
+const cylMesh  = buildCylinder(28);
+
+/* ---------- scene objects ---------- */
+const OBSTACLES = [
+  { kind: 'cyl', x: -0.15, z: 0.00, r: 0.15, h: 0.34 },
+  { kind: 'cyl', x:  0.50, z: 0.28, r: 0.11, h: 0.26 },
+  { kind: 'cyl', x:  0.50, z: -0.28, r: 0.11, h: 0.26 },
+  { kind: 'box', x:  0.90, z: 0.00, sx: 0.10, sy: 0.16, sz: 1.20 }
+];
+
+// tank frame edges
+const EDGES = [];
+{
+  const y0 = 0.0, y1 = TANK_H;
+  const cs = [];
+  for (const sx of [-1, 1]) for (const sy of [y0, y1]) for (const sz of [-1, 1])
+    cs.push([sx * TW, sy, sz * TD]);
+  const key = c => c.join(',');
+  for (let i = 0; i < cs.length; i++)
+    for (let j = i + 1; j < cs.length; j++) {
+      const a = cs[i], b = cs[j];
+      let diff = 0;
+      for (let k = 0; k < 3; k++) if (Math.abs(a[k] - b[k]) > 1e-6) diff++;
+      if (diff === 1) EDGES.push([a, b]);
+    }
+}
+
+// glass panels
+const PANELS = [
+  { t: [0, TANK_H / 2,  TD], s: [LX, TANK_H, 0.012] },
+  { t: [0, TANK_H / 2, -TD], s: [LX, TANK_H, 0.012] },
+  { t: [ TW, TANK_H / 2, 0], s: [0.012, TANK_H, LZ] },
+  { t: [-TW, TANK_H / 2, 0], s: [0.012, TANK_H, LZ] }
+];
+
+/* ==========================================================================
+   DROPLET PARTICLES (transform feedback)
+   ========================================================================== */
+const dropData = new Float32Array(DROP_N * 8);
+for (let i = 0; i < DROP_N; i++) {
+  dropData[i * 8 + 6] = 0.0;
+  dropData[i * 8 + 7] = Math.random() * 997.0;
+}
+const dropBuf = [gl.createBuffer(), gl.createBuffer()];
+for (const b of dropBuf) {
+  gl.bindBuffer(gl.ARRAY_BUFFER, b);
+  gl.bufferData(gl.ARRAY_BUFFER, dropData, gl.DYNAMIC_COPY);
+}
+function makeDropVAO(buf) {
+  const vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  const S = 32;
+  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, S, 0);
+  gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, S, 12);
+  gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 1, gl.FLOAT, false, S, 24);
+  gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3, 1, gl.FLOAT, false, S, 28);
+  gl.bindVertexArray(null);
+  return vao;
+}
+const dropVAO = [makeDropVAO(dropBuf[0]), makeDropVAO(dropBuf[1])];
+const tfObj = gl.createTransformFeedback();
+let dropCur = 0;
+
+/* ==========================================================================
+   SCENE RENDER TARGETS
+   ========================================================================== */
+let sceneTex = null, sceneTexB = null, sceneDepth = null;
+let fboScene = null, fboCopy = null;
+
+function setupSceneTargets(w, h) {
+  if (sceneTex)   gl.deleteTexture(sceneTex);
+  if (sceneTexB)  gl.deleteTexture(sceneTexB);
+  if (sceneDepth) gl.deleteRenderbuffer(sceneDepth);
+  if (fboScene)   gl.deleteFramebuffer(fboScene);
+  if (fboCopy)    gl.deleteFramebuffer(fboCopy);
+
+  sceneTex  = makeTex(w, h, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, gl.LINEAR);
+  sceneTexB = makeTex(w, h, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, gl.LINEAR);
+
+  sceneDepth = gl.createRenderbuffer();
+  gl.bindRenderbuffer(gl.RENDERBUFFER, sceneDepth);
+  gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, w, h);
+
+  fboScene = makeFBO([sceneTex], sceneDepth);
+  fboCopy  = makeFBO([sceneTexB], null);
+}
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let w = Math.floor(canvas.clientWidth * dpr);
+  let h = Math.floor(canvas.clientHeight * dpr);
+  const maxPix = 2300000;
+  if (w * h > maxPix) {
+    const s = Math.sqrt(maxPix / (w * h));
+    w = Math.max(2, Math.floor(w * s));
+    h = Math.max(2, Math.floor(h * s));
+  }
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w; canvas.height = h;
+    setupSceneTargets(w, h);
+  }
+}
+
+/* ==========================================================================
+   STATE
+   ========================================================================== */
+let simCur = 0;
+let simAcc = 0;
+let cycleTime = 0;
+let needReset = true;
+let gen = 0;
+let dropResetFlag = 1;
+
+const camPos    = new Float32Array(3);
+const camFwd    = new Float32Array(3);
+const camRight  = new Float32Array(3);
+const camUp     = new Float32Array(3);
+const lightDir  = new Float32Array([0.48, 0.79, 0.38]);
+{
+  const l = Math.hypot(lightDir[0], lightDir[1], lightDir[2]);
+  lightDir[0] /= l; lightDir[1] /= l; lightDir[2] /= l;
+}
+
+const projM = new Float32Array(16);
+const viewM = new Float32Array(16);
+const vpM   = new Float32Array(16);
+const modelM = new Float32Array(16);
+const nrmM   = new Float32Array(9);
+
+/* ==========================================================================
+   SIMULATION STEPS
+   ========================================================================== */
+function doReset() {
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fboReset);
+  gl.viewport(0, 0, NX, NZ);
+  gl.disable(gl.DEPTH_TEST);
+  gl.depthMask(false);
+  gl.disable(gl.BLEND);
+  gl.useProgram(progReset.p);
+  gl.uniform2f(progReset.u('uGrid'), NX, NZ);
+  gl.uniform2f(progReset.u('uWorld'), LX, LZ);
+  gl.uniform1f(progReset.u('uDx'), DX);
+  gl.bindVertexArray(quadVAO);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+  simCur = 0;
+  simAcc = 0;
+  dropResetFlag = 1;
+}
+
+function stepSim() {
+  /* --- flux --- */
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fboFlux[1 - simCur]);
+  gl.viewport(0, 0, NX, NZ);
+  gl.disable(gl.DEPTH_TEST);
+  gl.depthMask(false);
+  gl.disable(gl.BLEND);
+  gl.useProgram(progFlux.p);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, heightTex[simCur]);
+  gl.uniform1i(progFlux.u('uHeight'), 0);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, fluxTex[simCur]);
+  gl.uniform1i(progFlux.u('uFlux'), 1);
+  gl.uniform2f(progFlux.u('uTexel'), 1 / NX, 1 / NZ);
+  gl.uniform2f(progFlux.u('uGrid'), NX, NZ);
+  gl.uniform1f(progFlux.u('uDt'), DT_SUB);
+  gl.uniform1f(progFlux.u('uDx'), DX);
+  gl.uniform1f(progFlux.u('uG'), GRAV);
+  gl.uniform1f(progFlux.u('uDamp'), 0.9982);
+  gl.bindVertexArray(quadVAO);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+  /* --- height + foam + velocity --- */
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fboHeight[1 - simCur]);
+  gl.viewport(0, 0, NX, NZ);
+  gl.useProgram(progHeight.p);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, heightTex[simCur]);
+  gl.uniform1i(progHeight.u('uHeight'), 0);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, fluxTex[1 - simCur]);
+  gl.uniform1i(progHeight.u('uFlux'), 1);
+  gl.uniform2f(progHeight.u('uTexel'), 1 / NX, 1 / NZ);
+  gl.uniform2f(progHeight.u('uGrid'), NX, NZ);
+  gl.uniform1f(progHeight.u('uDt'), DT_SUB);
+  gl.uniform1f(progHeight.u('uDx'), DX);
+  gl.bindVertexArray(quadVAO);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+  simCur = 1 - simCur;
+}
+
+function stepDroplets(dt) {
+  const dst = 1 - dropCur;
+  gl.useProgram(progDropSim.p);
+  gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK, tfObj);
+  gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, 0, dropBuf[dst]);
+
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, heightTex[simCur]);
+  gl.uniform1i(progDropSim.u('uHeight'), 0);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, velTex);
+  gl.uniform1i(progDropSim.u('uVel'), 1);
+
+  gl.uniform1f(progDropSim.u('uDt'), Math.min(dt, 0.05));
+  gl.uniform1f(progDropSim.u('uGen'), gen % 997);
+  gl.uniform1f(progDropSim.u('uReset'), dropResetFlag);
+  gl.uniform2f(progDropSim.u('uGrid'), NX, NZ);
+  gl.uniform2f(progDropSim.u('uWorld'), LX, LZ);
+  gl.uniform2f(progDropSim.u('uTexel'), 1 / NX, 1 / NZ);
+
+  gl.enable(gl.RASTERIZER_DISCARD);
+  gl.beginTransformFeedback(gl.POINTS);
+  gl.bindVertexArray(dropVAO[dropCur]);
+  gl.drawArrays(gl.POINTS, 0, DROP_N);
+  gl.endTransformFeedback();
+  gl.disable(gl.RASTERIZER_DISBARD_PLACEHOLDER);
+  gl.disable(gl.RASTERIZER_DISCARD);
+  gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, 0, null);
+  gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK, null);
+
+  dropCur = dst;
+  dropResetFlag = 0;
+}
+
+/* ==========================================================================
+   RENDER
+   ========================================================================== */
+function drawSceneMesh(mesh, baseColor, pattern, tx, ty, tz, sx, sy, sz) {
+  trs(modelM, tx, ty, tz, sx, sy, sz);
+  nrmM[0] = 1 / sx; nrmM[1] = 0; nrmM[2] = 0;
+  nrmM[3] = 0; nrmM[4] = 1 / sy; nrmM[5] = 0;
+  nrmM[6] = 0; nrmM[7] = 0; nrmM[8] = 1 / sz;
+  gl.uniformMatrix4fv(progScene.u('uModel'), false, modelM);
+  gl.uniformMatrix3fv(progScene.u('uNrmMat'), false, nrmM);
+  gl.uniform3f(progScene.u('uBase'), baseColor[0], baseColor[1], baseColor[2]);
+  gl.uniform1f(progScene.u('uPattern'), pattern);
+  gl.bindVertexArray(mesh.vao);
+  gl.drawElements(gl.TRIANGLES, mesh.count, mesh.type, 0);
+}
+
+function render() {
+  const W = canvas.width, H = canvas.height;
+
+  /* ---------------- scene pass ---------------- */
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fboScene);
+  gl.viewport(0, 0, W, H);
+  gl.disable(gl.DEPTH_TEST);
+  gl.depthMask(false);
+  gl.disable(gl.BLEND);
+  gl.clearColor(0.01, 0.015, 0.03, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  // sky
+  gl.useProgram(progSky.p);
+  gl.uniform3fv(progSky.u('uForward'), camFwd);
+  gl.uniform3fv(progSky.u('uRight'), camRight);
+  gl.uniform3fv(progSky.u('uUp'), camUp);
+  const tanY = Math.tan(42 * Math.PI / 360);
+  gl.uniform1f(progSky.u('uTanX'), tanY * (W / H));
+  gl.uniform1f(progSky.u('uTanY'), tanY);
+  gl.uniform3fv(progSky.u('uLight'), lightDir);
+  gl.bindVertexArray(quadVAO);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+  // opaque geometry
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthMask(true);
+  gl.useProgram(progScene.p);
+  gl.uniformMatrix4fv(progScene.u('uVP'), false, vpM);
+  gl.uniform3fv(progScene.u('uCam'), camPos);
+  gl.uniform3fv(progScene.u('uLight'), lightDir);
+
+  // floor
+  drawSceneMesh(cubeMesh, [0.16, 0.19, 0.24], 1.0, 0, -0.05, 0, 14.0, 0.1, 14.0);
+
+  // obstacles
+  for (const o of OBSTACLES) {
+    if (o.kind === 'cyl') {
+      drawSceneMesh(cylMesh, [0.30, 0.36, 0.44], 0.0, o.x, 0.0, o.z, o.r, o.h, o.r);
+    } else {
+      drawSceneMesh(cubeMesh, [0.32, 0.38, 0.46], 0.0, o.x, o.sy * 0.5, o.z, o.sx, o.sy, o.sz);
+    }
+  }
+
+  /* ---------------- copy scene colour for refraction ---------------- */
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fboCopy);
+  gl.viewport(0, 0, W, H);
+  gl.disable(gl.DEPTH_TEST);
+  gl.depthMask(false);
+  gl.disable(gl.BLEND);
+  gl.useProgram(progCopy.p);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, sceneTex);
+  gl.uniform1i(progCopy.u('uTex'), 0);
+  gl.bindVertexArray(quadVAO);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+  /* ---------------- water surface ---------------- */
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fboScene);
+  gl.viewport(0, 0, W, H);
+  gl.enable(gl.DEPTH_TEST);
+  gl.depthMask(true);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+  gl.useProgram(progWater.p);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, heightTex[simCur]);
+  gl.uniform1i(progWater.u('uHeight'), 0);
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, sceneTexB);
+  gl.uniform1i(progWater.u('uScene'), 1);
+  gl.uniform2f(progWater.u('uTexel'), 1 / NX, 1 / NZ);
+  gl.uniform2f(progWater.u('uGrid'), NX, NZ);
+  gl.uniform2f(progWater.u('uWorld'), LX, LZ);
+  gl.uniform2f(progWater.u('uRes'), W, H);
+  gl.uniform3fv(progWater.u('uCam'), camPos);
+  gl.uniform3fv(progWater.u('uLight'), lightDir);
+  gl.uniformMatrix4fv(progWater.u('uVP'), false, vpM);
+  gl.bindVertexArray(waterVAO);
+  gl.drawElements(gl.TRIANGLES, waterVAO.count, gl.UNSIGNED_INT, 0);
+
+  /* ---------------- droplets ---------------- */
+  gl.useProgram(progDropDraw.p);
+  gl.uniformMatrix4fv(progDropDraw.u('uVP'), false, vpM);
+  gl.uniform3fv(progDropDraw.u('uCam'), camPos);
+  gl.bindVertexArray(dropVAO[dropCur]);
+  gl.drawArrays(gl.POINTS, 0, DROP_N);
+
+  /* ---------------- glass tank ---------------- */
+  gl.useProgram(progGlass.p);
+  gl.uniformMatrix4fv(progGlass.u('uVP'), false, vpM);
+  gl.uniform3fv(progGlass.u('uCam'), camPos);
+  gl.uniform3fv(progGlass.u('uLight'), lightDir);
+  gl.depthMask(false);
+
+  const frameCol = [0.72, 0.80, 0.90];
+  const t = 0.028;
+  for (const e of EDGES) {
+    const a = e[0], b = e[1];
+    const mx = (a[0] + b[0]) * 0.5, my = (a[1] + b[1]) * 0.5, mz = (a[2] + b[2]) * 0.5;
+    const sx = Math.abs(a[0] - b[0]) + t;
+    const sy = Math.abs(a[1] - b[1]) + t;
+    const sz = Math.abs(a[2] - b[2]) + t;
+    trs(modelM, mx, my, mz, sx, sy, sz);
+    nrmM[0] = 1 / sx; nrmM[1] = 0; nrmM[2] = 0;
+    nrmM[3] = 0; nrmM[4] = 1 / sy; nrmM[5] = 0;
+    nrmM[6] = 0; nrmM[7] = 0; nrmM[8] = 1 / sz;
+    gl.uniformMatrix4fv(progGlass.u('uModel'), false, modelM);
+    gl.uniformMatrix3fv(progGlass.u('uNrmMat'), false, nrmM);
+    gl.uniform3f(progGlass.u('uBase'), frameCol[0], frameCol[1], frameCol[2]);
+    gl.uniform1f(progGlass.u('uAlpha'), 1.0);
+    gl.bindVertexArray(cubeMesh.vao);
+    gl.drawElements(gl.TRIANGLES, cubeMesh.count, cubeMesh.type, 0);
+  }
+
+  gl.uniform3f(progGlass.u('uBase'), 0.55, 0.78, 0.95);
+  gl.uniform1f(progGlass.u('uAlpha'), 0.13);
+  for (const p of PANELS) {
+    trs(modelM, p.t[0], p.t[1], p.t[2], p.s[0], p.s[1], p.s[2]);
+    nrmM[0] = 1 / p.s[0]; nrmM[1] = 0; nrmM[2] = 0;
+    nrmM[3] = 0; nrmM[4] = 1 / p.s[1]; nrmM[5] = 0;
+    nrmM[6] = 0; nrmM[7] = 0; nrmM[8] = 1 / p.s[2];
+    gl.uniformMatrix4fv(progGlass.u('uModel'), false, modelM);
+    gl.uniformMatrix3fv(progGlass.u('uNrmMat'), false, nrmM);
+    gl.bindVertexArray(cubeMesh.vao);
+    gl.drawElements(gl.TRIANGLES, cubeMesh.count, cubeMesh.type, 0);
+  }
+  gl.depthMask(true);
+  gl.disable(gl.BLEND);
+
+  /* ---------------- blit to screen ---------------- */
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, W, H);
+  gl.disable(gl.DEPTH_TEST);
+  gl.useProgram(progCopy.p);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, sceneTex);
+  gl.uniform1i(progCopy.u('uTex'), 0);
+  gl.bindVertexArray(quadVAO);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+  gl.bindVertexArray(null);
+}
+
+/* ==========================================================================
+   CAMERA
+   ========================================================================== */
+function updateCamera(t) {
+  const ang = t * 0.000225;
+  const R = 3.15;
+  const ex = Math.sin(ang) * R;
+  const ez = Math.cos(ang) * R;
+  const ey = 1.36 + Math.sin(ang * 0.73) * 0.34;
+
+  camPos[0] = ex; camPos[1] = ey; camPos[2] = ez;
+
+  const cx = 0, cy = 0.26, cz = 0;
+  let fx = cx - ex, fy = cy - ey, fz = cz - ez;
+  let l = Math.hypot(fx, fy, fz) || 1;
+  fx /= l; fy /= l; fz /= l;
+  camFwd[0] = fx; camFwd[1] = fy; camFwd[2] = fz;
+
+  let rx = fz * 0 - fy * 0, ry = 0, rz = 0;
+  // right = normalize(cross(fwd, worldUp))
+  rx = fy * 0 - fz * 1;
+  ry = fz * 0 - fx * 0;
+  rz = fx * 1 - fy * 0;
+  l = Math.hypot(rx, ry, rz) || 1;
+  rx /= l; ry /= l; rz /= l;
+  camRight[0] = rx; camRight[1] = ry; camRight[2] = rz;
+
+  // up = cross(right, fwd)
+  const ux = ry * fz - rz * fy;
+  const uy = rz * fx - rx * fz;
+  const uz = rx * fy - ry * fx;
+  camUp[0] = ux; camUp[1] = uy; camUp[2] = uz;
+
+  perspective(projM, 42 * Math.PI / 180, canvas.width / Math.max(1, canvas.height), 0.05, 60);
+  lookAt(viewM, ex, ey, ez, cx, cy, cz);
+  matMul(vpM, projM, viewM);
+}
+
+/* ==========================================================================
+   HUD
+   ========================================================================== */
+const hud = document.getElementById('hud');
+let fpsFrames = 0, fpsAccum = 0, fpsValue = 0;
+function updateHUD() {
+  hud.innerHTML =
+    'fluid grid&nbsp; <b>' + NX + ' &times; ' + NZ + '</b> = <b>' + (NX * NZ).toLocaleString() + '</b> cells<br>' +
+    'spray particles&nbsp; <b>' + DROP_N.toLocaleString() + '</b><br>' +
+    'fps&nbsp; <b>' + fpsValue.toFixed(0) + '</b>';
+}
+
+/* ==========================================================================
+   MAIN LOOP
+   ========================================================================== */
+let lastT = performance.now();
+
+function frame(now) {
+  requestAnimationFrame(frame);
+
+  const dt = Math.min((now - lastT) / 1000, 0.05);
+  lastT = now;
+
+  resize();
+  updateCamera(now);
+
+  cycleTime += dt;
+  if (cycleTime > RESTART_TIME) {
+    cycleTime = 0;
+    needReset = true;
+  }
+  if (needReset) {
+    doReset();
+    needReset = false;
+  }
+
+  // fixed-step simulation
+  simAcc += dt;
+  let steps = 0;
+  while (simAcc >= DT_SUB && steps < MAX_SUBSTEPS) {
+    stepSim();
+    simAcc -= DT_SUB;
+    steps++;
+  }
+  if (steps >= MAX_SUBSTEPS) simAcc = 0;
+
+  stepDroplets(dt);
+  gen++;
+
+  render();
+
+  // fps
+  fpsFrames++;
+  fpsAccum += dt;
+  if (fpsAccum >= 0.5) {
+    fpsValue = fpsFrames / fpsAccum;
+    fpsFrames = 0;
+    fpsAccum = 0;
+    updateHUD();
+  }
+}
+
+/* ==========================================================================
+   BOOT
+   ========================================================================== */
+resize();
+setupSceneTargets(canvas.width, canvas.height);
+doReset();
+needReset = false;
+updateHUD();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
+```
+### Simulation and Rendering Mechanics
+
+The tank runs a GPU-based shallow-water solver on a 320×160 grid. A dam-break wave releases every seven seconds, splashing against four fixed obstacles (three cylinders and one box). You can watch the wavefront, foam buildup, and spray droplets in real time.
+
+- **Grid and particles:** The fluid uses a 51,200-cell shallow-water grid, while up to 4,096 droplet particles are driven by transform feedback. Particles spawn from high-foam areas and fall under gravity.
+- **Surface rendering:** The water mesh samples height and velocity textures to produce refraction through the tank glass, specular highlights, and foam that thickens where the surface rises quickly.
+- **Camera and HUD:** The camera slowly orbits the tank. The on-screen display shows the grid dimensions, particle count, and live FPS.
+---
+
+**Optimization Tip:** You can tweak `RESTART_TIME` to change how often the wave releases, `NX` and `NZ` to adjust fluid grid resolution, or `DROP_N` to control the number of spray particles. The obstacle positions and sizes are listed in the `OBSTACLES` array.

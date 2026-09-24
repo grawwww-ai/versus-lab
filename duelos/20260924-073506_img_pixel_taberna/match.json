@@ -1,0 +1,393 @@
+{
+  "id": "20260924-073506_img_pixel_taberna",
+  "challenge": {
+    "id": "img_pixel_taberna",
+    "category": "imagen",
+    "cerebro": "pixel",
+    "title_es": "Taberna en pixel art",
+    "title_en": "Pixel art tavern",
+    "aspecto": "1:1",
+    "prompt": "Pixel art scene of a fantasy tavern interior, 16-bit SNES JRPG style, strict pixel grid with large visible square pixels and a limited palette of about 24 colours, no anti-aliasing and no blur. Top-down-ish 3/4 view: wooden tables with mugs, a fireplace on the left casting warm light, a bard with a lute sitting on a stool, a dwarf innkeeper behind the bar, barrels and hanging lanterns, a cat sleeping by the fire.",
+    "excelente": "Pixel art de verdad — rejilla de píxeles clara y constante, paleta corta, sin desenfoques ni bordes suavizados, con la escena completa y legible como en un juego de 16 bits.",
+    "rubric": [
+      {
+        "id": "rejilla",
+        "c": "Píxeles de verdad",
+        "es": "Se ven píxeles cuadrados en una rejilla constante, no un dibujo suavizado imitando pixel art",
+        "w": 3
+      },
+      {
+        "id": "paleta",
+        "c": "Paleta corta",
+        "es": "Usa pocos colores planos, sin degradados ni ruido, como una consola de 16 bits",
+        "w": 2
+      },
+      {
+        "id": "escena",
+        "c": "La taberna completa",
+        "es": "Están la chimenea, las mesas con jarras, el bardo con el laúd, el tabernero y los barriles",
+        "w": 3
+      },
+      {
+        "id": "gato",
+        "c": "El gato junto al fuego",
+        "es": "Hay un gato durmiendo cerca de la chimenea",
+        "w": 1
+      },
+      {
+        "id": "legible",
+        "c": "Se entiende todo",
+        "es": "Cada elemento se reconoce a simple vista, sin manchas ni formas confusas",
+        "w": 2
+      }
+    ],
+    "nivel": 2,
+    "tema": "imagen"
+  },
+  "prompt": "Pixel art scene of a fantasy tavern interior, 16-bit SNES JRPG style, strict pixel grid with large visible square pixels and a limited palette of about 24 colours, no anti-aliasing and no blur. Top-down-ish 3/4 view: wooden tables with mugs, a fireplace on the left casting warm light, a bard with a lute sitting on a stool, a dwarf innkeeper behind the bar, barrels and hanging lanterns, a cat sleeping by the fire.",
+  "contestants": [
+    {
+      "contestant": "img:qwen-image-2.1",
+      "side": "a",
+      "dir": "a-img-qwen-image-2-1",
+      "error": null,
+      "total_s": 32.5,
+      "ficha": {
+        "nombre": "Qwen-Image 2.1",
+        "casa": "Alibaba",
+        "params": "7B",
+        "pasos": 25,
+        "licencia": "Qwen Research (uso comercial con acuerdo aparte)",
+        "salida": "2026-09-20",
+        "id": "qwen-image-2.1"
+      },
+      "validation": {
+        "checks": {
+          "genera": true,
+          "sin_vacias": true,
+          "medida": true
+        },
+        "errors": [],
+        "score": 100,
+        "imagenes": 4
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 86,
+        "raw": 86.0,
+        "base_score": 100,
+        "requirements": {
+          "ok": 5,
+          "total": 5,
+          "pct": 91
+        },
+        "quality": 8.0,
+        "fps": null,
+        "faults": [
+          "(leve) La paleta de colores es demasiado amplia y variada, especialmente en los tonos de la madera y el suelo, lo que resta autenticidad al estilo estricto de consola 16-bit.",
+          "(leve) En algunas imágenes (ej. 1) las manos de los personajes se ven como masas de píxeles indistintas, aunque no impiden la lectura de la escena."
+        ],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "rejilla",
+            "es": "Se ven píxeles cuadrados en una rejilla constante, no un dibujo suavizado imitando pixel art",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Imagen 1: Se observa una cuadrícula de píxeles muy marcada y uniforme, sin suavizado, típica de la estética 16-bit."
+          },
+          {
+            "id": "paleta",
+            "es": "Usa pocos colores planos, sin degradados ni ruido, como una consola de 16 bits",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "Aunque usa tonos planos, la imagen 1 muestra demasiada variedad de tonos de marrón y naranja en el suelo y la madera, superando el límite de 24 colores de una consola 16-bit."
+          },
+          {
+            "id": "escena",
+            "es": "Están la chimenea, las mesas con jarras, el bardo con el laúd, el tabernero y los barriles",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Imagen 3: Se identifican claramente el bardo con el laúd, el barbero en el mostrador, la chimenea, mesas, barriles y lámparas."
+          },
+          {
+            "id": "gato",
+            "es": "Hay un gato durmiendo cerca de la chimenea",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Imagen 1: Hay un gato naranja y blanco durmiendo en el suelo, justo delante de la chimenea."
+          },
+          {
+            "id": "legible",
+            "es": "Cada elemento se reconoce a simple vista, sin manchas ni formas confusas",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Imagen 4: Los personajes y objetos (jarras, barriles, instrumentos) son nítidos y reconocibles a simple vista."
+          }
+        ],
+        "probe": {},
+        "evidence": [
+          "evidence/0.png",
+          "evidence/1.png",
+          "evidence/2.png",
+          "evidence/3.png"
+        ]
+      },
+      "first_token_s": null,
+      "first_answer_s": null,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": null,
+      "max_tokens": 0,
+      "cuts": [],
+      "tokens_per_s": null,
+      "familia": "imagen",
+      "piezas": [
+        {
+          "modelo": "qwen-image-2.1",
+          "nombre": "Qwen-Image 2.1",
+          "fichero": "img_0.png",
+          "seed": 7,
+          "pasos": 25,
+          "ancho": 1024,
+          "alto": 1024,
+          "segundos": 14.2
+        },
+        {
+          "modelo": "qwen-image-2.1",
+          "nombre": "Qwen-Image 2.1",
+          "fichero": "img_1.png",
+          "seed": 21,
+          "pasos": 25,
+          "ancho": 1024,
+          "alto": 1024,
+          "segundos": 6.1
+        },
+        {
+          "modelo": "qwen-image-2.1",
+          "nombre": "Qwen-Image 2.1",
+          "fichero": "img_2.png",
+          "seed": 42,
+          "pasos": 25,
+          "ancho": 1024,
+          "alto": 1024,
+          "segundos": 6.1
+        },
+        {
+          "modelo": "qwen-image-2.1",
+          "nombre": "Qwen-Image 2.1",
+          "fichero": "img_3.png",
+          "seed": 99,
+          "pasos": 25,
+          "ancho": 1024,
+          "alto": 1024,
+          "segundos": 6.0
+        }
+      ],
+      "segundos_por_pieza": 6.1
+    },
+    {
+      "contestant": "img:krea-2-turbo",
+      "side": "b",
+      "dir": "b-img-krea-2-turbo",
+      "error": null,
+      "total_s": 42.4,
+      "ficha": {
+        "nombre": "Krea 2 Turbo",
+        "casa": "Krea",
+        "params": "—",
+        "pasos": 8,
+        "licencia": "pesos abiertos (no comercial)",
+        "salida": "2026-08",
+        "id": "krea-2-turbo"
+      },
+      "validation": {
+        "checks": {
+          "genera": true,
+          "sin_vacias": true,
+          "medida": true
+        },
+        "errors": [],
+        "score": 100,
+        "imagenes": 4
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 88,
+        "raw": 88.0,
+        "base_score": 100,
+        "requirements": {
+          "ok": 5,
+          "total": 5,
+          "pct": 100
+        },
+        "quality": 8.0,
+        "fps": null,
+        "faults": [
+          "(leve) El laúd del bardo tiene una forma algo irregular y tosca en las imágenes 2 y 4, pareciendo un instrumento genérico más que un laúd definido.",
+          "(leve) En las imágenes 2 y 3, el gato está cortado por el borde izquierdo de la imagen.",
+          "(leve) Las caras de los personajes (bardo y tabernero) son algo genéricas y esquemáticas, aunque coherentes con el estilo."
+        ],
+        "penalty": 3,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "rejilla",
+            "es": "Se ven píxeles cuadrados en una rejilla constante, no un dibujo suavizado imitando pixel art",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Las 4 imágenes muestran una cuadrícula de píxeles cuadrados consistente, sin antialiasing ni difuminado, estilo 16-bit."
+          },
+          {
+            "id": "paleta",
+            "es": "Usa pocos colores planos, sin degradados ni ruido, como una consola de 16 bits",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Los colores son planos y limitados, sin degradados suaves, manteniendo la estética de consola retro en todas las capturas."
+          },
+          {
+            "id": "escena",
+            "es": "Están la chimenea, las mesas con jarras, el bardo con el laúd, el tabernero y los barriles",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Se distinguen claramente la chimenea a la izquierda, mesas con jarras, el bardo con el laúd en el centro y el enano tabernero a la derecha en todas las variantes."
+          },
+          {
+            "id": "gato",
+            "es": "Hay un gato durmiendo cerca de la chimenea",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Hay un gato naranja visible cerca de la chimenea en las 4 imágenes, aunque en la 2 y 3 está parcialmente recortado por el borde."
+          },
+          {
+            "id": "legible",
+            "es": "Cada elemento se reconoce a simple vista, sin manchas ni formas confusas",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Todos los elementos (personajes, mobiliario, fuego) son nítidos y se reconocen sin confusión."
+          }
+        ],
+        "probe": {},
+        "evidence": [
+          "evidence/0.png",
+          "evidence/1.png",
+          "evidence/2.png",
+          "evidence/3.png"
+        ]
+      },
+      "first_token_s": null,
+      "first_answer_s": null,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": null,
+      "max_tokens": 0,
+      "cuts": [],
+      "tokens_per_s": null,
+      "familia": "imagen",
+      "piezas": [
+        {
+          "modelo": "krea-2-turbo",
+          "nombre": "Krea 2 Turbo",
+          "fichero": "img_0.png",
+          "seed": 7,
+          "pasos": 8,
+          "ancho": 1024,
+          "alto": 1024,
+          "segundos": 18.1
+        },
+        {
+          "modelo": "krea-2-turbo",
+          "nombre": "Krea 2 Turbo",
+          "fichero": "img_1.png",
+          "seed": 21,
+          "pasos": 8,
+          "ancho": 1024,
+          "alto": 1024,
+          "segundos": 8.1
+        },
+        {
+          "modelo": "krea-2-turbo",
+          "nombre": "Krea 2 Turbo",
+          "fichero": "img_2.png",
+          "seed": 42,
+          "pasos": 8,
+          "ancho": 1024,
+          "alto": 1024,
+          "segundos": 8.1
+        },
+        {
+          "modelo": "krea-2-turbo",
+          "nombre": "Krea 2 Turbo",
+          "fichero": "img_3.png",
+          "seed": 99,
+          "pasos": 8,
+          "ancho": 1024,
+          "alto": 1024,
+          "segundos": 8.0
+        }
+      ],
+      "segundos_por_pieza": 8.1
+    }
+  ],
+  "comparison": {
+    "winner": "b",
+    "margin": "ligera",
+    "items": {
+      "rejilla": null,
+      "paleta": null,
+      "escena": null,
+      "gato": "b",
+      "legible": null
+    },
+    "why": [
+      "El Resultado 1 presenta una rejilla de píxeles nítida y consistente sin desenfoque, mientras que el Resultado 2 parece una imagen de baja resolución con bordes borrosos y ruido de compresión.",
+      "El resultado 2 presenta una rejilla de píxeles mucho más nítida y marcada, fiel al estilo 16-bit solicitado, mientras que el 1 aparece ligeramente desenfocado."
+    ],
+    "raw": {
+      "parejas": [
+        null,
+        "b",
+        null
+      ]
+    },
+    "judged_by": [
+      "local-gpu"
+    ]
+  },
+  "winner": "img:krea-2-turbo",
+  "winner_side": "b",
+  "decided_by": "comparison"
+}

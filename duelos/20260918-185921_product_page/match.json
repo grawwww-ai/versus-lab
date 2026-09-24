@@ -1,0 +1,410 @@
+{
+  "id": "20260918-185921_product_page",
+  "challenge": {
+    "id": "product_page",
+    "category": "web",
+    "title_es": "Web de producto estilo Apple",
+    "title_en": "Apple-style Product Page",
+    "prompt": "Design a premium product landing page, in the style of Apple's product pages, for an invented product: \"Halo\", a pair of smart glasses that translate any conversation in real time. Requirements: a full-screen hero with a large headline and a product illustration drawn with inline SVG and CSS (no images); scroll-driven animations (elements fade, slide and scale in as you scroll, using IntersectionObserver or scroll events); a sticky section where the product rotates or transforms as you scroll; a features grid, a section with big animated numbers (battery life, languages, weight), a comparison of two models and a pre-order call to action. Elegant typography using system fonts, generous white space, smooth transitions, and a dark and a light section. Everything inline, no external resources.",
+    "rubric": [
+      {
+        "id": "hero",
+        "es": "Hay una portada a pantalla completa con un titular grande y una ilustración del producto (unas gafas)",
+        "w": 2
+      },
+      {
+        "id": "svg_producto",
+        "es": "El producto (las gafas) está dibujado con cuidado y se reconoce claramente como unas gafas",
+        "w": 2
+      },
+      {
+        "id": "anim_scroll",
+        "es": "Los elementos aparecen con animación al hacer scroll",
+        "probe": "scroll_anim",
+        "arg": 6,
+        "w": 2
+      },
+      {
+        "id": "seccion_fija",
+        "es": "Hay una sección que se queda fija mientras el producto gira o se transforma al hacer scroll",
+        "probe": "sticky",
+        "w": 2
+      },
+      {
+        "id": "producto_cambia",
+        "es": "El producto cambia de posición, ángulo o forma entre unas capturas y otras (se transforma al hacer scroll)",
+        "w": 1
+      },
+      {
+        "id": "caracteristicas",
+        "es": "Hay una cuadrícula de características (varias tarjetas con icono o título y texto)",
+        "w": 1
+      },
+      {
+        "id": "cifras",
+        "es": "Hay una sección con cifras grandes (autonomía, idiomas, peso)",
+        "w": 1
+      },
+      {
+        "id": "comparativa",
+        "es": "Compara dos modelos del producto con precios",
+        "probe": "text",
+        "arg": "[$€]\\s?\\d",
+        "min": 2,
+        "w": 1
+      },
+      {
+        "id": "reserva",
+        "es": "Hay una llamada a la acción para reservar o comprar",
+        "probe": "text",
+        "arg": "pre-?order|reserv|buy|comprar|order now",
+        "w": 1
+      },
+      {
+        "id": "claro_oscuro",
+        "es": "Hay al menos una sección de fondo oscuro y otra de fondo claro",
+        "w": 1
+      },
+      {
+        "id": "largo",
+        "es": "La página es completa: al menos 4 pantallas de contenido",
+        "probe": "screens",
+        "arg": 4,
+        "w": 1
+      }
+    ]
+  },
+  "prompt": "Design a premium product landing page, in the style of Apple's product pages, for an invented product: \"Halo\", a pair of smart glasses that translate any conversation in real time. Requirements: a full-screen hero with a large headline and a product illustration drawn with inline SVG and CSS (no images); scroll-driven animations (elements fade, slide and scale in as you scroll, using IntersectionObserver or scroll events); a sticky section where the product rotates or transforms as you scroll; a features grid, a section with big animated numbers (battery life, languages, weight), a comparison of two models and a pre-order call to action. Elegant typography using system fonts, generous white space, smooth transitions, and a dark and a light section. Everything inline, no external resources.\n\nRequirements: deliver everything in ONE self-contained HTML file (inline CSS and JavaScript; no external resources, CDNs, fonts or images). Reply with the complete file in a single ```html code block.",
+  "contestants": [
+    {
+      "contestant": "or:deepseek/deepseek-v4-flash-0731:free",
+      "first_token_s": 1.202,
+      "first_answer_s": 575.113,
+      "total_s": 821.386,
+      "prompt_tokens": 283,
+      "completion_tokens": 27445,
+      "reasoning_tokens": 19220,
+      "cost": 0,
+      "finish_reason": "stop",
+      "error": null,
+      "side": "a",
+      "dir": "a-or-deepseek-deepseek-v4-flash-0731-free",
+      "tokens_per_s": 33.5,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.05,
+        "visual": {
+          "contrast": 40.85,
+          "detail_pct": 4.1
+        },
+        "external_requests": [],
+        "capture": {
+          "frames": 360,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "works": true,
+        "score": 96,
+        "requirements": {
+          "ok": 11,
+          "total": 11,
+          "pct": 100
+        },
+        "quality": 8.5,
+        "fps": null,
+        "faults": [
+          "El diseño es muy consistente y limpio, pero la transición de color entre secciones es abrupta en algunas capturas.",
+          "La ilustración de las gafas, aunque correcta, es un poco básica en su diseño (forma rectangular simple).",
+          "La tipografía y los espaciados, aunque limpios, no alcanzan el nivel de refinamiento extremo y sofisticación visual de una página real de Apple."
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "hero",
+            "es": "Hay una portada a pantalla completa con un titular grande y una ilustración del producto (unas gafas)",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "prueba": "La captura 1 muestra una sección a pantalla completa con un gran titular ('Translate the world...') y una ilustración de gafas en la parte inferior."
+          },
+          {
+            "id": "svg_producto",
+            "es": "El producto (las gafas) está dibujado con cuidado y se reconoce claramente como unas gafas",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "prueba": "En las capturas 1, 3, 4 y 5 se ven unas gafas con lentes azules y detalles de brillo que se reconocen claramente como el producto descrito."
+          },
+          {
+            "id": "anim_scroll",
+            "es": "Los elementos aparecen con animación al hacer scroll",
+            "w": 2,
+            "how": "probe",
+            "ok": true,
+            "prueba": "scroll_anim: 13"
+          },
+          {
+            "id": "seccion_fija",
+            "es": "Hay una sección que se queda fija mientras el producto gira o se transforma al hacer scroll",
+            "w": 2,
+            "how": "probe",
+            "ok": true,
+            "prueba": "sticky: 1"
+          },
+          {
+            "id": "producto_cambia",
+            "es": "El producto cambia de posición, ángulo o forma entre unas capturas y otras (se transforma al hacer scroll)",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "prueba": "Las gafas tienen una orientación horizontal en la captura 1, pero están rotadas en diagonal en la captura 4 y en posición vertical en la captura 5, indicando una transformación."
+          },
+          {
+            "id": "caracteristicas",
+            "es": "Hay una cuadrícula de características (varias tarjetas con icono o título y texto)",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "prueba": "La captura 6 muestra el título 'Everything matters.' y una cuadrícula de tarjetas con iconos (traducción, idiomas, batería, etc.)."
+          },
+          {
+            "id": "cifras",
+            "es": "Hay una sección con cifras grandes (autonomía, idiomas, peso)",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "prueba": "La captura 7 muestra una sección oscura con grandes cifras: '0.3s', '28+', '22h' y '60g'."
+          },
+          {
+            "id": "comparativa",
+            "es": "Compara dos modelos del producto con precios",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "prueba": "[$€]\\s?\\d"
+          },
+          {
+            "id": "reserva",
+            "es": "Hay una llamada a la acción para reservar o comprar",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "prueba": "pre-?order|reserv|buy|comprar|order now"
+          },
+          {
+            "id": "claro_oscuro",
+            "es": "Hay al menos una sección de fondo oscuro y otra de fondo claro",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "prueba": "Hay secciones con fondo negro (captura 1, 5, 7) y secciones con fondo blanco (captura 2, 6, 8)."
+          },
+          {
+            "id": "largo",
+            "es": "La página es completa: al menos 4 pantallas de contenido",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "prueba": "screens: 8.1"
+          }
+        ],
+        "probe": {
+          "page_height": 7310,
+          "screens": 8.1,
+          "sticky": 1,
+          "scroll_anim": 13,
+          "sections": 8,
+          "errors": []
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png"
+        ]
+      }
+    },
+    {
+      "contestant": "or:nvidia/nemotron-3-ultra-550b-a55b:free",
+      "first_token_s": 0.61,
+      "first_answer_s": 11.206,
+      "total_s": 386.697,
+      "prompt_tokens": 220,
+      "completion_tokens": 13432,
+      "reasoning_tokens": 470,
+      "cost": 0,
+      "finish_reason": "stop",
+      "error": null,
+      "side": "b",
+      "dir": "b-or-nvidia-nemotron-3-ultra-550b-a55b-free",
+      "tokens_per_s": 34.8,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.04,
+        "visual": {
+          "contrast": 29.76,
+          "detail_pct": 3.53
+        },
+        "external_requests": [],
+        "capture": {
+          "frames": 360,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "works": true,
+        "score": 96,
+        "requirements": {
+          "ok": 11,
+          "total": 11,
+          "pct": 100
+        },
+        "quality": 8.5,
+        "fps": null,
+        "faults": [
+          "La ilustración de las gafas, aunque correcta, es ligeramente esquemática y podría tener más detalle para un acabado 'premium' total.",
+          "La transición entre secciones es muy plana, sin sombras profundas que den más volumen.",
+          "La ilustración de las gafas, aunque correcta, es algo básica y esquemática para una web 'premium' de estilo Apple.",
+          "Las capturas muestran la misma ilustración repetida en distintas secciones sin variaciones significativas que aporten dinamismo."
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "hero",
+            "es": "Hay una portada a pantalla completa con un titular grande y una ilustración del producto (unas gafas)",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "prueba": "La captura 1 muestra una portada a pantalla completa con el titular 'Halo' grande y una ilustración de unas gafas."
+          },
+          {
+            "id": "svg_producto",
+            "es": "El producto (las gafas) está dibujado con cuidado y se reconoce claramente como unas gafas",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "prueba": "Las gafas en la captura 1 y 2 están dibujadas con cuidado, tienen degradados en los lentes y se reconocen claramente como un producto de alta gama."
+          },
+          {
+            "id": "anim_scroll",
+            "es": "Los elementos aparecen con animación al hacer scroll",
+            "w": 2,
+            "how": "probe",
+            "ok": true,
+            "prueba": "scroll_anim: 19"
+          },
+          {
+            "id": "seccion_fija",
+            "es": "Hay una sección que se queda fija mientras el producto gira o se transforma al hacer scroll",
+            "w": 2,
+            "how": "probe",
+            "ok": true,
+            "prueba": "sticky: 1"
+          },
+          {
+            "id": "producto_cambia",
+            "es": "El producto cambia de posición, ángulo o forma entre unas capturas y otras (se transforma al hacer scroll)",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "prueba": "En las capturas 1, 2 y 4 se observa que el producto cambia de posición (centrado, desplazado a la izquierda) y parece rotar ligeramente, indicando una animación de scroll."
+          },
+          {
+            "id": "caracteristicas",
+            "es": "Hay una cuadrícula de características (varias tarjetas con icono o título y texto)",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "prueba": "En la parte inferior de la captura 6 se ve una cuadrícula con 6 tarjetas, cada una con un icono, un título (ej. 'Instant Translation') y texto descriptivo."
+          },
+          {
+            "id": "cifras",
+            "es": "Hay una sección con cifras grandes (autonomía, idiomas, peso)",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "prueba": "La captura 7 muestra una sección 'Specs that matter' con tres cifras grandes: '16h', '111+' y '35g'."
+          },
+          {
+            "id": "comparativa",
+            "es": "Compara dos modelos del producto con precios",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "prueba": "[$€]\\s?\\d"
+          },
+          {
+            "id": "reserva",
+            "es": "Hay una llamada a la acción para reservar o comprar",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "prueba": "pre-?order|reserv|buy|comprar|order now"
+          },
+          {
+            "id": "claro_oscuro",
+            "es": "Hay al menos una sección de fondo oscuro y otra de fondo claro",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "prueba": "La mayor parte de las capturas (1 a 8) tienen fondo claro, pero la captura 9 muestra una sección con fondo negro y texto blanco ('Reserve your Halo')."
+          },
+          {
+            "id": "largo",
+            "es": "La página es completa: al menos 4 pantallas de contenido",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "prueba": "screens: 8.2"
+          }
+        ],
+        "probe": {
+          "page_height": 7407,
+          "screens": 8.2,
+          "sticky": 1,
+          "scroll_anim": 19,
+          "sections": 10,
+          "errors": []
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png"
+        ]
+      }
+    }
+  ],
+  "winner": "or:nvidia/nemotron-3-ultra-550b-a55b:free",
+  "winner_side": "b",
+  "decided_by": "speed"
+}

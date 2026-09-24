@@ -1,0 +1,63 @@
+{
+  "id": "20260917-021229_mystery_number",
+  "challenge": {
+    "id": "mystery_number",
+    "category": "text",
+    "title_es": "El número misterioso",
+    "title_en": "The Mystery Number",
+    "prompt": "I am a three-digit number. My digits are all different and strictly decreasing from left to right. The sum of my digits is 18, and I am divisible by 17. What number am I? Explain your reasoning briefly, then finish with a last line of the form 'ANSWER: <number>'.",
+    "expected": "765"
+  },
+  "prompt": "I am a three-digit number. My digits are all different and strictly decreasing from left to right. The sum of my digits is 18, and I am divisible by 17. What number am I? Explain your reasoning briefly, then finish with a last line of the form 'ANSWER: <number>'.",
+  "contestants": [
+    {
+      "contestant": "local:grawwww-qwen38",
+      "first_token_s": 24.625,
+      "first_answer_s": 39.75,
+      "total_s": 48.385,
+      "prompt_tokens": 75,
+      "completion_tokens": 1144,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": "stop",
+      "error": null,
+      "side": "a",
+      "dir": "a-local-grawwww-qwen38",
+      "tokens_per_s": 48.1,
+      "validation": {
+        "checks": {
+          "correct": true
+        },
+        "answer": "765",
+        "errors": [],
+        "score": 100
+      }
+    },
+    {
+      "contestant": "local:grawwww-qwen38",
+      "first_token_s": 0.346,
+      "first_answer_s": 16.918,
+      "total_s": 24.379,
+      "prompt_tokens": 75,
+      "completion_tokens": 1158,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": "stop",
+      "error": null,
+      "side": "b",
+      "dir": "b-local-grawwww-qwen38",
+      "tokens_per_s": 48.2,
+      "validation": {
+        "checks": {
+          "correct": true
+        },
+        "answer": "765",
+        "errors": [],
+        "score": 100
+      }
+    }
+  ],
+  "winner": "local:grawwww-qwen38",
+  "winner_side": "b",
+  "decided_by": "speed"
+}

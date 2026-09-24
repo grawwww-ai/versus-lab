@@ -1,0 +1,850 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Halo — Real-Time Translation Glasses</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #1d1d1f;
+      --muted: #86868b;
+      --accent: #0066cc;
+      --accent-hover: #0052a3;
+      --card-bg: #f5f5f7;
+      --border: #d2d2d7;
+      --shadow: rgba(0, 0, 0, 0.08);
+      --shadow-strong: rgba(0, 0, 0, 0.12);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not(.light) {
+        --bg: #000000;
+        --fg: #f5f5f7;
+        --muted: #86868b;
+        --accent: #2997ff;
+        --accent-hover: #60b0ff;
+        --card-bg: #1d1d1f;
+        --border: #3a3a3c;
+        --shadow: rgba(0, 0, 0, 0.3);
+        --shadow-strong: rgba(0, 0, 0, 0.5);
+      }
+    }
+
+    .light { --bg: #ffffff; --fg: #1d1d1f; --muted: #86868b; --accent: #0066cc; --accent-hover: #0052a3; --card-bg: #f5f5f7; --border: #d2d2d7; --shadow: rgba(0, 0, 0, 0.08); --shadow-strong: rgba(0, 0, 0, 0.12); }
+    .dark  { --bg: #000000; --fg: #f5f5f7; --muted: #86868b; --accent: #2997ff; --accent-hover: #60b0ff; --card-bg: #1d1d1f; --border: #3a3a3c; --shadow: rgba(0, 0, 0, 0.3); --shadow-strong: rgba(0, 0, 0, 0.5); }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.47;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    /* Layout */
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+    section { position: relative; }
+
+    /* Hero */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 80px 24px;
+      background: linear-gradient(180deg, var(--bg) 0%, var(--card-bg) 100%);
+    }
+    .hero.light { background: linear-gradient(180deg, #ffffff 0%, #f5f5f7 100%); }
+    .hero.dark { background: linear-gradient(180deg, #000000 0%, #1d1d1f 100%); }
+
+    .hero-headline {
+      font-size: clamp(48px, 8vw, 96px);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      margin-bottom: 16px;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .hero-headline.visible { opacity: 1; transform: translateY(0); }
+    .hero-subhead {
+      font-size: clamp(20px, 3vw, 28px);
+      font-weight: 400;
+      color: var(--muted);
+      max-width: 720px;
+      margin: 0 auto 48px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1) 0.1s, transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.1s;
+    }
+    .hero-subhead.visible { opacity: 1; transform: translateY(0); }
+
+    .hero-illustration {
+      width: 100%;
+      max-width: 800px;
+      height: auto;
+      opacity: 0;
+      transform: scale(0.95);
+      transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.2s, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.2s;
+      filter: drop-shadow(0 40px 60px var(--shadow-strong));
+    }
+    .hero-illustration.visible { opacity: 1; transform: scale(1); }
+
+    .scroll-indicator {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0;
+      animation: bounce 2s ease-in-out infinite;
+      transition: opacity 0.8s ease 1s;
+    }
+    .scroll-indicator.visible { opacity: 1; }
+    @keyframes bounce { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(8px); } }
+
+    /* Sticky Showcase */
+    .showcase {
+      position: relative;
+      min-height: 300vh;
+      background: var(--bg);
+    }
+    .showcase.light { background: #ffffff; }
+    .showcase.dark { background: #000000; }
+
+    .showcase-sticky {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .showcase-glasses {
+      width: 600px;
+      height: 600px;
+      transform-origin: center center;
+      will-change: transform;
+      filter: drop-shadow(0 60px 80px var(--shadow-strong));
+    }
+
+    .showcase-text {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .showcase-slide {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      max-width: 600px;
+      padding: 0 24px;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+    .showcase-slide.active { opacity: 1; }
+    .showcase-slide h2 { font-size: clamp(32px, 4vw, 56px); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; line-height: 1.1; }
+    .showcase-slide p { font-size: clamp(17px, 2vw, 21px); color: var(--muted); font-weight: 400; }
+
+    .slide-1 { top: 12vh; }
+    .slide-2 { top: 65vh; }
+    .slide-3 { top: 120vh; }
+    .slide-4 { top: 175vh; }
+    .slide-5 { top: 230vh; }
+    .slide-6 { top: 285vh; }
+
+    /* Features */
+    .features {
+      padding: 120px 24px;
+      background: var(--bg);
+    }
+    .features.light { background: #f5f5f7; }
+    .features.dark { background: #1d1d1f; }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 80px;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .section-header.visible { opacity: 1; transform: translateY(0); }
+    .section-label { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 12px; }
+    .section-title { font-size: clamp(40px, 5vw, 64px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+    .section-desc { font-size: clamp(17px, 2vw, 21px); color: var(--muted); max-width: 600px; margin: 16px auto 0; }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 32px;
+    }
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 48px 40px;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+    }
+    .feature-card.visible { opacity: 1; transform: translateY(0); }
+    .feature-card:hover { box-shadow: 0 20px 40px var(--shadow); border-color: transparent; }
+    .feature-icon { width: 48px; height: 48px; margin-bottom: 24px; color: var(--accent); }
+    .feature-title { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 12px; }
+    .feature-desc { font-size: 17px; color: var(--muted); line-height: 1.5; }
+
+    /* Stats */
+    .stats {
+      padding: 120px 24px;
+      background: var(--bg);
+    }
+    .stats.light { background: #ffffff; }
+    .stats.dark { background: #000000; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .stat-card {
+      text-align: center;
+      padding: 40px 24px;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .stat-card.visible { opacity: 1; transform: scale(1); }
+    .stat-number { font-size: clamp(56px, 8vw, 88px); font-weight: 700; letter-spacing: -0.03em; line-height: 1; color: var(--fg); }
+    .stat-label { font-size: 17px; color: var(--muted); font-weight: 400; margin-top: 12px; }
+
+    /* Comparison */
+    .compare {
+      padding: 120px 24px;
+      background: var(--card-bg);
+    }
+    .compare.light { background: #f5f5f7; }
+    .compare.dark { background: #1d1d1f; }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .compare-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 48px 40px;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .compare-card.visible { opacity: 1; transform: translateY(0); }
+    .compare-card.featured { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 20px 40px var(--shadow); }
+    .compare-badge { display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); background: rgba(0, 102, 204, 0.1); padding: 4px 10px; border-radius: 100px; margin-bottom: 16px; }
+    .compare-card.featured .compare-badge { background: var(--accent); color: white; }
+    .compare-name { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .compare-price { font-size: 17px; color: var(--muted); margin-bottom: 32px; }
+    .compare-price span { font-size: 40px; font-weight: 700; color: var(--fg); letter-spacing: -0.02em; }
+    .compare-specs { list-style: none; margin-bottom: 32px; }
+    .compare-specs li { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 15px; }
+    .compare-specs li:last-child { border-bottom: none; }
+    .compare-specs span:first-child { color: var(--muted); }
+    .compare-specs span:last-child { font-weight: 600; color: var(--fg); }
+    .compare-btn {
+      display: block;
+      width: 100%;
+      padding: 16px 32px;
+      border-radius: 100px;
+      font-size: 17px;
+      font-weight: 600;
+      text-align: center;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+    }
+    .compare-btn.primary { background: var(--accent); color: white; }
+    .compare-btn.primary:hover { background: var(--accent-hover); }
+    .compare-btn.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .compare-btn.secondary:hover { background: rgba(0, 102, 204, 0.1); }
+
+    /* Pre-order */
+    .preorder {
+      padding: 120px 24px;
+      background: var(--fg);
+      color: var(--bg);
+      text-align: center;
+    }
+    .preorder.light { background: #1d1d1f; color: #f5f5f7; }
+    .preorder.dark { background: #f5f5f7; color: #1d1d1f; }
+
+    .preorder-title { font-size: clamp(40px, 5vw, 64px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 16px; opacity: 0; transform: translateY(30px); transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+    .preorder-title.visible { opacity: 1; transform: translateY(0); }
+    .preorder-desc { font-size: clamp(17px, 2vw, 21px); color: var(--muted); max-width: 600px; margin: 0 auto 48px; opacity: 0; transform: translateY(20px); transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s; }
+    .preorder-desc.visible { opacity: 1; transform: translateY(0); }
+
+    .preorder-form { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; max-width: 520px; margin: 0 auto; opacity: 0; transform: translateY(20px); transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s; }
+    .preorder-form.visible { opacity: 1; transform: translateY(0); }
+    .preorder-input { flex: 1; min-width: 240px; padding: 16px 24px; border-radius: 100px; border: 1px solid var(--border); background: var(--card-bg); color: var(--fg); font-size: 17px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    .preorder-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.2); }
+    .preorder-input::placeholder { color: var(--muted); }
+    .preorder-btn { padding: 16px 40px; border-radius: 100px; background: var(--accent); color: white; font-size: 17px; font-weight: 600; border: none; cursor: pointer; transition: background 0.2s, transform 0.1s; white-space: nowrap; }
+    .preorder-btn:hover { background: var(--accent-hover); }
+    .preorder-btn:active { transform: scale(0.98); }
+    .preorder-note { font-size: 13px; color: var(--muted); margin-top: 16px; opacity: 0; transition: opacity 0.8s ease 0.3s; }
+    .preorder-note.visible { opacity: 1; }
+
+    /* Footer */
+    footer { padding: 48px 24px; text-align: center; color: var(--muted); font-size: 13px; background: var(--bg); border-top: 1px solid var(--border); }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .hero-headline, .hero-subhead, .hero-illustration, .scroll-indicator,
+      .section-header, .feature-card, .stat-card, .compare-card,
+      .preorder-title, .preorder-desc, .preorder-form, .preorder-note {
+        opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important;
+      }
+      .showcase-glasses { transition: none !important; }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .showcase { min-height: 200vh; }
+      .showcase-glasses { width: 320px; height: 320px; }
+      .slide-1 { top: 8vh; }
+      .slide-2 { top: 45vh; }
+      .slide-3 { top: 82vh; }
+      .slide-4 { top: 119vh; }
+      .slide-5 { top: 156vh; }
+      .slide-6 { top: 193vh; }
+      .stats-grid { grid-template-columns: 1fr; gap: 40px; }
+      .features-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 1024px) {
+      .showcase-glasses { width: 500px; height: 500px; }
+    }
+  </style>
+</head>
+<body class="light">
+  <!-- Hero -->
+  <section class="hero light" aria-labelledby="hero-title">
+    <div class="container">
+      <h1 id="hero-title" class="hero-headline">Halo</h1>
+      <p class="hero-subhead">The first smart glasses that translate any conversation in real time. See the world without language barriers.</p>
+      <svg class="hero-illustration" viewBox="0 0 800 500" aria-hidden="true" role="img">
+        <defs>
+          <linearGradient id="lensGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.15"/>
+            <stop offset="50%" stop-color="var(--accent)" stop-opacity="0.05"/>
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.15"/>
+          </linearGradient>
+          <linearGradient id="frameGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#2a2a2e"/>
+            <stop offset="50%" stop-color="#1a1a1d"/>
+            <stop offset="100%" stop-color="#0d0d0e"/>
+          </linearGradient>
+          <linearGradient id="templeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#1a1a1d"/>
+            <stop offset="50%" stop-color="#2a2a2e"/>
+            <stop offset="100%" stop-color="#1a1a1d"/>
+          </linearGradient>
+          <radialGradient id="highlightGrad" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <filter id="innerShadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feOffset dx="0" dy="2"/>
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feComposite in="SourceGraphic" in2="blur" operator="out"/>
+          </filter>
+        </defs>
+        <!-- Glasses frame - front view -->
+        <g id="glassesGroup" transform="translate(400, 250)">
+          <!-- Left lens -->
+          <ellipse cx="-145" cy="0" rx="110" ry="75" fill="url(#lensGrad)" stroke="#0066cc" stroke-width="1.5" stroke-opacity="0.3" filter="url(#glow)"/>
+          <ellipse cx="-145" cy="0" rx="104" ry="69" fill="none" stroke="url(#highlightGrad)" stroke-width="2"/>
+          <!-- Right lens -->
+          <ellipse cx="145" cy="0" rx="110" ry="75" fill="url(#lensGrad)" stroke="#0066cc" stroke-width="1.5" stroke-opacity="0.3" filter="url(#glow)"/>
+          <ellipse cx="145" cy="0" rx="104" ry="69" fill="none" stroke="url(#highlightGrad)" stroke-width="2"/>
+          <!-- Bridge -->
+          <path d="M -35 -10 Q 0 -18 35 -10" stroke="url(#frameGrad)" stroke-width="8" stroke-linecap="round" fill="none"/>
+          <path d="M -35 10 Q 0 18 35 10" stroke="url(#frameGrad)" stroke-width="8" stroke-linecap="round" fill="none"/>
+          <!-- Nose pads -->
+          <ellipse cx="-40" cy="22" rx="6" ry="4" fill="#1a1a1d"/>
+          <ellipse cx="40" cy="22" rx="6" ry="4" fill="#1a1a1d"/>
+          <!-- Frame rims -->
+          <ellipse cx="-145" cy="0" rx="112" ry="77" fill="none" stroke="url(#frameGrad)" stroke-width="6"/>
+          <ellipse cx="145" cy="0" rx="112" ry="77" fill="none" stroke="url(#frameGrad)" stroke-width="6"/>
+          <!-- Temples (arms) -->
+          <path d="M 257 -5 Q 320 -15 380 -10 Q 420 0 450 15" stroke="url(#templeGrad)" stroke-width="12" stroke-linecap="round" fill="none" filter="url(#innerShadow)"/>
+          <path d="M -257 -5 Q -320 -15 -380 -10 Q -420 0 -450 15" stroke="url(#templeGrad)" stroke-width="12" stroke-linecap="round" fill="none" filter="url(#innerShadow)"/>
+          <!-- Temple tips -->
+          <ellipse cx="450" cy="15" rx="10" ry="8" fill="#1a1a1d"/>
+          <ellipse cx="-450" cy="15" rx="10" ry="8" fill="#1a1a1d"/>
+          <!-- Hinge details -->
+          <rect x="250" y="-14" width="16" height="20" rx="3" fill="#2a2a2e"/>
+          <rect x="-266" y="-14" width="16" height="20" rx="3" fill="#2a2a2e"/>
+          <!-- Micro LED indicator on left temple -->
+          <circle cx="-380" cy="-5" r="3" fill="#00cc66" filter="url(#glow)"/>
+          <!-- Camera module on right rim -->
+          <circle cx="255" cy="-55" r="5" fill="#0d0d0e" stroke="#3a3a3c" stroke-width="1"/>
+          <!-- Subtle reflection lines on lenses -->
+          <g opacity="0.15" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round">
+            <path d="M -200 -40 Q -145 -60 -90 -40"/>
+            <path d="M -200 10 Q -145 -10 -90 10"/>
+            <path d="M 90 -40 Q 145 -60 200 -40"/>
+            <path d="M 90 10 Q 145 -10 200 10"/>
+          </g>
+        </g>
+      </svg>
+      <div class="scroll-indicator" aria-hidden="true">
+        <svg width="24" height"24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5v14M19 12l-7 7-7-7"/>
+        </svg>
+        Scroll to explore
+      </div>
+    </div>
+  </section>
+
+  <!-- Sticky Showcase -->
+  <section class="showcase light" aria-label="Product showcase">
+    <div class="showcase-sticky">
+      <svg class="showcase-glasses" viewBox="0 0 600 600" aria-hidden="true" role="img">
+        <defs>
+          <linearGradient id="lensGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.18"/>
+            <stop offset="50%" stop-color="var(--accent)" stop-opacity="0.06"/>
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity"0.18"/>
+          </linearGradient>
+          <linearGradient id="frameGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#3a3a3e"/>
+            <stop offset="50%" stop-color="#1a1a1d"/>
+            <stop offset="100%" stop-color="#0a0a0b"/>
+          </linearGradient>
+          <linearGradient id="templeGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#1a1a1d"/>
+            <stop offset="50%" stop-color="#3a3a3e"/>
+            <stop offset="100%" stop-color="#1a1a1d"/>
+          </linearGradient>
+          <radialGradient id="highlightGrad2" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.4"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="glow2">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="innerShadow2">
+            <feOffset dx="0" dy="3"/>
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feComposite in="SourceGraphic" in2="blur" operator="out"/>
+          </filter>
+        </defs>
+        <g transform="translate(300, 300)">
+          <!-- Left lens -->
+          <ellipse cx="-110" cy="0" rx="95" ry="70" fill="url(#lensGrad2)" stroke="var(--accent)" stroke-width="1.5" stroke-opacity="0.4" filter="url(#glow2)"/>
+          <ellipse cx="-110" cy="0" rx="89" ry="64" fill="none" stroke="url(#highlightGrad2)" stroke-width="2"/>
+          <!-- Right lens -->
+          <ellipse cx="110" cy="0" rx="95" ry="70" fill="url(#lensGrad2)" stroke="var(--accent)" stroke-width="1.5" stroke-opacity="0.4" filter="url(#glow2)"/>
+          <ellipse cx="110" cy="0" rx="89" ry="64" fill="none" stroke="url(#highlightGrad2)" stroke-width="2"/>
+          <!-- Bridge -->
+          <path d="M -28 -8 Q 0 -15 28 -8" stroke="url(#frameGrad2)" stroke-width="7" stroke-linecap="round" fill="none"/>
+          <path d="M -28 8 Q 0 15 28 8" stroke="url(#frameGrad2)" stroke-width="7" stroke-linecap="round" fill="none"/>
+          <!-- Nose pads -->
+          <ellipse cx="-32" cy="18" rx="5" ry="3.5" fill="#1a1a1d"/>
+          <ellipse cx="32" cy="18" rx="5" ry="3.5" fill="#1a1a1d"/>
+          <!-- Frame rims -->
+          <ellipse cx="-110" cy="0" rx="97" ry="72" fill="none" stroke="url(#frameGrad2)" stroke-width="5"/>
+          <ellipse cx="110" cy="0" rx="97" ry="72" fill="none" stroke="url(#frameGrad2)" stroke-width="5"/>
+          <!-- Temples -->
+          <path d="M 207 -3 Q 260 -10 310 -5 Q 345 2 370 20" stroke="url(#templeGrad2)" stroke-width="10" stroke-linecap="round" fill="none" filter="url(#innerShadow2)"/>
+          <path d="M -207 -3 Q -260 -10 -310 -5 Q -345 2 -370 20" stroke="url(#templeGrad2)" stroke-width="10" stroke-linecap="round" fill="none" filter="url(#innerShadow2)"/>
+          <!-- Temple tips -->
+          <ellipse cx="370" cy="20" rx="9" ry="7" fill="#1a1a1d"/>
+          <ellipse cx="-370" cy="20" rx="9" ry="7" fill="#1a1a1d"/>
+          <!-- Hinges -->
+          <rect x="200" y="-11" width="14" height="18" rx="2.5" fill="#2a2a2e"/>
+          <rect x="-214" y="-11" width="14" height="18" rx="2.5" fill="#2a2a2e"/>
+          <!-- LED indicator -->
+          <circle cx="-260" cy="-2" r="2.5" fill="#00cc66" filter="url(#glow2)"/>
+          <!-- Camera -->
+          <circle cx="205" cy="-52" r="4" fill="#0a0a0b" stroke="#3a3a3c" stroke-width="1"/>
+          <!-- Reflections -->
+          <g opacity="0.18" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round">
+            <path d="M -165 -35 Q -110 -55 -55 -35"/>
+            <path d="M -165 5 Q -110 -15 -55 5"/>
+            <path d="M 55 -35 Q 110 -55 165 -35"/>
+            <path d="M 55 5 Q 110 -15 165 5"/>
+          </g>
+          <!-- Projection visualization (appears at certain scroll positions) -->
+          <g id="projectionViz" opacity="0">
+            <!-- Projected text lines from right lens -->
+            <g transform="translate(110, 0)" fill="var(--accent)" opacity="0.9">
+              <rect x="110" y="-45" width="180" height="4" rx="2"/>
+              <rect x="110" y="-35" width="150" height="4" rx="2"/>
+              <rect x="110" y="-25" width="200" height="4" rx="2"/>
+              <rect x="110" y="-15" width="130" height="4" rx="2"/>
+            </g>
+            <!-- Translation bubble -->
+            <g transform="translate(110, -80)" fill="var(--bg)" stroke="var(--accent)" stroke-width="2">
+              <rect x="80" y="-40" width="220" height="60" rx="12" filter="url(#glow2)"/>
+              <text x="190" y="-10" text-anchor="middle" font-size="14" font-weight="600" fill="var(--accent)">Hola → Hello</text>
+            </g>
+          </g>
+        </g>
+      </svg>
+      <div class="showcase-text container">
+        <div class="showcase-slide slide-1">
+          <h2>See every word</h2>
+          <p>Real-time translation appears directly on the lenses. No phones, no delays — just conversation.</p>
+        </div>
+        <div class="showcase-slide slide-2">
+          <h2>120+ languages</h2>
+          <p>From Mandarin to Swahili. Offline support for 40 languages. The world speaks, you understand.</p>
+        </div>
+        <div class="showcase-slide slide-3">
+          <h2>All-day battery</h2>
+          <p>18 hours of continuous translation. Magnetic snap-charge adds 4 hours in 15 minutes.</p>
+        </div>
+        <div class="showcase-slide slide-4">
+          <h2>Whisper quiet</h2>
+          <p>Bone-conduction audio delivers translations only you can hear. Private by design.</p>
+        </div>
+        <div class="showcase-slide slide-5">
+          <h2>Featherlight</h2>
+          <p>At 38 grams, you'll forget you're wearing them. Titanium frame, sapphire crystal lenses.</p>
+        </div>
+        <div class="showcase-slide slide-6">
+          <h2>Ready when you are</h2>
+          <p>Tap to activate. Swipe to adjust. Voice control for hands-free moments.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features light" aria-labelledby="features-title">
+    <div class="container">
+      <header class="section-header">
+        <span class="section-label">Features</span>
+        <h2 id="features-title" class="section-title">Engineered for conversation</h2>
+        <p class="section-desc">Every detail designed to make language barriers disappear.</p>
+      </header>
+      <div class="features-grid">
+        <article class="feature-card">
+          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <h3 class="feature-title">Instant Translation</h3>
+          <p class="feature-desc">Sub-200ms latency powered by on-device neural engine. Works offline for 40 languages, online for 120+.</p>
+        </article>
+        <article class="feature-card">
+          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          <h3 class="feature-title">Private Audio</h3>
+          <p class="feature-desc">Bone-conduction transducers deliver crystal-clear audio directly to your inner ear. No one else hears a thing.</p>
+        </article>
+        <article class="feature-card">
+          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 6v6l4 2"></path>
+          </svg>
+          <h3 class="feature-title">18-Hour Battery</h3>
+          <p class="feature-desc">Custom silicon sips power. Magnetic charging case holds 3 full charges. 15-minute boost = 4 hours.</p>
+        </article>
+        <article class="feature-card">
+          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <path d="M9 12l2 2 4-4"></path>
+          </svg>
+          <h3 class="feature-title">Privacy First</h3>
+          <p class="feature-desc">All processing on-device. No conversation data leaves your glasses. Camera indicator LED always active when recording.</p>
+        </article>
+        <article class="feature-card">
+          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+            <path d="M8 21h8"></path>
+            <path d="M12 17v4"></path>
+          </svg>
+          <h3 class="feature-title">Prescription Ready</h3>
+          <p class="feature-desc">Optical insert system supports -10 to +6 diopters. Magnetic snap-in, virtually invisible. Partner opticians worldwide.</p>
+        </article>
+        <article class="feature-card">
+          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <h3 class="feature-title">Live Transcript</h3>
+          <p class="feature-desc">Optional floating transcript on lenses. Searchable history in companion app. Export to notes, email, or documents.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats light" aria-labelledby="stats-title">
+    <div class="container">
+      <header class="section-header">
+        <span class="section-label">By the numbers</span>
+        <h2 id="stats-title" class="section-title">Specs that matter</h2>
+      </header>
+      <div class="stats-grid">
+        <article class="stat-card">
+          <div class="stat-number" data-target="18" data-suffix="h">0</div>
+          <p class="stat-label">Battery life</p>
+        </article>
+        <article class="stat-card">
+          <div class="stat-number" data-target="120" data-suffix="+">0</div>
+          <p class="stat-label">Languages supported</p>
+        </article>
+        <article class="stat-card">
+          <div class="stat-number" data-target="38" data-suffix="g">0</div>
+          <p class="stat-label">Weight</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison -->
+  <section class="compare light" aria-labelledby="compare-title">
+    <div class="container">
+      <header class="section-header">
+        <span class="section-label">Models</span>
+        <h2 id="compare-title" class="section-title">Choose your Halo</h2>
+        <p class="section-desc">Two models. Same translation engine. Different capabilities.</p>
+      </header>
+      <div class="compare-grid">
+        <article class="compare-card">
+          <span class="compare-badge">Core</span>
+          <h3 class="compare-name">Halo</h3>
+          <p class="compare-price"><span>$899</span></p>
+          <ul class="compare-specs">
+            <li><span>Translation latency</span><span>&lt;200ms</span></li>
+            <li><span>Offline languages</span><span>40</span></li>
+            <li><span>Online languages</span><span>120+</span></li>
+            <li><span>Battery life</span><span>18 hours</span></li>
+            <li><span>Weight</span><span>38g</span></li>
+            <li><span>Frame material</span><span>Titanium</span></li>
+            <li><span>Lens material</span><span>Sapphire crystal</span></li>
+            <li><span>Audio</span><span>Bone conduction</span></li>
+            <li><span>Storage</span><span>32GB</span></li>
+            <li><span>Water resistance</span><span>IP54</span></li>
+          </ul>
+          <button class="compare-btn secondary">Pre-order Halo</button>
+        </article>
+        <article class="compare-card featured">
+          <span class="compare-badge">Best value</span>
+          <h3 class="compare-name">Halo Pro</h3>
+          <p class="compare-price"><span>$1,299</span></p>
+          <ul class="compare-specs">
+            <li><span>Translation latency</span><span>&lt;150ms</span></li>
+            <li><span>Offline languages</span><span>60</span></li>
+            <li><span>Online languages</span><span>120+</span></li>
+            <li><span>Battery life</span><span>24 hours</span></li>
+            <li><span>Weight</span><span>42g</span></li>
+            <li><span>Frame material</span><span>Titanium + carbon fiber</span></li>
+            <li><span>Lens material</span><span>Sapphire + AR coating</span></li>
+            <li><span>Audio</span><span>Bone conduction + spatial</span></li>
+            <li><span>Storage</span><span>128GB</span></li>
+            <li><span>Water resistance</span><span>IP67</span></li>
+            <li><span>Exclusive</span><span>AR navigation &amp; teleprompter</span></li>
+          </ul>
+          <button class="compare-btn primary">Pre-order Halo Pro</button>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pre-order -->
+  <section class="preorder light" aria-labelledby="preorder-title">
+    <div class="container">
+      <h2 id="preorder-title" class="preorder-title">Reserve your Halo</h2>
+      <p class="preorder-desc">Shipping begins March 2025. Reserve now with a fully refundable $99 deposit.</p>
+      <form class="preorder-form" action="#" method="POST">
+        <input type="email" class="preorder-input" placeholder="Email address" required autocomplete="email" aria-label="Email address for pre-order">
+        <button type="submit" class="preorder-btn">Reserve now</button>
+      </form>
+      <p class="preorder-note">We'll notify you when your order is ready. Cancel anytime for a full refund.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>Halo is a concept product. &copy; 2024. <a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">Accessibility</a></p>
+  </footer>
+
+  <script>
+    // Theme management
+    const html = document.documentElement;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (prefersDark) html.classList.add('dark');
+    else html.classList.add('light');
+
+    // IntersectionObserver for scroll animations
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px 0px -10% 0px',
+      threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+
+    // Observe all animated elements
+    document.querySelectorAll('.hero-headline, .hero-subhead, .hero-illustration, .scroll-indicator, .section-header, .feature-card, .stat-card, .compare-card, .preorder-title, .preorder-desc, .preorder-form, .preorder-note').forEach(el => {
+      observer.observe(el);
+    });
+
+    // Sticky showcase scroll-driven animation
+    const showcase = document.querySelector('.showcase');
+    const glasses = document.querySelector('.showcase-glasses');
+    const slides = document.querySelectorAll('.showcase-slide');
+    const projectionViz = document.querySelector('#projectionViz');
+
+    let ticking = false;
+    function updateShowcase() {
+      const rect = showcase.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const progress = Math.max(0, Math.min(1, -rect.top / (rect.height - vh)));
+      
+      // Rotate glasses based on scroll progress
+      const rotateY = progress * 720; // Two full rotations
+      const rotateX = Math.sin(progress * Math.PI * 4) * 15; // Nodding motion
+      const scale = 1 + Math.sin(progress * Math.PI * 2) * 0.05; // Subtle breathing
+      glasses.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg) scale(${scale})`;
+
+      // Activate slides based on progress
+      const slideThresholds = [0.05, 0.22, 0.4, 0.58, 0.75, 0.92];
+      slides.forEach((slide, i) => {
+        if (progress >= slideThresholds[i] && progress < (slideThresholds[i + 1] || 1)) {
+          slide.classList.add('active');
+        } else {
+          slide.classList.remove('active');
+        }
+      });
+
+      // Show projection visualization in middle section
+      if (progress > 0.3 && progress < 0.7) {
+        const projProgress = (progress - 0.3) / 0.4;
+        projectionViz.style.opacity = Math.min(1, projProgress * 2);
+        projectionViz.style.transform = `translateY(${(-20 + projProgress * 40)}px)`;
+      } else {
+        projectionViz.style.opacity = 0;
+      }
+
+      ticking = false;
+    }
+
+    function requestShowcaseUpdate() {
+      if (!ticking) {
+        requestAnimationFrame(updateShowcase);
+        ticking = true;
+      }
+    }
+
+    window.addEventListener('scroll', requestShowcaseUpdate, { passive: true });
+
+    // Animate numbers
+    function animateNumber(el) {
+      const target = parseInt(el.dataset.target, 10);
+      const suffix = el.dataset.suffix || '';
+      const duration = 2000;
+      const startTime = performance.now();
+      
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.floor(eased * target);
+        el.textContent = current + suffix;
+        if (progress < 1) requestAnimationFrame(update);
+      }
+      requestAnimationFrame(update);
+    }
+
+    const statsObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          animateNumber(entry.target);
+          statsObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('.stat-number').forEach(el => statsObserver.observe(el));
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    // Pre-order form handling
+    const preorderForm = document.querySelector('.preorder-form');
+    preorderForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const btn = preorderForm.querySelector('.preorder-btn');
+      const originalText = btn.textContent;
+      btn.textContent = 'Reserved!';
+      btn.style.background = '#00cc66';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        preorderForm.reset();
+      }, 2000);
+    });
+
+    // Initial showcase update
+    updateShowcase();
+  </script>
+</body>
+</html>
+```

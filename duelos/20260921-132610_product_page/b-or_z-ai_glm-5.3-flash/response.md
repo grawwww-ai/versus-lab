@@ -1,0 +1,925 @@
+Here's my take on Halo — I built the glasses as a real-time 3D-projected SVG (every rim, temple and hinge is computed and redrawn each frame), so the same engine powers the floating hero pair, the scroll-driven rotation, and the two comparison renders.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Halo — smart glasses that translate any conversation in real time.">
+<meta name="theme-color" content="#0A0A0B">
+<title>Halo — Every language. In your ear.</title>
+<style>
+/* ---------- base ---------- */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ease:cubic-bezier(.22,.61,.2,1);
+  --dark:#0A0A0B; --light:#F4F2ED; --light2:#FBFAF7;
+  --amber:#E2A44E; --ink:#1B1A17;
+}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+html,body{overflow-x:clip}
+body{
+  font-family:"SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
+  background:var(--dark);color:#F2F1EC;
+  font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased;
+}
+section,p,h1,h2,h3{overflow-wrap:break-word}
+::selection{background:rgba(226,164,78,.32)}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:4px}
+noscript ~ * [data-reveal]{opacity:1}
+
+/* theme tokens per section */
+.sec-dark { --bg:#0A0A0B; --fg:#F2F1EC; --mut:#A39F94; --hair:rgba(255,255,255,.09); --hair2:rgba(255,255,255,.2); --acc:var(--amber); }
+.sec-light{ --bg:var(--light); --fg:var(--ink); --mut:#6F6A5E; --hair:rgba(24,19,10,.13); --hair2:rgba(24,19,10,.3); --acc:#96610F; }
+
+.wrap{max-width:1140px;margin:0 auto;padding:0 clamp(20px,4.5vw,44px)}
+section{background:var(--bg);color:var(--fg);padding:clamp(96px,11vw,152px) 0}
+.kicker{font-size:11px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--acc)}
+.sec-head{max-width:760px;margin-bottom:clamp(52px,7vw,88px)}
+.sec-head h2{font-size:clamp(34px,5.2vw,62px);font-weight:700;letter-spacing:-.03em;line-height:1.06;margin:16px 0 20px}
+.lead{font-size:18px;color:var(--mut);max-width:560px}
+.dot-a{color:var(--acc)}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:13px 27px;
+  font:inherit;font-size:15px;font-weight:600;letter-spacing:-.01em;cursor:pointer;text-decoration:none;
+  border:1px solid transparent;color:inherit;
+  transition:transform .35s var(--ease),background .3s var(--ease),border-color .3s var(--ease),color .3s var(--ease)}
+.btn.solid{background:var(--amber);color:#221608}
+.btn.solid:hover{background:#EEB263;transform:translateY(-2px)}
+.btn.ghost{border-color:var(--hair2)}
+.btn.ghost:hover{border-color:var(--fg);transform:translateY(-2px)}
+.btn:active{transform:scale(.97)}
+.btn.small{padding:8px 17px;font-size:13px}
+
+/* ---------- nav ---------- */
+nav{position:fixed;inset:0 0 auto 0;z-index:60;height:64px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(16px,3vw,34px);color:#F2F1EC;
+  background:rgba(12,12,13,.72);-webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3);
+  border-bottom:1px solid rgba(255,255,255,.07);
+  transition:background .45s var(--ease),border-color .45s var(--ease),color .45s var(--ease)}
+nav.on-light{background:rgba(249,248,244,.74);border-bottom-color:rgba(24,19,10,.09);color:var(--ink)}
+nav .brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px;letter-spacing:-.01em;color:inherit;text-decoration:none}
+.nlinks{display:flex;gap:28px}
+.nlinks a{color:inherit;opacity:.72;text-decoration:none;font-size:14px;transition:opacity .25s}
+.nlinks a:hover{opacity:1}
+nav .btn{color:#221608}
+
+/* ---------- hero ---------- */
+.hero{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;
+  text-align:center;padding:112px 20px 60px;position:relative}
+.hero .eyebrow{font-size:11px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:var(--amber)}
+.hero h1{font-size:clamp(44px,7.4vw,96px);font-weight:700;letter-spacing:-.035em;line-height:1.02;margin:22px 0 24px}
+.hero h1 span{display:block}
+.hero .sub{font-size:18px;color:#A39F94;max-width:590px;margin:0 auto 34px}
+.hero .ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.hero-art{position:relative;margin-top:clamp(6px,2.5vh,26px);width:min(52vh,46vw,580px);min-width:320px}
+.hero-art svg.glasses{display:block;width:100%;height:auto;position:relative;z-index:1;overflow:visible}
+.halo-ring{position:absolute;left:50%;top:51%;transform:translate(-50%,-50%);width:158%;z-index:0;overflow:visible}
+.ring-base{stroke:rgba(255,255,255,.13);stroke-width:1;fill:none;stroke-dasharray:100;stroke-dashoffset:100;animation:ringDraw 1.8s var(--ease) .7s forwards}
+.ring-orb{stroke:var(--amber);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-dasharray:9 91;animation:orbit 13s linear infinite}
+.ring-orb.o2{stroke-dasharray:2.5 97.5;opacity:.4;animation-duration:13s;animation-delay:-6.5s}
+@keyframes orbit{to{stroke-dashoffset:-100}}
+@keyframes ringDraw{to{stroke-dashoffset:0}}
+.ticker{margin-top:clamp(10px,2vh,20px);height:34px;display:flex;align-items:center;justify-content:center}
+.twrap{display:flex;align-items:center;gap:13px;transition:opacity .38s ease,transform .38s ease}
+.twrap.out{opacity:0;transform:translateY(9px)}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:.2em;color:var(--amber)}
+.live i{width:6px;height:6px;border-radius:50%;background:var(--amber);animation:blink 1.7s ease infinite}
+@keyframes blink{50%{opacity:.2}}
+.tl{font-size:10px;font-weight:700;letter-spacing:.16em;color:#A39F94;border:1px solid rgba(255,255,255,.18);padding:3px 7px;border-radius:6px}
+.t-native{font-weight:600;font-size:15px}
+.t-en{color:#A39F94;font-size:15px}
+.t-arrow{color:var(--amber);display:flex}
+.cue{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:9px;
+  color:#7B776D;font-size:10px;font-weight:600;letter-spacing:.26em;text-transform:uppercase}
+.cue i{width:1px;height:36px;background:rgba(255,255,255,.14);position:relative;overflow:hidden}
+.cue i::after{content:"";position:absolute;left:0;width:100%;height:100%;background:var(--amber);top:-100%;animation:cue 2.3s var(--ease) infinite}
+@keyframes cue{0%{top:-100%}60%{top:100%}100%{top:100%}}
+@keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+@keyframes riseArt{from{opacity:0;transform:translateY(30px) scale(.94)}to{opacity:1;transform:none}}
+.d1{animation:rise .9s var(--ease) .1s both}.d2{animation:rise .9s var(--ease) .22s both}
+.d3{animation:rise .9s var(--ease) .34s both}.d4{animation:rise .9s var(--ease) .48s both}
+.hero-art{animation:riseArt 1.2s var(--ease) .45s both}
+
+/* ---------- design (sticky) ---------- */
+.design{height:340vh;padding:0}
+.pin{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.ghost{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);z-index:0;pointer-events:none;user-select:none;
+  font-weight:800;letter-spacing:-.05em;line-height:1;color:rgba(28,22,10,.055);white-space:nowrap;opacity:0}
+.pin-art{position:relative;width:min(76vw,580px);z-index:1}
+@media(min-width:1000px){.pin-art{transform:translateX(7vw)}}
+.pin-art svg.glasses{display:block;width:100%;height:auto;overflow:visible;will-change:transform}
+.pin-shadow{position:absolute;left:50%;bottom:-5%;width:64%;height:36px;z-index:-1;
+  background:radial-gradient(closest-side,rgba(22,17,7,.30),rgba(22,17,7,0) 74%)}
+.stage-copy{position:absolute;z-index:2;left:clamp(20px,7vw,110px);top:50%;margin-top:-140px;width:min(320px,78vw);height:280px}
+.stage{position:absolute;left:0;top:50%;width:100%;transform:translateY(-50%);opacity:0;pointer-events:none}
+.stage h3{font-size:24px;font-weight:700;letter-spacing:-.02em;margin-bottom:12px}
+.stage p{font-size:15.5px;color:var(--mut)}
+.pin-top{position:absolute;top:26px;left:0;right:0;z-index:3;display:flex;align-items:center;justify-content:center;gap:20px}
+.pin-top .kicker{color:#96610F}
+.pin-progress{width:120px;height:1px;background:rgba(24,19,10,.16);overflow:hidden}
+.pin-progress i{display:block;height:100%;background:#B0781F;transform:scaleX(0);transform-origin:left}
+.pin-count{font-size:11px;letter-spacing:.14em;color:#6F6A5E;font-variant-numeric:tabular-nums}
+@media(max-width:860px){
+  .design{height:300vh}
+  .stage-copy{left:50%;top:auto;bottom:5svh;margin:0;transform:translateX(-50%);width:min(88vw,430px);height:150px;text-align:center}
+  .ghost{top:42%}
+}
+
+/* ---------- features ---------- */
+.features{background:var(--light2)}
+.fgrid{display:grid;grid-template-columns:repeat(12,1fr);gap:1px;background:var(--hair);border:1px solid var(--hair)}
+.fcell{background:var(--light2);padding:clamp(30px,4vw,52px)}
+.c7{grid-column:span 7}.c5{grid-column:span 5}
+.fic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;color:#B0781F;background:rgba(226,164,78,.16);margin-bottom:20px}
+.fcell h3{font-size:22px;font-weight:700;letter-spacing:-.02em;margin-bottom:12px}
+.fcell>p{font-size:15.5px;color:var(--mut)}
+.demo{margin-top:28px;background:rgba(24,19,10,.04);border-radius:16px;padding:18px}
+.t-demo{height:224px;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,transparent,#000 20px,#000 calc(100% - 14px),transparent);mask-image:linear-gradient(180deg,transparent,#000 20px,#000 calc(100% - 14px),transparent)}
+.t-row{display:flex;flex-direction:column;gap:3px;margin:11px 2px;opacity:0;transform:translateY(12px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.t-row.show{opacity:1;transform:none}
+.t-row .who{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#8B867A}
+.t-row.you{align-items:flex-end;text-align:right}
+.t-row.you .who{color:#96610F}
+.t-row .txt{font-size:15px;font-weight:500}
+.t-row .tsub{font-size:14px;color:#96610F}
+.mdemo svg{display:block;width:100%;height:auto}
+.air{display:flex;flex-direction:column;gap:16px}
+.air-row{display:flex;align-items:center;gap:16px}
+.switch{width:54px;height:31px;border-radius:999px;background:#D8D3C8;border:none;cursor:pointer;position:relative;flex:none;transition:background .3s}
+.switch i{position:absolute;top:3px;left:3px;width:25px;height:25px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.28);transition:transform .32s var(--ease)}
+.switch[aria-checked="true"]{background:var(--amber)}
+.switch[aria-checked="true"] i{transform:translateX(23px)}
+.air-num{font-size:46px;font-weight:200;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.air-lab{font-size:14px;color:var(--mut)}
+.fine{font-size:13px;color:var(--mut)}
+.fnote{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:30px;color:var(--mut);font-size:15px;text-align:center}
+.fnote svg{color:#B0781F;flex:none}
+@media(max-width:820px){.c7,.c5{grid-column:span 12}}
+
+/* ---------- numbers ---------- */
+.numbers .sec-head{margin-bottom:30px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr))}
+.stat{border-top:1px solid var(--hair);padding:38px 34px 10px 0}
+.stat .n{display:flex;align-items:baseline;font-size:clamp(64px,8.5vw,128px);font-weight:200;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums}
+.stat .u{font-size:.34em;font-weight:600;color:var(--amber);margin-left:9px;letter-spacing:0}
+.stat p{margin-top:14px;font-size:14.5px;color:var(--mut);max-width:24ch}
+.footnote{margin-top:46px;font-size:12px;color:#6E6A5F}
+
+/* ---------- compare ---------- */
+.cmp{border-top:1px solid var(--hair)}
+.cmp-row{display:grid;grid-template-columns:1.05fr 1fr 1fr}
+.cmp-row>div{padding:18px 20px;border-bottom:1px solid var(--hair)}
+.cmp-row>div:nth-child(n+2){border-left:1px solid var(--hair)}
+.c-lab{font-size:14px;color:var(--mut);display:flex;align-items:center}
+.c-val{text-align:center;font-size:15px}
+.c-val.pro{background:rgba(226,164,78,.06)}
+.cmp-row:not(.cmp-head):hover>div{background:rgba(226,164,78,.07)}
+.cmp-row:not(.cmp-head):hover>div.pro{background:rgba(226,164,78,.11)}
+.cmp-head>div{padding:34px 20px 30px;vertical-align:top}
+.cmp-head .c-lab{border-bottom:none}
+.c-head-in{display:flex;flex-direction:column;align-items:center;gap:6px}
+.c-head-in svg{width:190px;height:132px;overflow:visible}
+.c-head-in h3{font-size:21px;font-weight:700;letter-spacing:-.02em}
+.csub{font-size:13px;color:var(--mut)}
+.cmp-head .btn{margin-top:14px}
+.tag{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#96610F;background:rgba(226,164,78,.18);padding:5px 11px;border-radius:999px}
+@media(max-width:720px){
+  .cmp-row{grid-template-columns:1fr 1fr}
+  .c-lab{grid-column:1/-1;border-left:none!important;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding-bottom:4px}
+  .cmp-head .c-lab{display:none}
+  .c-val{font-size:14px;padding:14px 10px}
+  .c-head-in svg{width:150px;height:105px}
+}
+
+/* ---------- pre-order ---------- */
+.preorder{text-align:center}
+.preorder .lead{margin:0 auto}
+.mini-ring{width:200px;height:auto;margin-bottom:10px;overflow:visible}
+.model-pick{display:flex;gap:12px;justify-content:center;margin:36px 0 8px;flex-wrap:wrap}
+.mpill{font:inherit;font-size:15px;font-weight:600;display:inline-flex;align-items:center;gap:10px;cursor:pointer;
+  padding:12px 24px;border-radius:999px;border:1px solid var(--hair2);background:transparent;color:var(--fg);
+  transition:background .3s,border-color .3s,color .3s,transform .3s var(--ease)}
+.mpill span{color:var(--mut);font-weight:500}
+.mpill:hover{transform:translateY(-2px);border-color:var(--fg)}
+.mpill[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:#221608}
+.mpill[aria-pressed="true"] span{color:#5A3E15}
+#resForm{display:flex;gap:10px;max-width:520px;margin:18px auto 12px}
+#resForm input{flex:1;min-width:0;font:inherit;font-size:16px;color:#F2F1EC;background:#161618;
+  border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:15px 19px;transition:border-color .3s,box-shadow .3s}
+#resForm input::placeholder{color:#6E6A5F}
+#resForm input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 4px rgba(226,164,78,.18)}
+#resForm input.err{border-color:#D9776B;animation:shake .4s var(--ease)}
+@keyframes shake{20%{transform:translateX(-7px)}45%{transform:translateX(6px)}70%{transform:translateX(-3px)}}
+.ferr{font-size:14px;color:#D9776B;margin-bottom:6px}
+.done{display:flex;flex-direction:column;align-items:center;gap:10px;margin:26px auto 8px;max-width:520px;animation:rise .8s var(--ease) both}
+.done .okc{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:rgba(226,164,78,.15);color:var(--amber)}
+.done h3{font-size:24px;letter-spacing:-.02em}
+.done p{font-size:15px;color:var(--mut)}
+.preorder .fine{margin-top:26px}
+
+/* ---------- footer ---------- */
+footer{background:var(--dark);color:#A39F94;border-top:1px solid rgba(255,255,255,.08);padding:60px 0 42px}
+.fgrid2{display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap}
+.fbrand{display:flex;align-items:center;gap:9px;color:#F2F1EC;font-weight:700;font-size:18px;margin-bottom:10px}
+.fbrand + p{font-size:14px;max-width:280px}
+.flinks{display:flex;flex-direction:column;gap:10px;font-size:14px}
+.flinks a{color:#A39F94;text-decoration:none;transition:color .25s}
+.flinks a:hover{color:#F2F1EC}
+.fbottom{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:54px;padding-top:22px;
+  border-top:1px solid rgba(255,255,255,.07);font-size:12px;color:#6E6A5F}
+
+/* ---------- toast ---------- */
+.toast{position:fixed;left:50%;bottom:26px;z-index:99;transform:translate(-50%,90px);opacity:0;
+  display:flex;align-items:center;gap:11px;background:#1D1D20;color:#F2F1EC;border:1px solid rgba(255,255,255,.13);
+  padding:13px 21px;border-radius:14px;font-size:14.5px;box-shadow:0 12px 40px rgba(0,0,0,.45);
+  transition:transform .5s var(--ease),opacity .5s var(--ease);pointer-events:none}
+.toast.show{transform:translate(-50%,0);opacity:1}
+.toast svg{color:var(--amber);flex:none}
+
+/* ---------- reveal ---------- */
+[data-reveal]{opacity:0;transform:translateY(30px) scale(.985);
+  transition:opacity 1s var(--ease),transform 1s var(--ease);transition-delay:var(--d,0s)}
+[data-reveal].in{opacity:1;transform:none}
+
+@media(max-width:760px){.nlinks{display:none}.t-en{display:none}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  [data-reveal]{opacity:1!important;transform:none!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast" role="status">
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span id="toastTxt"></span>
+</div>
+
+<nav id="nav">
+  <a class="brand" href="#top" aria-label="Halo — back to top">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="7.4" stroke="#E2A44E" stroke-width="2" pathLength="100" stroke-dasharray="80 20" transform="rotate(118 12 12)" stroke-linecap="round"/>
+      <circle cx="18.4" cy="6.4" r="1.9" fill="#E2A44E"/>
+    </svg>
+    Halo
+  </a>
+  <div class="nlinks">
+    <a href="#design">Design</a><a href="#features">Features</a><a href="#numbers">Specs</a><a href="#compare">Compare</a>
+  </div>
+  <a class="btn solid small" href="#preorder">Pre-order</a>
+</nav>
+
+<!-- ================= HERO (dark) ================= -->
+<header id="top" class="hero sec-dark" data-theme="dark">
+  <p class="eyebrow d1">Introducing Halo</p>
+  <h1><span class="d2">Every language.</span><span class="d3">In your ear<span class="dot-a">.</span></span></h1>
+  <p class="sub d3">Halo translates the conversation in front of you — as it happens — and whispers it into your ear in a voice like your own. No phone in your hand. No pauses. No more smiling and nodding.</p>
+  <div class="ctas d4">
+    <a class="btn solid" href="#preorder">Pre-order — $349</a>
+    <a class="btn ghost" href="#design">Explore the design</a>
+  </div>
+
+  <div class="hero-art" id="heroArt">
+    <svg class="halo-ring" viewBox="0 0 600 240" fill="none" aria-hidden="true">
+      <g transform="rotate(-7 300 120)">
+        <ellipse class="ring-base" cx="300" cy="120" rx="252" ry="66" pathLength="100"/>
+        <ellipse class="ring-orb"    cx="300" cy="120" rx="252" ry="66" pathLength="100"/>
+        <ellipse class="ring-orb o2" cx="300" cy="120" rx="252" ry="66" pathLength="100"/>
+      </g>
+    </svg>
+    <svg id="gHero" class="glasses" viewBox="0 0 400 300" aria-label="Halo smart glasses"></svg>
+  </div>
+
+  <div class="ticker d4" aria-hidden="true">
+    <div class="twrap" id="tWrap">
+      <span class="live"><i></i>LIVE</span>
+      <span class="tl" id="tLang">JA</span>
+      <span class="t-native" id="tNat"></span>
+      <span class="t-arrow"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span class="t-en" id="tEn"></span>
+    </div>
+  </div>
+
+  <div class="cue"><span>Scroll</span><i></i></div>
+</header>
+
+<!-- ================= DESIGN (light, sticky) ================= -->
+<section id="design" class="design sec-light" data-theme="light">
+  <div class="pin">
+    <div class="pin-top">
+      <span class="kicker">Design</span>
+      <span class="pin-progress"><i id="pinBar"></i></span>
+      <span class="pin-count" id="pinCount">01 / 03</span>
+    </div>
+    <div class="ghost" id="gh0" style="font-size:clamp(88px,16vw,264px)">TITANIUM</div>
+    <div class="ghost" id="gh1" style="font-size:clamp(84px,15vw,246px)">WHISPER</div>
+    <div class="ghost" id="gh2" style="font-size:clamp(84px,15vw,246px)">SIGNAL</div>
+
+    <div class="stage-copy">
+      <div class="stage" id="st0">
+        <h3>One billet of titanium.</h3>
+        <p>Rims, bridge and hinges, machined from a single piece of Grade-5 titanium and trimmed to 24 grams. You notice it in the first minute — and never again.</p>
+      </div>
+      <div class="stage" id="st1">
+        <h3>Sound with a direction.</h3>
+        <p>A beam-array in each temple aims audio into your ear canal and nowhere else. To the person beside you, your conversation is a whisper of nothing.</p>
+      </div>
+      <div class="stage" id="st2">
+        <h3>Six ears, always open.</h3>
+        <p>Six microphones form a beam toward whoever is speaking — and ignore the rest. From the second they start talking, the translation is already underway.</p>
+      </div>
+    </div>
+
+    <div class="pin-art">
+      <div class="pin-shadow" id="pinShadow"></div>
+      <svg id="gDesign" class="glasses" viewBox="0 0 400 300" aria-label="Halo frame, rotating"></svg>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FEATURES (light) ================= -->
+<section id="features" class="features sec-light" data-theme="light">
+  <div class="wrap">
+    <header class="sec-head" data-reveal>
+      <p class="kicker">Capabilities</p>
+      <h2>Technology that gets out of the way<span class="dot-a">.</span></h2>
+      <p class="lead">No screen to stare at. Nothing to unlock, pair or charge mid-sentence. Halo simply sits in the conversation, translating.</p>
+    </header>
+
+    <div class="fgrid">
+      <article class="fcell c7" data-reveal>
+        <div class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 8h13l-3.2-3.2M20 16H7l3.2 3.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 12h1.8M9 12h1.8M13.5 12h1.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".45"/></svg></div>
+        <h3>Fluent, both ways</h3>
+        <p>Halo listens to the person in front of you, translates in 0.28&nbsp;s, and whispers it into your ear in a voice that sounds like yours. When you answer, it speaks for you — out loud, in their language.</p>
+        <div class="demo t-demo"><div id="tRows" aria-hidden="true"></div></div>
+      </article>
+
+      <article class="fcell c5" data-reveal style="--d:.1s">
+        <div class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="6" cy="12" r="2.1" stroke="currentColor" stroke-width="1.8"/><path d="M10.5 8.5a5 5 0 0 1 0 7M13.8 6a9 9 0 0 1 0 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>Private by physics</h3>
+        <p>Sound is focused into your ear canal — no seal, no earbud, no leak. The person right next to you hears silence. Privacy here isn't a setting; it's geometry.</p>
+      </article>
+
+      <article class="fcell c5" data-reveal>
+        <div class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.2M8.8 21.2h6.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <h3>Six microphones, one voice</h3>
+        <p>A beamforming array finds the person speaking and follows them — through wind, a busy café, or a train platform at rush hour.</p>
+        <div class="demo mdemo">
+          <svg id="micSvg" viewBox="0 0 320 150" fill="none" aria-hidden="true">
+            <circle cx="126" cy="104" r="30" stroke="rgba(24,19,10,.22)" stroke-width="1.6"/>
+            <circle cx="194" cy="104" r="30" stroke="rgba(24,19,10,.22)" stroke-width="1.6"/>
+            <path d="M148 88 Q160 79 172 88" stroke="rgba(24,19,10,.22)" stroke-width="1.6" stroke-linecap="round"/>
+            <circle id="wv1" stroke="rgba(176,120,31,.5)" stroke-width="1.1"/>
+            <circle id="wv2" stroke="rgba(176,120,31,.5)" stroke-width="1.1"/>
+            <line id="beamM" stroke="#B0781F" stroke-width="1.3" stroke-dasharray="4 4" opacity=".85"/>
+            <circle class="mdot" cx="98.8"  cy="91.3" r="2.2" fill="#B7B0A2"/>
+            <circle class="mdot" cx="113.3" cy="76.8" r="2.2" fill="#B7B0A2"/>
+            <circle class="mdot" cx="131.2" cy="74.5" r="2.2" fill="#B7B0A2"/>
+            <circle class="mdot" cx="188.8" cy="74.5" r="2.2" fill="#B7B0A2"/>
+            <circle class="mdot" cx="206.7" cy="76.8" r="2.2" fill="#B7B0A2"/>
+            <circle class="mdot" cx="221.2" cy="91.3" r="2.2" fill="#B7B0A2"/>
+            <circle id="spkM" r="3.6" fill="#1B1A17"/>
+          </svg>
+        </div>
+      </article>
+
+      <article class="fcell c7" data-reveal style="--d:.1s">
+        <div class="fic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.4" stroke="currentColor" stroke-width="1.7"/><ellipse cx="12" cy="12" rx="3.6" ry="8.4" stroke="currentColor" stroke-width="1.7"/><path d="M4 12h16" stroke="currentColor" stroke-width="1.7"/></svg></div>
+        <h3>Fluent when the signal isn't</h3>
+        <p>Each temple carries its own neural engine, translating on-device. Airplane mode, basements, mountain trails — the conversation doesn't notice.</p>
+        <div class="demo air">
+          <div class="air-row">
+            <button class="switch" id="airSwitch" role="switch" aria-checked="false" aria-label="Airplane mode"><i></i></button>
+            <div>
+              <div style="display:flex;align-items:baseline;gap:10px">
+                <span class="air-num" id="airNum">43</span>
+                <span class="air-lab" id="airLab">languages · with Halo Cloud</span>
+              </div>
+            </div>
+          </div>
+          <p class="fine">Neural engine: 2 × 11 TOPS, one in each temple. Flip the switch to leave the network behind.</p>
+        </div>
+      </article>
+    </div>
+
+    <p class="fnote" data-reveal>
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M9.4 17.2V6.2l10-2v11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.9" cy="17.2" r="2.5" stroke="currentColor" stroke-width="1.7"/><circle cx="16.9" cy="15.2" r="2.5" stroke="currentColor" stroke-width="1.7"/></svg>
+      And when nobody's talking, Halo is simply a lovely pair of headphones — music, calls and podcasts for 40 hours with the case.
+    </p>
+  </div>
+</section>
+
+<!-- ================= NUMBERS (dark) ================= -->
+<section id="numbers" class="numbers sec-dark" data-theme="dark">
+  <div class="wrap">
+    <header class="sec-head" data-reveal>
+      <p class="kicker">By the numbers</p>
+      <h2>Obsession, quantified<span class="dot-a">.</span></h2>
+      <p class="lead">Measured on production hardware. No rounding up.</p>
+    </header>
+
+    <div class="stats">
+      <div class="stat" data-reveal>
+        <div class="n"><span class="cnt" data-n="43" data-dec="0">0</span></div>
+        <p>languages, translated the instant they're spoken</p>
+      </div>
+      <div class="stat" data-reveal style="--d:.08s">
+        <div class="n"><span class="cnt" data-n="24" data-dec="0">0</span><span class="u">g</span></div>
+        <p>on your face — a mechanical watch weighs more</p>
+      </div>
+      <div class="stat" data-reveal style="--d:.16s">
+        <div class="n"><span class="cnt" data-n="36" data-dec="0">0</span><span class="u">h</span></div>
+        <p>of translation per charge, charging case included</p>
+      </div>
+      <div class="stat" data-reveal style="--d:.24s">
+        <div class="n"><span class="cnt" data-n="0.28" data-dec="2">0.00</span><span class="u">s</span></div>
+        <p>from their lips to your ear — about one blink</p>
+      </div>
+    </div>
+    <p class="footnote" data-reveal>Battery measured with mixed translation and playback, firmware 1.0, September 2025.</p>
+  </div>
+</section>
+
+<!-- ================= COMPARE (light) ================= -->
+<section id="compare" class="sec-light" data-theme="light">
+  <div class="wrap">
+    <header class="sec-head" data-reveal>
+      <p class="kicker">Two models</p>
+      <h2>Halo<span class="dot-a">.</span> Or Halo Pro<span class="dot-a">.</span></h2>
+      <p class="lead">The same fit, the same fluent ears. Pro adds titanium, two more microphones and a bigger offline brain.</p>
+    </header>
+
+    <div class="cmp" data-reveal>
+      <div class="cmp-row cmp-head">
+        <div class="c-lab"></div>
+        <div class="c-val">
+          <div class="c-head-in">
+            <svg id="gC1" viewBox="0 0 400 300" aria-label="Halo"></svg>
+            <h3>Halo</h3><p class="csub">The essential pair.</p>
+            <button class="btn ghost small jump" data-model="halo">Pre-order · $349</button>
+          </div>
+        </div>
+        <div class="c-val pro">
+          <div class="c-head-in">
+            <span class="tag">Most popular</span>
+            <svg id="gC2" viewBox="0 0 400 300" aria-label="Halo Pro"></svg>
+            <h3>Halo Pro</h3><p class="csub">Everything, everywhere.</p>
+            <button class="btn solid small jump" data-model="pro">Pre-order · $499</button>
+          </div>
+        </div>
+      </div>
+      <div class="cmp-row"><div class="c-lab">Price · pre-order</div><div class="c-val">$349</div><div class="c-val pro">$499</div></div>
+      <div class="cmp-row"><div class="c-lab">Frame</div><div class="c-val">Anodized aluminum</div><div class="c-val pro">Grade-5 titanium</div></div>
+      <div class="cmp-row"><div class="c-lab">Weight</div><div class="c-val">24 g</div><div class="c-val pro">26 g</div></div>
+      <div class="cmp-row"><div class="c-lab">Battery, with case</div><div class="c-val">30 h</div><div class="c-val pro">36 h</div></div>
+      <div class="cmp-row"><div class="c-lab">Microphones</div><div class="c-val">4</div><div class="c-val pro">6</div></div>
+      <div class="cmp-row"><div class="c-lab">Languages on device</div><div class="c-val">12</div><div class="c-val pro">26</div></div>
+      <div class="cmp-row"><div class="c-lab">Languages, total</div><div class="c-val">43</div><div class="c-val pro">43</div></div>
+      <div class="cmp-row"><div class="c-lab">Finishes</div><div class="c-val">Graphite · Bone</div><div class="c-val pro">Graphite · Bone · Raw Ti</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PRE-ORDER (dark) ================= -->
+<section id="preorder" class="preorder sec-dark" data-theme="dark">
+  <div class="wrap">
+    <svg class="mini-ring" viewBox="0 0 600 240" fill="none" aria-hidden="true">
+      <g transform="rotate(-7 300 120)">
+        <ellipse class="ring-base" cx="300" cy="120" rx="252" ry="66" pathLength="100" style="animation-delay:.2s"/>
+        <ellipse class="ring-orb" cx="300" cy="120" rx="252" ry="66" pathLength="100"/>
+      </g>
+    </svg>
+    <h2 data-reveal style="font-size:clamp(38px,5.6vw,68px);font-weight:700;letter-spacing:-.03em;line-height:1.05">Be first in line<span class="dot-a">.</span></h2>
+    <p class="lead" data-reveal style="margin-top:18px">Halo ships this spring. Reserve with an email alone — we only charge you when your pair is already on its way.</p>
+
+    <div class="model-pick" data-reveal>
+      <button class="mpill" data-model="halo" aria-pressed="true">Halo <span>$349</span></button>
+      <button class="mpill" data-model="pro" aria-pressed="false">Halo Pro <span>$499</span></button>
+    </div>
+
+    <form id="resForm" data-reveal novalidate>
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email" aria-label="Email address">
+      <button class="btn solid" type="submit">Reserve yours</button>
+    </form>
+    <p class="ferr" id="ferr" role="alert" hidden>That email doesn't look right — one more try?</p>
+
+    <div class="done" id="done" hidden>
+      <div class="okc"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h3>You're in line.</h3>
+      <p id="doneTxt"></p>
+    </div>
+
+    <p class="fine" data-reveal>No charge today. One email before anything ships, one click to cancel.</p>
+  </div>
+</section>
+
+<footer data-theme="dark">
+  <div class="wrap">
+    <div class="fgrid2">
+      <div>
+        <div class="fbrand">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="7.4" stroke="#E2A44E" stroke-width="2" pathLength="100" stroke-dasharray="80 20" transform="rotate(118 12 12)" stroke-linecap="round"/>
+            <circle cx="18.4" cy="6.4" r="1.9" fill="#E2A44E"/>
+          </svg>
+          Halo
+        </div>
+        <p>Every language, in your ear. Smart glasses that translate conversation as it happens.</p>
+      </div>
+      <div class="flinks">
+        <a href="#top">Overview</a><a href="#design">Design</a><a href="#features">Features</a>
+        <a href="#numbers">Specs</a><a href="#compare">Compare</a>
+      </div>
+    </div>
+    <div class="fbottom">
+      <span>© 2025 Halo Audio ApS · Designed in Copenhagen, worn everywhere</span>
+      <span>A concept page — every pixel drawn in code, no images.</span>
+    </div>
+  </div>
+</footer>
+
+<noscript><style>[data-reveal]{opacity:1;transform:none}</style></noscript>
+
+<script>
+(() => {
+"use strict";
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const lerp  = (a,b,t) => a + (b-a)*t;
+const easeIO = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
+const easeO  = t => 1 - Math.pow(1-t,3);
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const TAU = Math.PI * 2;
+
+/* ---------- color helpers ---------- */
+const hx = h => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+const mixc = (a,b,t) => {
+  const A = hx(a), B = hx(b);
+  return `rgb(${Math.round(lerp(A[0],B[0],t))},${Math.round(lerp(A[1],B[1],t))},${Math.round(lerp(A[2],B[2],t))})`;
+};
+
+/* ---------- glasses renderer (procedural pseudo-3D SVG) ---------- */
+const PAL = {
+  dark: { rim:'#C9CBD1', temple:'#8D9097', lens:'rgba(168,182,192,0.16)', glint:'rgba(255,255,255,.6)',  accent:'#E7B45C', pad:'#B9BBC1', camRing:'#E7B45C' },
+  light:{ rim:'#7E8087', temple:'#6A6C72', lens:'rgba(38,36,30,0.10)',    glint:'rgba(255,255,255,.9)',  accent:'#B0781F', pad:'#8E9096', camRing:'#B0781F' },
+  pro:  { rim:'#585A61', temple:'#4A4C53', lens:'rgba(30,30,36,0.14)',    glint:'rgba(255,255,255,.55)', accent:'#B0781F', pad:'#6E7076', camRing:'#B0781F' }
+};
+
+function drawGlasses(svg, o){
+  const th = o.th, ph = o.phi || 0, cy = o.cy, pal = o.pal, D = 950;
+  const c = Math.cos(th), s = Math.sin(th), cp = Math.cos(ph), sp = Math.sin(ph);
+  const pr = p => {
+    const x = p[0]*c - p[2]*s;
+    let z = p[0]*s + p[2]*c;
+    const y = p[1]*cp - z*sp;
+    z = p[1]*sp + z*cp;
+    const f = D / (D - z);
+    return [200 + x*f, cy + y*f, z];
+  };
+  const F = n => n.toFixed(1);
+  const circ = (cx0, cy0, r, a0, a1, n) => {
+    let d = '';
+    for (let i = 0; i <= n; i++){
+      const a = a0 + (a1 - a0) * i / n;
+      const q = pr([cx0 + r*Math.cos(a), cy0 + r*Math.sin(a), 0]);
+      d += (i ? 'L' : 'M') + F(q[0]) + ' ' + F(q[1]);
+    }
+    return d;
+  };
+  const shapes = [];
+  const add = (z, str) => shapes.push({z, str});
+
+  /* shading */
+  const fR = 0.5 + 0.5*Math.abs(c);
+  const rimOut = mixc(mixc(pal.rim,'#0B0B0D',.55), pal.rim, fR);
+  const rimIn  = mixc(mixc(pal.rim,'#0B0B0D',.30), mixc(pal.rim,'#FFFFFF',.38), fR);
+  const browC  = mixc(mixc(pal.rim,'#0A0A0C',.62), mixc(pal.rim,'#0B0B0D',.25), fR);
+  const browL  = mixc(mixc(pal.rim,'#0A0A0C',.35), mixc(pal.rim,'#FFFFFF',.30), fR);
+  const camOp  = clamp(1.35 - Math.abs(th)/1.15, 0, 1).toFixed(2);
+  const gOp    = (0.15 + 0.5*Math.max(0,c)).toFixed(2);
+  const padOp  = clamp(Math.abs(c)*1.6, 0, 1).toFixed(2);
+
+  /* core: lenses, rims, brow bars, bridge, pads, camera dots */
+  let core = '';
+  [-40, 40].forEach(lcx => {
+    core += `<path d="${circ(lcx,2,31.5,0,TAU,40)}Z" fill="${pal.lens}"/>`;
+    core += `<path d="${circ(lcx,2,26,3.55,5.35,12)}" fill="none" stroke="${pal.glint}" stroke-width="1.6" stroke-linecap="round" opacity="${gOp}"/>`;
+    const rimD = circ(lcx,2,33,0,TAU,44) + 'Z';
+    core += `<path d="${rimD}" fill="none" stroke="${rimOut}" stroke-width="4.8" stroke-linejoin="round"/>`;
+    core += `<path d="${rimD}" fill="none" stroke="${rimIn}" stroke-width="2.1" stroke-linejoin="round"/>`;
+    core += `<path d="${circ(lcx,2,31.5,Math.PI+0.12,TAU-0.12,18)}" fill="none" stroke="${browC}" stroke-width="7" stroke-linecap="round"/>`;
+    core += `<path d="${circ(lcx,2,31.5,Math.PI+0.2,TAU-0.2,18)}" fill="none" stroke="${browL}" stroke-width="2.1" stroke-linecap="round" opacity=".8"/>`;
+    const aA = lcx < 0 ? 4.045 : 5.38;
+    const cq = pr([lcx + 33*Math.cos(aA), 2 + 33*Math.sin(aA), 0]);
+    core += `<circle cx="${F(cq[0])}" cy="${F(cq[1])}" r="2.3" fill="#131316" stroke="${pal.camRing}" stroke-width=".8" opacity="${camOp}"/>`;
+  });
+  const b0=pr([-12.5,-16.5,0]), b1=pr([-5,-27.5,-1.2]), b2=pr([5,-27.5,-1.2]), b3=pr([12.5,-16.5,0]);
+  const bd = `M${F(b0[0])} ${F(b0[1])}C${F(b1[0])} ${F(b1[1])} ${F(b2[0])} ${F(b2[1])} ${F(b3[0])} ${F(b3[1])}`;
+  core += `<path d="${bd}" fill="none" stroke="${browC}" stroke-width="5.4" stroke-linecap="round"/>`;
+  core += `<path d="${bd}" fill="none" stroke="${browL}" stroke-width="1.8" stroke-linecap="round" opacity=".85"/>`;
+  [[-10.5,1],[10.5,-1]].forEach(([px,sg]) => {
+    const q = pr([px,11,-5]);
+    core += `<ellipse cx="${F(q[0])}" cy="${F(q[1])}" rx="3.3" ry="5.4" fill="${pal.pad}" opacity="${padOp}" transform="rotate(${18*sg} ${F(q[0])} ${F(q[1])})"/>`;
+  });
+  if (o.proRing) [-40,40].forEach(lcx => {
+    core += `<path d="${circ(lcx,2,41,0,TAU,40)}Z" fill="none" stroke="${pal.accent}" stroke-width="1.4" opacity=".75"/>`;
+  });
+  add(0, `<g>${core}</g>`);
+
+  /* temples, painter-sorted by depth */
+  const rib = (P, ws) => {
+    let L = '', R = '';
+    P.forEach((p,i) => {
+      const a = P[Math.max(0,i-1)], b = P[Math.min(P.length-1,i+1)];
+      const dx = b[0]-a[0], dy = b[1]-a[1], l = Math.hypot(dx,dy) || 1;
+      const nx = -dy/l, ny = dx/l, hw = ws[i]/2;
+      L += (i?'L':'M') + F(p[0]+nx*hw) + ' ' + F(p[1]+ny*hw);
+      R  = 'L' + F(p[0]-nx*hw) + ' ' + F(p[1]-ny*hw) + R;
+    });
+    return L + R + 'Z';
+  };
+  const mkTemple = mirror => {
+    const raw = mirror
+      ? [[-73,-7.4,1],[-71,-5.4,-40],[-68,0.6,-88],[-65,11.6,-116],[-63,31.6,-126],[-60,48.6,-119]]
+      : [[ 73,-9,3 ],[ 71,-7,-38],[ 68,-1,-86],[ 65,10,-114],[ 63,30,-124],[ 60,47,-117]];
+    const pts = raw.map(pr), W = [7.4,6.6,5.8,5.2,4.6,3.8];
+    const z = pts.reduce((a,p)=>a+p[2],0) / pts.length;
+    const fT = Math.min(1, 0.42 + 0.48*Math.max(0, (mirror?-1:1)*s) + 0.18*Math.max(0,c));
+    const tcol = mixc(mixc(pal.temple,'#0A0A0C',.5), mixc(pal.temple,'#FFFFFF',.22), fT);
+    let g = `<circle cx="${F(pts[0][0])}" cy="${F(pts[0][1])}" r="4.6" fill="${rimOut}"/>`;
+    g += `<path d="${rib(pts,W)}" fill="${tcol}"/>`;
+    g += `<path d="${rib(pts.slice(1,4), W.slice(1,4).map(w=>w+2.2))}" fill="${pal.accent}" opacity="${(0.22+0.78*(o.speech||0)).toFixed(2)}"/>`;
+    let cl = ''; pts.forEach((p,i)=> cl += (i?'L':'M') + F(p[0]) + ' ' + F(p[1]));
+    g += `<path d="${cl}" fill="none" stroke="rgba(10,10,12,.28)" stroke-width="1"/>`;
+    add(z, `<g>${g}</g>`);
+  };
+  mkTemple(true); mkTemple(false);
+
+  shapes.sort((a,b) => a.z - b.z);
+  svg.innerHTML = shapes.map(x => x.str).join('');
+}
+
+/* ---------- instances ---------- */
+const gHero = $('#gHero'), gDesign = $('#gDesign'), heroArt = $('#heroArt');
+const speechBase = 0.16;
+let speechP = 0;
+
+function drawHero(t){
+  const T = t * 0.001;
+  const th  = 0.26 + (RM ? 0 : Math.sin(T*0.5)*0.045);
+  const phi = -0.10 + (RM ? 0 : Math.sin(T*0.33)*0.02);
+  drawGlasses(gHero, { th, phi, cy:146, pal:PAL.dark, speech: Math.min(1, speechBase + speechP) });
+  if (!RM) gHero.style.transform = `translateY(${(Math.sin(T*0.9)*7).toFixed(1)}px)`;
+}
+drawHero(0);
+
+/* static comparison renders */
+drawGlasses($('#gC1'), { th:0.21, phi:-0.07, cy:150, pal:PAL.light });
+drawGlasses($('#gC2'), { th:0.21, phi:-0.07, cy:150, pal:PAL.pro, proRing:true });
+
+/* ---------- hero live-translation ticker ---------- */
+const PHRASES = [
+  {l:'JA', n:'「すみません、もう一度お願いします。」', e:'Sorry — once more, please.'},
+  {l:'FR', n:'« Vous avez tout ce qu’il nous faut ? »', e:'Do you have everything we need?'},
+  {l:'ES', n:'¿Cuánto queda hasta la cumbre?', e:'How much farther to the summit?'},
+  {l:'DE', n:'Ich hätte fast vergessen zu fragen…', e:'I almost forgot to ask…'},
+  {l:'IT', n:'Ci vediamo allo stesso posto domani.', e:'Same place tomorrow?'},
+  {l:'AR', n:'لا مشكلة، خذ وقتك.', e:'No problem — take your time.'},
+  {l:'KO', n:'여기가 처음이에요?', e:'Is this your first time here?'},
+  {l:'PT', n:'A conta, por favor. Vamos dividir?', e:'The check, please — shall we split it?'}
+];
+const tWrap = $('#tWrap'), tLang = $('#tLang'), tNat = $('#tNat'), tEn = $('#tEn');
+let pi = 0;
+const setPhrase = () => {
+  const p = PHRASES[pi % PHRASES.length];
+  tLang.textContent = p.l; tNat.textContent = p.n; tEn.textContent = p.e;
+  speechP = 1;
+};
+setPhrase();
+(function tickT(){
+  setTimeout(() => {
+    if (RM){ pi++; setPhrase(); tickT(); return; }
+    tWrap.classList.add('out');
+    setTimeout(() => { pi++; setPhrase(); tWrap.classList.remove('out'); }, 380);
+    tickT();
+  }, 3600);
+})();
+
+/* ---------- visibility gates ---------- */
+let heroVis = true, micVis = false, transVis = false;
+new IntersectionObserver(e => { heroVis = e[0].isIntersecting; }, {rootMargin:'120px'}).observe(heroArt);
+new IntersectionObserver(e => { micVis = e[0].isIntersecting; }, {rootMargin:'80px'}).observe($('#micSvg'));
+new IntersectionObserver(e => { transVis = e[0].isIntersecting; }, {rootMargin:'80px'}).observe($('#tRows'));
+
+/* ---------- scroll reveals ---------- */
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+}), {threshold:.16, rootMargin:'0px 0px -7% 0px'});
+$$('[data-reveal]').forEach(el => io.observe(el));
+
+/* ---------- counters ---------- */
+const cio = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  cio.unobserve(e.target);
+  const el = e.target, target = parseFloat(el.dataset.n), dec = +el.dataset.dec;
+  if (RM){ el.textContent = target.toFixed(dec); return; }
+  const t0 = performance.now(), dur = 1700;
+  (function f(now){
+    const k = easeO(Math.min(1, (now - t0)/dur));
+    el.textContent = (target*k).toFixed(dec);
+    if (k < 1) requestAnimationFrame(f); else el.textContent = target.toFixed(dec);
+  })(t0);
+}), {threshold:.5});
+$$('.cnt').forEach(el => cio.observe(el));
+
+/* ---------- sticky design section ---------- */
+const desWrap = $('#design'), pinBar = $('#pinBar'), pinCount = $('#pinCount'), pinShadow = $('#pinShadow');
+const stages = [$('#st0'), $('#st1'), $('#st2')], ghosts = [$('#gh0'), $('#gh1'), $('#gh2')];
+const CEN = [0.18, 0.5, 0.82];
+const stageOps = [0,0,0];
+
+function updateDesign(){
+  const r = desWrap.getBoundingClientRect();
+  const vh = innerHeight;
+  if (r.bottom < -60 || r.top > vh + 60) return;
+  const total = r.height - vh;
+  const p = clamp(-r.top / total, 0, 1);
+  const pe = easeIO(p);
+
+  const th  = lerp(-0.42, 1.71, pe);
+  const phi = lerp(-0.09, 0.06, pe);
+  const scl = 1 + 0.13 * Math.sin(Math.PI * p);
+  const ty  = (0.5 - p) * 26;
+  gDesign.style.transform = RM ? '' : `translateY(${ty.toFixed(1)}px) scale(${scl.toFixed(3)})`;
+  drawGlasses(gDesign, { th, phi, cy:128, pal:PAL.light, speech: 0.25 + 0.75*stageOps[1] });
+
+  let active = 0;
+  CEN.forEach((cn,i) => {
+    let o = clamp(1 - Math.abs(p - cn)/0.31, 0, 1);
+    o = o*o*(3-2*o);
+    stageOps[i] = o;
+    if (o > stageOps[active]) active = i;
+    stages[i].style.opacity   = o.toFixed(3);
+    stages[i].style.transform = `translateY(calc(-50% + ${((1-o)*16).toFixed(1)}px))`;
+    ghosts[i].style.opacity   = o.toFixed(3);
+  });
+  pinBar.style.transform = `scaleX(${p.toFixed(4)})`;
+  pinCount.textContent = '0' + (active+1) + ' / 03';
+
+  const sw = 0.6 + 0.5*Math.abs(Math.sin(th));
+  const tx = Math.sin(th) * 36;
+  pinShadow.style.width = (sw*100).toFixed(1) + '%';
+  pinShadow.style.transform = `translateX(calc(-50% + ${tx.toFixed(0)}px))`;
+}
+updateDesign();
+
+/* ---------- nav theme swap ---------- */
+const nav = $('#nav');
+const themed = $$('[data-theme]');
+let lastY = -1;
+function navTheme(){
+  let cur = 'dark';
+  for (const s of themed) if (s.getBoundingClientRect().top <= 70) cur = s.dataset.theme;
+  nav.classList.toggle('on-light', cur === 'light');
+}
+
+/* ---------- mic demo ---------- */
+const MICS = [[98.8,91.3],[113.3,76.8],[131.2,74.5],[188.8,74.5],[206.7,76.8],[221.2,91.3]];
+const mdots = $$('#micSvg .mdot'), beam = $('#beamM'), spk = $('#spkM'), wv1 = $('#wv1'), wv2 = $('#wv2');
+function micFrame(t){
+  const T = t * 0.001;
+  const u = (T * 0.32) % 2, k = u < 1 ? u : 2 - u;
+  const sx = 34 + k*252, sy = 44 + 12*Math.sin(T*2);
+  let bi = 0, bd = 1e9;
+  MICS.forEach((m,i) => { const d = (m[0]-sx)**2 + (m[1]-sy)**2; if (d < bd){ bd = d; bi = i; } });
+  beam.setAttribute('x1', MICS[bi][0]); beam.setAttribute('y1', MICS[bi][1]);
+  beam.setAttribute('x2', sx.toFixed(1)); beam.setAttribute('y2', sy.toFixed(1));
+  spk.setAttribute('cx', sx.toFixed(1)); spk.setAttribute('cy', sy.toFixed(1));
+  mdots.forEach((c,i) => {
+    const near = (MICS[i][0]-sx)**2 + (MICS[i][1]-sy)**2 < 9500;
+    c.setAttribute('r', i === bi ? 4.6 : near ? 3.2 : 2.2);
+    c.setAttribute('fill', i === bi ? '#B0781F' : near ? '#8F897B' : '#C6C0B4');
+  });
+  const r1 = (T*52) % 66, r2 = (r1 + 33) % 66;
+  wv1.setAttribute('cx', sx.toFixed(1)); wv1.setAttribute('cy', sy.toFixed(1)); wv1.setAttribute('r', r1.toFixed(1));
+  wv1.setAttribute('opacity', ((1 - r1/66) * 0.35).toFixed(2));
+  wv2.setAttribute('cx', sx.toFixed(1)); wv2.setAttribute('cy', sy.toFixed(1)); wv2.setAttribute('r', r2.toFixed(1));
+  wv2.setAttribute('opacity', ((1 - r2/66) * 0.35).toFixed(2));
+}
+if (RM) micFrame(1200);
+
+/* ---------- transcript demo ---------- */
+const SCRIPT = [
+  {who:'them', lang:'日本語', text:'「すみません、この席、空いていますか？」', sub:'Excuse me — is this seat taken?'},
+  {who:'you',  lang:'English', text:'Please, sit! Are you here for the expo?'},
+  {who:'them', lang:'日本語', text:'「はい、初めて来ました。」', sub:'Yes — it’s my first time here.'},
+  {who:'you',  lang:'English', text:'Then you can’t miss the keynote hall. I’ll walk you over.'}
+];
+const tRows = $('#tRows');
+let ti = 0;
+(function nextLine(){
+  setTimeout(() => {
+    if (!transVis){ nextLine(); return; }
+    if (ti % SCRIPT.length === 0) tRows.innerHTML = '';
+    const sc = SCRIPT[ti % SCRIPT.length]; ti++;
+    const row = document.createElement('div');
+    row.className = 't-row ' + sc.who;
+    row.innerHTML = `<span class="who">${sc.who === 'them' ? 'They' : 'You'} · ${sc.lang}</span><span class="txt">${sc.text}</span>` + (sc.sub ? `<span class="tsub">${sc.sub}</span>` : '');
+    tRows.appendChild(row);
+    requestAnimationFrame(() => row.classList.add('show'));
+    while (tRows.children.length > 4) tRows.removeChild(tRows.firstChild);
+    nextLine();
+  }, ti % SCRIPT.length === 0 ? 600 : 2400);
+})();
+
+/* ---------- airplane toggle ---------- */
+const airSwitch = $('#airSwitch'), airNum = $('#airNum'), airLab = $('#airLab');
+function tweenNum(el, to){
+  const from = parseInt(el.textContent, 10) || 0;
+  if (RM){ el.textContent = to; return; }
+  const t0 = performance.now();
+  (function f(n){
+    const k = Math.min(1, (n - t0)/620);
+    el.textContent = Math.round(from + (to - from)*easeO(k));
+    if (k < 1) requestAnimationFrame(f);
+  })(t0);
+}
+airSwitch.addEventListener('click', () => {
+  const on = airSwitch.getAttribute('aria-checked') !== 'true';
+  airSwitch.setAttribute('aria-checked', String(on));
+  if (on){ tweenNum(airNum, 26); airLab.textContent = 'languages · on device'; }
+  else   { tweenNum(airNum, 43); airLab.textContent = 'languages · with Halo Cloud'; }
+});
+
+/* ---------- model selection + toast ---------- */
+let model = 'halo';
+const toastEl = $('#toast'), toastTxt = $('#toastTxt');
+let toastT;
+function toast(msg){
+  toastTxt.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => toastEl.classList.remove('show'), 3200);
+}
+function setModel(m){
+  model = m;
+  $$('.mpill').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.model === m)));
+}
+$$('[data-model]').forEach(btn => btn.addEventListener('click', () => {
+  setModel(btn.dataset.model);
+  if (btn.classList.contains('jump')){
+    toast((model === 'pro' ? 'Halo Pro' : 'Halo') + ' selected — reserving your pair');
+    $('#preorder').scrollIntoView({behavior: RM ? 'auto' : 'smooth'});
+  }
+}));
+
+/* ---------- reservation form ---------- */
+const form = $('#resForm'), email = $('#email'), ferr = $('#ferr'), done = $('#done'), doneTxt = $('#doneTxt');
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  const v = email.value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)){
+    ferr.hidden = false;
+    email.classList.add('err');
+    setTimeout(() => email.classList.remove('err'), 450);
+    email.focus();
+    return;
+  }
+  ferr.hidden = true;
+  form.hidden = true;
+  doneTxt.textContent = `Reservation saved for ${model === 'pro' ? 'Halo Pro ($499)' : 'Halo ($349)'} — we'll write to ${v} the moment pre-orders open.`;
+  done.hidden = false;
+  toast('Reservation saved');
+});
+
+/* ---------- master loop ---------- */
+let pt = 0;
+function loop(ts){
+  const dt = Math.min(0.05, (ts - (pt || ts)) / 1000); pt = ts;
+  speechP = Math.max(0, speechP - dt * 0.85);
+  if (heroVis && !RM) drawHero(ts);
+  updateDesign();
+  if (micVis && !RM) micFrame(ts);
+  if (window.scrollY !== lastY){ lastY = window.scrollY; navTheme(); }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+addEventListener('resize', () => { lastY = -1; updateDesign(); });
+navTheme();
+})();
+</script>
+</body>
+</html>
+```
+
+**How it's built, briefly:**
+
+- **One procedural glasses engine.** `drawGlasses()` projects sampled 3D points (lens rims, brow bars, bridge, nose pads, temples with ear hooks) through a rotate-Y → rotate-X → perspective pipeline, sorts the pieces by depth (painter's algorithm) and rebuilds the SVG string each frame. Shading is angle-aware, so the metal darkens as the frame turns away. The hero pair (idle sway + amber strip pulsing in sync with the live-translation ticker), the scroll section and both comparison thumbnails all share it.
+- **Sticky rotation.** A 340vh section pins a 100vh stage; scroll progress drives rotation from −24° to 98° with eased pitch, scale, a lengthening floor shadow, three cross-fading stage captions and giant ghost words behind the frame.
+- **Scroll life everywhere else.** IntersectionObserver reveals (fade/rise/scale with stagger delays), count-up spec numerals (including the 0.28 s decimal), a two-way live transcript demo, a beamforming mic demo with a moving speaker and wavefronts, and an airplane-mode toggle that flips 43 ↔ 26 languages — every control does something real.
+- **Rhythm and restraint.** Dark → light → dark bookends, hairline-divided editorial grids instead of card tiles, one warm amber accent, system-font typography with tight display tracking, and full `prefers-reduced-motion` support. Zero external requests — no fonts, images, or libraries.

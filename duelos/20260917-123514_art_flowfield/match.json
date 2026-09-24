@@ -1,0 +1,100 @@
+{
+  "id": "20260917-123514_art_flowfield",
+  "challenge": {
+    "id": "art_flowfield",
+    "category": "art",
+    "title_es": "Arte generativo",
+    "title_en": "Generative Art",
+    "prompt": "Create a mesmerizing generative art piece on a full-window HTML5 canvas: thousands of particles following an evolving flow field built from layered noise (implement the noise yourself), leaving soft glowing trails that build up into an intricate, colorful composition. Use a curated palette that slowly shifts over time, additive blending for glow, and occasional gentle \"reset waves\" so the image keeps evolving instead of saturating. Use the requestAnimationFrame timestamp for time. The canvas must always fill the window and handle resizing. Starts automatically, no interaction needed."
+  },
+  "prompt": "Create a mesmerizing generative art piece on a full-window HTML5 canvas: thousands of particles following an evolving flow field built from layered noise (implement the noise yourself), leaving soft glowing trails that build up into an intricate, colorful composition. Use a curated palette that slowly shifts over time, additive blending for glow, and occasional gentle \"reset waves\" so the image keeps evolving instead of saturating. Use the requestAnimationFrame timestamp for time. The canvas must always fill the window and handle resizing. Starts automatically, no interaction needed.\n\nRequirements: deliver everything in ONE self-contained HTML file (inline CSS and JavaScript; no external resources, CDNs, fonts or images). Reply with the complete file in a single ```html code block.",
+  "contestants": [
+    {
+      "contestant": "local:grawwww-qwen38",
+      "first_token_s": 86.877,
+      "first_answer_s": 93.609,
+      "total_s": 163.006,
+      "prompt_tokens": 157,
+      "completion_tokens": 3641,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": "stop",
+      "error": null,
+      "side": "a",
+      "dir": "a-local-grawwww-qwen38",
+      "tokens_per_s": 47.8,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.37,
+        "visual": {
+          "contrast": 9.38,
+          "detail_pct": 3.11
+        },
+        "motion": [
+          28353,
+          33803,
+          25604,
+          24443,
+          27362,
+          27554,
+          9807
+        ],
+        "external_requests": []
+      }
+    },
+    {
+      "contestant": "local:grawwww-qwen38",
+      "first_token_s": 0.217,
+      "first_answer_s": 15.998,
+      "total_s": 86.602,
+      "prompt_tokens": 157,
+      "completion_tokens": 4128,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": "stop",
+      "error": null,
+      "side": "b",
+      "dir": "b-local-grawwww-qwen38",
+      "tokens_per_s": 47.8,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.38,
+        "visual": {
+          "contrast": 10.21,
+          "detail_pct": 3.44
+        },
+        "motion": [
+          37599,
+          42288,
+          35896,
+          31302,
+          34804,
+          36991,
+          9106
+        ],
+        "external_requests": []
+      }
+    }
+  ],
+  "winner": "local:grawwww-qwen38",
+  "winner_side": "b",
+  "decided_by": "speed"
+}

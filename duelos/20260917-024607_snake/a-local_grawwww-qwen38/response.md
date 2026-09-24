@@ -1,0 +1,390 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Snake — 60fps + AI Demo</Help>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #0b0f14;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: monospace;
+    color: #cfe3ff;
+    user-select: none;
+  }
+  #hud {
+    height: 30px;
+    line-height: 30px;
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
+  canvas {
+    background: #101820;
+    border: 2px solid #24486b;
+    border-radius: 4px;
+    box-shadow: 0 0 40px rgba(40, 120, 200, 0.25);
+    image-rendering: pixelated;
+  }
+  #hint {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #5f7ea3;
+    text-align: center;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div id="hud">SCORE: <span id="score">0</span><span id="mode"></span></div>
+<canvas id="game" width="480" height="480"></canvas>
+<div id="hint">
+  Arrow keys: move &nbsp;|&nbsp; Space: restart &nbsp;|&nbsp; P: toggle AI demo mode<br>
+  <span id="ai-label">MODE: HUMAN</span>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Configuration ----------
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const CELL = 20;                 // pixels per grid cell
+  const COLS = canvas.width / CELL; // 24
+  const ROWS = canvas.height / CELL; // 24
+  const STEP_MS = 90;              // one logical snake step every 90 ms
+  const scoreEl = document.getElementById("score");
+  const modeEl = document.getElementById("mode");
+  const aiLabelEl = document.getElementById("ai-label");
+
+  // ---------- Game State ----------
+  let snake, prevSnake, dir, nextDir, food, score, dead, autoplay;
+  let accumulator = 0;
+  let lastTime = performance.now();
+  let pendingDirs = []; // buffered key presses
+
+  function center() {
+    const cx = Math.floor(COLS / 2);
+    const cy = Math.floor(ROWS / 2);
+    return { x: cx, y: cy };
+  }
+
+  function reset() {
+    const c = center();
+    snake = [
+      { x: c.x, y: c.y },
+      { x: c.x - 1, y: c.y },
+      { x: c.x - 2, y: c.y }
+    ];
+    prevSnake = snake.map(s => ({ x: s.x, y: s.y }));
+    dir = { x: 1, y: 0 };           // moving right
+    nextDir = { x: 1, y: 0 };
+    pendingDirs = [];
+    score = 0;
+    dead = false;
+    placeFood();
+    scoreEl.textContent = "0";
+  }
+
+  function placeFood() {
+    const occupied = {};
+    for (const s of snake) occupied[s.x + "," + s.y] = true;
+    let fx, fy, guard = 0;
+    do {
+      fx = (Math.random() * COLS) | 0;
+      fy = (Math.random() * ROWS) | 0;
+      if (++guard > 100000) break;
+    } while (occupied[fx + "," + fy]);
+    food = { x: fx, y: fy };
+  }
+
+  // ---------- Input ----------
+  function queueDir(dx, dy) {
+    // Ignore 180° reversals and duplicates relative to last queued/current dir
+    const last = pendingDirs.length ? pendingDirs[pendingDirs.length - 1] : dir;
+    if (dx === -last.x && dy === -last.y) return; // no reversal
+    if (dx === last.x && dy === last.y) return;   // no-op
+    if (pendingDirs.length < 3) pendingDirs.push({ x: dx, y: dy });
+  }
+
+  window.addEventListener("keydown", function (e) {
+    const k = e.key;
+    if (k === "ArrowUp" || k === "ArrowDown" || k === "ArrowLeft" || k === "ArrowRight" || k === " ") {
+      e.preventDefault();
+    }
+    if (!autoplay) {
+      if (k === "ArrowUp")    queueDir(0, -1);
+      else if (k === "ArrowDown")   queueDir(0, 1);
+      else if (k === "ArrowLeft")   queueDir(-1, 0);
+      else if (k === "ArrowRight")  queueDir(1, 0);
+    }
+    if (k === " ") {
+      if (dead) reset();
+    }
+    if (k === "p" || k === "P") {
+      autoplay = !autoplay;
+      updateModeUI();
+      if (!dead) reset(); // start a fresh clean run in demo mode
+    }
+  });
+
+  function updateModeUI() {
+    aiLabelEl.textContent = autoplay ? "MODE: AI DEMO" : "MODE: HUMAN";
+    modeEl.textContent = autoplay ? "   [AI]" : "";
+    modeEl.style.color = autoplay ? "#66e08c" : "#cfe3ff";
+  }
+
+  // ---------- AI (autoplay) ----------
+  // For each candidate move:
+  //   1) it must not instantly collide (wall or body; tail cell frees unless eating)
+  //   2) prefer candidates that have a BFS path to food, shortest first
+  //   3) fallback: BFS path to tail (tail-chasing keeps us alive)
+  //   4) last resort: any safe move; prefer longer snake
+
+  function chooseAIDir() {
+    const head = snake[0];
+    const eating = (food.x === head.x + dir.x && false) ? false : null; // placeholder
+    const candidates = [
+      { x: dir.x, y: dir.y },
+      { x: -dir.y, y: dir.x },
+      { x: dir.y, y: -dir.x }
+    ];
+
+    const results = [];
+
+    for (const c of candidates) {
+      const nx = head.x + c.x;
+      const ny = head.y + c.y;
+
+      // wall collision
+      if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS) continue;
+
+      // will the tail move? (snake only stays same length if not eating here)
+      const willEat = (nx === food.x && ny === food.y);
+      const body = new Set();
+      for (let i = 0; i < snake.length - (willEat ? 0 : 1); i++) {
+        body.add(snake[i].x + "," + snake[i].y);
+      }
+      if (body.has(nx + "," + ny)) continue; // instant collision
+
+      // BFS from candidate head to food (or tail), avoiding body cells
+      const foodPath = bfs(nx, ny, food.x, food.y, body, snake.length);
+      const tail = snake[snake.length - 1];
+      const tailPath = bfs(nx, ny, tail.x, tail.y, body, snake.length);
+
+      results.push({ c: c, willEat: willEat, foodPath: foodPath, tailPath: tailPath });
+    }
+
+    if (!results.length) return dir; // doomed; keep going (will die)
+
+    let best = null;
+    // 1) prefer real path to food; among those, shortest, then longer snake
+    let foodOptions = results.filter(r => r.foodPath >= 0);
+    if (foodOptions.length) {
+      best = foodOptions.sort((a, b) =>
+        a.foodPath - b.foodPath || snake.length - snake.length
+      )[0];
+    } else {
+      // 2) fallback: path to tail
+      let tailOptions = results.filter(r => r.tailPath >= 0);
+      if (tailOptions.length) {
+        best = tailOptions.sort((a, b) => b.tailPath - a.tailPath)[0];
+      } else {
+        // 3) any safe move; prefer the one that doesn't shrink options now
+        best = results[0];
+      }
+    }
+    return best.c;
+  }
+
+  function bfs(sx, sy, tx, ty, blocked, snakeLen) {
+    // BFS on grid, returns shortest path length or -1.
+    // If the snake doesn't eat, tail cell will be free next step, so it's not blocked.
+    const start = sx + "," + sy;
+    const target = tx + "," + ty;
+    if (sx === tx && sy === ty) return 0;
+    const visited = new Set([start]);
+    let frontier = [[sx, sy]];
+    let dist = 0;
+    const dx = [1, -1, 0, 0], dy = [0, 0, 1, -1];
+    while (frontier.length) {
+      dist++;
+      const next = [];
+      for (const [cx, cy] of frontier) {
+        for (let i = 0; i < 4; i++) {
+          const nx = cx + dx[i], ny = cy + dy[i];
+          if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS) continue;
+          const key = nx + "," + ny;
+          if (visited.has(key)) continue;
+          if (blocked.has(key) && key !== target) continue;
+          if (key === target) return dist;
+          visited.add(key);
+          next.push([nx, ny]);
+        }
+      }
+      frontier = next;
+    }
+    return -1;
+  }
+
+  // ---------- Logic Step ----------
+  function step() {
+    prevSnake = snake.map(s => ({ x: s.x, y: s.y }));
+
+    if (autoplay) {
+      nextDir = chooseAIDir();
+    } else if (pendingDirs.length) {
+      nextDir = pendingDirs.shift();
+    }
+
+    dir = nextDir;
+
+    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+    // wall collision
+    if (head.x < 0 || head.y < 0 || head.x >= COLS || head.y >= ROWS) {
+      dead = true;
+      return;
+    }
+
+    // self collision (tail will move unless we eat)
+    const willEat = (head.x === food.x && head.y === food.y);
+    const limit = willEat ? snake.length : snake.length - 1;
+    for (let i = 0; i < limit; i++) {
+      if (snake[i].x === head.x && snake[i].y === head.y) {
+        dead = true;
+        return;
+      }
+    }
+
+    snake.unshift(head);
+    if (willEat) {
+      score += 1;
+      scoreEl.textContent = String(score);
+      placeFood();
+    } else {
+      snake.pop();
+    }
+  }
+
+  // ---------- Rendering ----------
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // subtle grid
+    ctx.strokeStyle = "rgba(255,255,255,0.03)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 1; i < COLS; i++) {
+      ctx.moveTo(i * CELL + 0.5, 0); ctx.lineTo(i * CELL + 0.5, canvas.height);
+    }
+    for (let i = 1; i < ROWS; i++) {
+      ctx.moveTo(0, i * CELL + 0.5); ctx.lineTo(canvas.width, i * CELL + 0.5);
+    }
+    ctx.stroke();
+
+    // food (pulsing)
+    const pulse = 0.75 + 0.25 * Math.sin(performance.now() / 200);
+    ctx.fillStyle = "#ff5c5c";
+    ctx.shadowColor = "#ff5c5c";
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL * 0.34 * pulse + 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // snake (interpolated for smooth 60fps)
+    const t = dead ? 1 : Math.min(accumulator / STEP_MS, 1);
+    const n = snake.length;
+    ctx.lineJoin = "round";
+    for (let i = n - 1; i >= 0; i--) {
+      const cur = snake[i];
+      // prev position: index i in prevSnake; if it just became head (growth), fall back to prev head
+      let p = prevSnake[i];
+      if (!p) p = prevSnake[0];
+      if (!p) p = cur;
+      const px = lerp(p.x, cur.x, t) * CELL + CELL / 2;
+      const py = lerp(p.y, cur.y, t) * CELL + CELL / 2;
+      const headness = i / n; // 0 at tail .. 1 at head
+      const r = CELL / 2 - 1.5 - headness * 1;
+      // color gradient
+      const g = Math.round(120 + headness * 135);
+      ctx.fillStyle = i === 0 ? "#7dffb0" : "rgb(20," + g + "," + Math.round(90 + headness * 60) + ")";
+      ctx.shadowColor = i === 0 ? "rgba(125,255,176,0.6)" : "transparent";
+      ctx.shadowBlur = i === 0 ? 10 : 0;
+      ctx.beginPath();
+      ctx.arc(px, py, Math.max(r, 3), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    // head eyes
+    if (n > 0) {
+      const h = snake[0], pp = prevSnake[0] || h;
+      const hx = lerp(pp.x, h.x, t) * CELL + CELL / 2;
+      const hy = lerp(pp.y, h.y, t) * CELL + CELL / 2;
+      const ex = -dir.y, ey = dir.x; // perpendicular
+      const ox = dir.x * 4, oy = dir.y * 4;
+      ctx.fillStyle = "#06281a";
+      for (const s of [1, -1]) {
+        ctx.beginPath();
+        ctx.arc(hx + ox + ex * 4.5 * s, hy + oy + ey * 4.5 * s, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    if (dead) {
+      ctx.fillStyle = "rgba(5,10,15,0.72)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#ff6b6b";
+      ctx.font = "bold 40px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
+      ctx.fillStyle = "#cfe3ff";
+      ctx.font = "16px monospace";
+      ctx.fillText("Score: " + score, canvas.width / 2, canvas.height / 2 + 14);
+      ctx.fillStyle = "#8fa8c9";
+      ctx.font = "14px monospace";
+      ctx.fillText(autoplay ? "(press P to exit demo)" : "Press SPACE to restart", canvas.width / 2, canvas.height / 2 + 42);
+    }
+  }
+
+  // ---------- Main Loop (fixed timestep, 60fps render) ----------
+  function frame(now) {
+    let delta = now - lastTime;
+    lastTime = now;
+    if (delta > 250) delta = 250; // tab-switch clamp
+
+    if (!dead) {
+      accumulator += delta;
+      let steps = 0;
+      while (accumulator >= STEP_MS && !dead && steps < 8) {
+        accumulator -= STEP_MS;
+        step();
+        steps++;
+      }
+      if (dead) accumulator = 0;
+    }
+
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- Boot ----------
+  autoplay = false;
+  updateModeUI();
+  reset(); // game starts automatically
+  requestAnimationFrame(function (t) { lastTime = t; requestAnimationFrame(frame); });
+})();
+</script>
+</body>
+</html>
+```

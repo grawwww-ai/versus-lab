@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script type="importmap">{"imports":{"three":"/vendor/three/three.module.js","three/addons/":"/vendor/three/addons/"}}</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Northern Lights — WebGL2</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(function () {
+  "use strict";
+
+  const canvas = document.getElementById("c");
+  const gl = canvas.getContext("webgl2", {
+    antialias: false,
+    alpha: false,
+    depth: false,
+    stencil: false,
+    powerPreference: "high-performance"
+  });
+
+  if (!gl) {
+    document.body.innerHTML =
+      '<div style="color:#9cf;font:16px/1.5 sans-serif;padding:2rem">WebGL2 is not supported by this browser.</div>';
+    return;
+  }
+
+  const vertSrc = `#version 300 es
+in vec2 aPos;
+void main() {
+  gl_Position = vec4(aPos, 0.0, 1.0);
+}`;
+
+  const fragSrc = `#version 300 es
+precision highp float;
+
+uniform vec2  uRes;
+uniform float uTime;
+
+out vec4 fragColor;
+
+const float HORIZON = 0.30;
+
+/* ------------------------------ noise ------------------------------ */
+
+float hash21(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+
+float vnoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  float a = hash21(i);
+  float b = hash21(i + vec2(1.0, 0.0));
+  float c = hash21(i + vec2(0.0, 1.0));
+  float d = hash21(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+float fbm(vec2 p) {
+  float s = 0.0;
+  float a = 0.5;
+  for (int i = 0; i < 4; i++) {
+    s += a * vnoise(p);
+    p = p * 2.03 + vec2(13.7, 7.3);
+    a *= 0.5;
+  }
+  return s;
+}
+
+/* ------------------------------- sky ------------------------------- */
+
+vec3 skyGradient(float y) {
+  vec3 top = vec3(0.004, 0.007, 0.021);
+  vec3 bot = vec3(0.020, 0.034, 0.066);
+  vec3 c = mix(bot, top, smoothstep(HORIZON, 1.0, y));
+  c += vec3(0.020, 0.055, 0.050) * exp(-max(y - HORIZON, 0.0) * 6.0);
+  return c;
+}
+
+/* ------------------------------ stars ------------------------------ */
+
+vec3 starField(vec2 p, float t) {
+  vec3 c = vec3(0.0);
+
+  /* dense faint stars */
+  vec2 sp = p * 24.0;
+  vec2 id = floor(sp);
+  vec2 gv = fract(sp) - 0.5;
+  float h = hash21(id + 3.13);
+  if (h > 0.90) {
+    vec2 off = (vec2(hash21(id + 1.7), hash21(id + 8.3)) - 0.5) * 0.72;
+    float d = length(gv - off);
+    float br = 0.30 + 0.70 * hash21(id + 4.9);
+    float tw = 0.80 + 0.20 * sin(t * 2.7 + h * 91.0);
+    c += vec3(0.80, 0.88, 1.00) * smoothstep(0.060, 0.0, d) * br * tw;
+  }
+
+  /* a few brighter stars with a soft cross flare */
+  vec2 sp2 = p * 4.2;
+  vec2 id2 = floor(sp2);
+  vec2 gv2 = fract(sp2) - 0.5;
+  float h2 = hash21(id2 + 19.7);
+  if (h2 > 0.93) {
+    vec2 off = (vec2(hash21(id2 + 2.3), hash21(id2 + 6.1)) - 0.5) * 0.6;
+    vec2 d = gv2 - off;
+    float dist = length(d);
+    float tw = 0.70 + 0.30 * sin(t * 1.9 + h2 * 60.0);
+    float core = smoothstep(0.050, 0.0, dist);
+    float fl = (smoothstep(0.30, 0.0, abs(d.x)) * smoothstep(0.012, 0.0, abs(d.y))
+              + smoothstep(0.30, 0.0, abs(d.y)) * smoothstep(0.012, 0.0, abs(d.x))) * 0.5;
+    c += vec3(1.00, 0.96, 0.88) * (core + fl) * tw * 1.3;
+  }
+
+  return c;
+}
+
+/* ------------------------------ aurora ----------------------------- */
+
+vec3 aurora(vec2 p, float t) {
+  vec3 col = vec3(0.0);
+  float y = p.y;
+
+  /* large-scale folding shared by all curtain layers */
+  float warp = (fbm(vec2(p.x * 0.55 + 4.0, t * 0.045)) - 0.47) * 2.0;
+
+  for (int i = 0; i < 3; i++) {
+    float fi = float(i);
+    float drift = t * (0.045 + 0.025 * fi);
+    float x = p.x + warp * (1.0 + 0.4 * fi) + drift + fi * 2.7;
+
+    float n1 = vnoise(vec2(x * 1.1 + fi * 7.0, t * 0.10 + fi * 3.0));
+    float n2 = vnoise(vec2(x * 2.4 - fi * 4.0, t * 0.17 + fi * 9.0));
+    float n  = n1 * 0.62 + n2 * 0.38;
+
+    /* draped bottom edge of the curtain */
+    float y0 = 0.33 + 0.13 * n + 0.020 * sin(x * 3.0 + t * 0.4 * (1.0 + fi));
+
+    /* vertical profile: bright low edge fading upward */
+    float vprof = smoothstep(y0 - 0.005, y0 + 0.035, y)
+                * exp(-max(y - y0, 0.0) * 1.9)
+                * (1.0 - smoothstep(0.80, 1.10, y));
+    vprof *= smoothstep(0.22, 0.34, y);
+
+    /* overlapping folds / sheets */
+    float ph = x * (3.0 + 2.0 * fi) + n * 3.6 + t * (0.50 + 0.35 * fi);
+    float sheet = pow(0.5 + 0.5 * sin(ph), 4.0);
+
+    /* vertical rays */
+    float rn = vnoise(vec2(x * 13.0 + fi * 5.0, y * 1.5 - t * 0.45));
+    float rays = 0.30 + 1.70 * pow(rn, 1.35);
+
+    /* slow brightening / fading */
+    float pulse = 0.62 + 0.38 * sin(t * 0.21 + fi * 2.1);
+
+    float bright = vprof * sheet * rays * pulse * (0.62 / (1.0 + fi * 0.5));
+
+    /* green low, teal mid, violet high */
+    float hh = clamp((y - y0) * 2.0, 0.0, 1.0);
+    vec3 green = vec3(0.10, 1.00, 0.36);
+    vec3 teal  = vec3(0.28, 0.90, 0.72);
+    vec3 viol  = vec3(0.58, 0.24, 1.00);
+    vec3 cc = mix(green, teal, smoothstep(0.10, 0.55, hh));
+    cc = mix(cc, viol, smoothstep(0.40, 1.0, hh) * (0.55 + 0.45 * sin(fi * 2.3 + 1.1)));
+
+    col += cc * bright;
+  }
+
+  /* soft diffuse glow of the whole display */
+  float haze = exp(-pow((y - 0.55) * 2.4, 2.0));
+  haze *= 0.5 + 0.5 * vnoise(vec2(p.x * 1.4, t * 0.07));
+  vec3 hazeCol = mix(vec3(0.10, 0.45, 0.34), vec3(0.35, 0.15, 0.70), smoothstep(0.55, 0.95, y));
+  col += hazeCol * haze * 0.12;
+
+  return col;
+}
+
+/* ----------------------- sky + mountains --------------------------- */
+
+vec3 sceneColor(vec2 p, float t) {
+  vec3 col = skyGradient(p.y);
+
+  float starFade = smoothstep(HORIZON - 0.02, HORIZON + 0.20, p.y);
+  col += starField(p, t) * starFade;
+
+  col += aurora(p, t);
+
+  /* two ridgelines, silhouetted */
+  float farH  = HORIZON + 0.018 + 0.080 * fbm(vec2(p.x * 0.70 + 21.0, 3.0));
+  float nearH = HORIZON - 0.010 + 0.105 * pow(fbm(vec2(p.x * 1.55 + 61.0, 9.0)), 1.5);
+
+  if (p.y < farH) {
+    float rim = smoothstep(farH - 0.014, farH, p.y);
+    vec3 mc = vec3(0.022, 0.030, 0.052) + vec3(0.10, 0.16, 0.20) * rim * 0.30;
+    col = mc;
+  }
+  if (p.y < nearH) {
+    float rim = smoothstep(nearH - 0.010, nearH, p.y);
+    vec3 mc = vec3(0.007, 0.011, 0.022) + vec3(0.05, 0.09, 0.13) * rim * 0.22;
+    col = mc;
+  }
+
+  return col;
+}
+
+/* ------------------------------- lake ------------------------------ */
+
+vec3 water(vec2 p, float t) {
+  float d = HORIZON - p.y;                 /* distance below the horizon */
+  float depth = clamp(d / 0.30, 0.0, 1.0);
+
+  vec2 rp = vec2(p.x, HORIZON + d);        /* mirrored sky sample */
+
+  /* ripples grow toward the viewer */
+  float amp = mix(0.0015, 0.022, depth * depth);
+  rp.x += amp * 2.2 * sin(d * 42.0 + t * 1.4 + p.x * 5.0);
+  rp.y += amp * 0.9 * sin(p.x * 26.0 + t * 2.0 + d * 20.0);
+
+  float blur = 0.004 + 0.020 * depth;
+  vec3 refl = sceneColor(rp + vec2(blur, 0.0), t)
+            + sceneColor(rp - vec2(blur, 0.0), t);
+  refl *= 0.5;
+
+  float fres = mix(0.92, 0.34, smoothstep(0.0, 1.0, depth));
+  vec3 deep = vec3(0.005, 0.011, 0.025);
+  vec3 col = deep + refl * fres * 0.90;
+
+  /* horizontal shimmer */
+  float sh = vnoise(vec2(p.x * 20.0, p.y * 110.0 + t * 0.7));
+  col += vec3(0.020, 0.070, 0.060) * sh * depth * 0.30;
+
+  /* soften the horizon line */
+  col = mix(col, skyGradient(HORIZON) * 0.55 + refl * 0.25, smoothstep(0.010, 0.0, d));
+
+  return col;
+}
+
+/* ------------------------------- main ------------------------------ */
+
+void main() {
+  vec2 uv = gl_FragCoord.xy / uRes;
+  float aspect = uRes.x / uRes.y;
+  vec2 p = vec2((uv.x - 0.5) * aspect * 2.0, uv.y);
+
+  float t = uTime;
+
+  vec3 col;
+  if (p.y > HORIZON) {
+    col = sceneColor(p, t);
+  } else {
+    col = water(p, t);
+  }
+
+  /* vignette */
+  vec2 q = uv - 0.5;
+  col *= 1.0 - 0.45 * dot(q, q);
+
+  /* tone map + gentle gamma */
+  col = vec3(1.0) - exp(-col * 1.30);
+  col = pow(max(col, 0.0), vec3(0.92));
+
+  fragColor = vec4(col, 1.0);
+}`;
+
+  function compileShader(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error(gl.getShaderInfoLog(s));
+      gl.deleteShader(s);
+      return null;
+    }
+    return s;
+  }
+
+  const vs = compileShader(gl.VERTEX_SHADER, vertSrc);
+  const fs = compileShader(gl.FRAGMENT_SHADER, fragSrc);
+  if (!vs || !fs) return;
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vs);
+  gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    console.error(gl.getProgramInfoLog(prog));
+    return;
+  }
+  gl.useProgram(prog);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+
+  const aPos = gl.getAttribLocation(prog, "aPos");
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  const uRes  = gl.getUniformLocation(prog, "uRes");
+  const uTime = gl.getUniformLocation(prog, "uTime");
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = Math.max(1, Math.floor(canvas.clientWidth * dpr));
+    const h = Math.max(1, Math.floor(canvas.clientHeight * dpr));
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+      gl.viewport(0, 0, w, h);
+    }
+  }
+
+  window.addEventListener("resize", resize, false);
+  resize();
+
+  const start = performance.now();
+
+  function frame() {
+    resize();
+    const t = (performance.now() - start) * 0.001;
+    gl.uniform2f(uRes, canvas.width, canvas.height);
+    gl.uniform1f(uTime, t);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

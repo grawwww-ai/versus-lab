@@ -1,0 +1,457 @@
+{
+  "id": "20260923-083940_pixel_boss",
+  "challenge": {
+    "id": "pixel_boss",
+    "category": "game",
+    "cerebro": "pixel",
+    "title_es": "Jefe final en pixel art",
+    "title_en": "Pixel Art Boss Fight",
+    "prompt": "Create a retro 16-bit pixel art boss fight on a canvas with crisp nearest-neighbour scaling: a hero sprite and a big animated boss (at least 48x48 pixels) with several attack patterns (projectiles, slam, beam), health bars at the top, hit flashes, screen shake, particles and a parallax dungeon background with torches. Sprites must be drawn procedurally in code, frame by frame, with idle, run, attack and hurt animations. An autoplay demo is ON by default: the hero dodges and attacks on its own so the whole fight plays itself, ending with the boss exploding and a VICTORY screen. Chiptune-style sound is not needed. No interaction required.",
+    "excelente": "Un jefe grande y bien animado con varios ataques, un héroe que esquiva y golpea solo, barras de vida, destellos al impactar, partículas y un fondo de mazmorra con parallax. Pixel art nítido y con personalidad.",
+    "rubric": [
+      {
+        "id": "pixel",
+        "c": "Pixel art nítido",
+        "es": "El dibujo es de píxeles grandes y nítidos, no formas suavizadas",
+        "w": 2
+      },
+      {
+        "id": "jefe",
+        "c": "Jefe grande animado",
+        "es": "Hay un enemigo grande con animación propia",
+        "w": 3
+      },
+      {
+        "id": "heroe",
+        "c": "Héroe que actúa solo",
+        "es": "El héroe se mueve, esquiva y ataca sin que nadie lo controle",
+        "w": 2
+      },
+      {
+        "id": "ataques",
+        "c": "Varios ataques",
+        "es": "El jefe usa al menos dos ataques distintos",
+        "w": 2
+      },
+      {
+        "id": "vida",
+        "c": "Barras de vida",
+        "es": "Hay barras de vida que cambian durante el combate",
+        "w": 1
+      },
+      {
+        "id": "efectos",
+        "c": "Impactos y partículas",
+        "es": "Al golpear hay destellos, partículas o temblor de pantalla",
+        "w": 2
+      },
+      {
+        "id": "fondo",
+        "c": "Fondo de mazmorra",
+        "es": "Hay un escenario de fondo con detalle (antorchas, capas)",
+        "w": 1
+      },
+      {
+        "id": "fluido",
+        "c": "Fluido (30+ fps)",
+        "es": "Va fluido (al menos 30 fotogramas por segundo)",
+        "probe": "fps",
+        "arg": 30,
+        "w": 1
+      }
+    ]
+  },
+  "prompt": "Create a retro 16-bit pixel art boss fight on a canvas with crisp nearest-neighbour scaling: a hero sprite and a big animated boss (at least 48x48 pixels) with several attack patterns (projectiles, slam, beam), health bars at the top, hit flashes, screen shake, particles and a parallax dungeon background with torches. Sprites must be drawn procedurally in code, frame by frame, with idle, run, attack and hurt animations. An autoplay demo is ON by default: the hero dodges and attacks on its own so the whole fight plays itself, ending with the boss exploding and a VICTORY screen. Chiptune-style sound is not needed. No interaction required.\n\nAlso include an autoplay demo mode toggled with the P key, in which the game plays itself competently (an AI controls the player) so a viewer can watch a good run.\n\nThe animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.\n\nRequirements: deliver everything in ONE self-contained HTML file (inline CSS and JavaScript; no external resources, CDNs, fonts or images). Reply with the complete file in a single ```html code block.",
+  "contestants": [
+    {
+      "contestant": "or:deepseek/deepseek-v4.1-flash",
+      "first_token_s": 0.693,
+      "first_answer_s": 211.053,
+      "total_s": 264.771,
+      "prompt_tokens": 285,
+      "completion_tokens": 60185,
+      "reasoning_tokens": 46593,
+      "cost": 0.03917725,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 943718,
+      "cuts": [],
+      "side": "a",
+      "dir": "a-or-deepseek-deepseek-v4-1-flash",
+      "tokens_per_s": 227.9,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.03,
+        "visual": {
+          "contrast": 32.08,
+          "detail_pct": 4.12,
+          "box": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ]
+        },
+        "motion": [
+          115760,
+          65472,
+          109840,
+          132112,
+          64096,
+          27744,
+          35392,
+          61600,
+          60400,
+          132640,
+          116688,
+          226032,
+          246928,
+          41728,
+          39072,
+          9696
+        ],
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 89,
+        "raw": 88.8,
+        "base_score": 100,
+        "requirements": {
+          "ok": 8,
+          "total": 8,
+          "pct": 100
+        },
+        "quality": 7.5,
+        "fps": 60.5,
+        "faults": [
+          "(leve) El héroe es visualmente muy simple y pequeño en comparación con el jefe, careciendo de la complejidad de animación esperada en un trabajo de nivel 10."
+        ],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "pixel",
+            "es": "El dibujo es de píxeles grandes y nítidos, no formas suavizadas",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Todas las capturas muestran gráficos nítidos con píxeles grandes y escalados correctamente (nearest-neighbor), sin suavizado."
+          },
+          {
+            "id": "jefe",
+            "es": "Hay un enemigo grande con animación propia",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "El jefe es grande, tiene un diseño propio (cuernos, ojos) y cambia de estado visualmente (captura 2 muestra un destello blanco de impacto)."
+          },
+          {
+            "id": "heroe",
+            "es": "El héroe se mueve, esquiva y ataca sin que nadie lo controle",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Se observa al héroe en diferentes posiciones (capturas 1, 3, 5, 9) y realizando acciones (captura 2 disparando, captura 10 en pose de daño)."
+          },
+          {
+            "id": "ataques",
+            "es": "El jefe usa al menos dos ataques distintos",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Se ven claramente tres tipos de ataque: proyectiles (capturas 5 y 9), un haz de energía vertical (capturas 4 y 11) y un golpe de suelo con partículas (captura 6)."
+          },
+          {
+            "id": "vida",
+            "es": "Hay barras de vida que cambian durante el combate",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Las barras de vida en la parte superior cambian de nivel y número (ej: Héroe baja de 20 a 2, Jefe baja de 100 a 85)."
+          },
+          {
+            "id": "efectos",
+            "es": "Al golpear hay destellos, partículas o temblor de pantalla",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Hay partículas visibles al impactar (captura 6), destellos de daño (captura 2) y líneas de advertencia visual (captura 7)."
+          },
+          {
+            "id": "fondo",
+            "es": "Hay un escenario de fondo con detalle (antorchas, capas)",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "El fondo es una mazmorra con pilares, antorchas iluminadas y una rejilla de ladrillos con efecto de profundidad."
+          },
+          {
+            "id": "fluido",
+            "es": "Va fluido (al menos 30 fotogramas por segundo)",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "grade": 2,
+            "prueba": "fps: 60.5"
+          }
+        ],
+        "probe": {
+          "fps": 60.5,
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png"
+        ]
+      }
+    },
+    {
+      "contestant": "or:openai/gpt-6-luna",
+      "first_token_s": 4.524,
+      "first_answer_s": 72.684,
+      "total_s": 159.094,
+      "prompt_tokens": 258,
+      "completion_tokens": 15550,
+      "reasoning_tokens": 5010,
+      "cost": 0.0078008,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 128000,
+      "cuts": [],
+      "side": "b",
+      "dir": "b-or-openai-gpt-6-luna",
+      "tokens_per_s": 100.6,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.02,
+        "visual": {
+          "contrast": 26.26,
+          "detail_pct": 7.23,
+          "box": [
+            0.048,
+            0.047,
+            0.952,
+            0.956
+          ]
+        },
+        "motion": [
+          54694,
+          15931,
+          13660,
+          11662,
+          11380,
+          20590,
+          35366,
+          31756,
+          9617,
+          14758,
+          12186,
+          17978,
+          9275,
+          14308,
+          17463,
+          1172
+        ],
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 89,
+        "raw": 88.8,
+        "base_score": 100,
+        "requirements": {
+          "ok": 8,
+          "total": 8,
+          "pct": 100
+        },
+        "quality": 7.5,
+        "fps": 60.5,
+        "faults": [
+          "(leve) Texto 'KEEP' en la parte superior central de la interfaz que parece un error de traducción o rotura."
+        ],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "pixel",
+            "es": "El dibujo es de píxeles grandes y nítidos, no formas suavizadas",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Toda la interfaz, sprites y fondo están renderizados con píxeles grandes y nítidos, sin suavizado visible."
+          },
+          {
+            "id": "jefe",
+            "es": "Hay un enemigo grande con animación propia",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "En la captura 1 se ve un enemigo grande (mucho mayor que el héroe) con detalles de ojos y boca, y cambia de pose en la captura 4."
+          },
+          {
+            "id": "heroe",
+            "es": "El héroe se mueve, esquiva y ataca sin que nadie lo controle",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "El héroe cambia de posición entre capturas (ej. 1, 3, 16), muestra destello de daño (captura 16) y lanza proyectiles (captura 2)."
+          },
+          {
+            "id": "ataques",
+            "es": "El jefe usa al menos dos ataques distintos",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Se observan proyectiles lanzados por el jefe (captura 2) y un ataque de área tipo lámina o onda en el suelo (captura 13)."
+          },
+          {
+            "id": "vida",
+            "es": "Hay barras de vida que cambian durante el combate",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Las barras superiores muestran los nombres y el número de HP (ej. 100 en cap 1, 040 en cap 12), descendiendo progresivamente."
+          },
+          {
+            "id": "efectos",
+            "es": "Al golpear hay destellos, partículas o temblor de pantalla",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Hay partículas naranjas en el suelo durante el impacto (captura 4) y el héroe se vuelve blanco al recibir daño (captura 16)."
+          },
+          {
+            "id": "fondo",
+            "es": "Hay un escenario de fondo con detalle (antorchas, capas)",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "El fondo muestra una mazmorra con pilares y antorchas que cambian de posición respecto a los personajes entre capturas, indicando parallax."
+          },
+          {
+            "id": "fluido",
+            "es": "Va fluido (al menos 30 fotogramas por segundo)",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "grade": 2,
+            "prueba": "fps: 60.5"
+          }
+        ],
+        "probe": {
+          "fps": 60.5,
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png",
+          "evidence/15.png"
+        ]
+      }
+    }
+  ],
+  "comparison": {
+    "winner": null,
+    "margin": null,
+    "items": {
+      "pixel": null,
+      "jefe": null,
+      "heroe": null,
+      "ataques": null,
+      "vida": null,
+      "efectos": null,
+      "fondo": null
+    },
+    "why": [
+      "Ambos resultados muestran exactamente los mismos sprites, mecánicas y escenarios, diferenciándose únicamente por el estilo de la interfaz (HUD) y la paleta de colores.",
+      "Ambos implementan fielmente los requisitos de pixel art, ataques variados (láser, proyectiles), UI y efectos con una calidad visual equivalente."
+    ],
+    "raw": {
+      "a_izquierda": "igual",
+      "b_izquierda": "igual"
+    },
+    "judged_by": [
+      "local-gpu"
+    ]
+  },
+  "winner": "or:openai/gpt-6-luna",
+  "winner_side": "b",
+  "decided_by": "speed"
+}

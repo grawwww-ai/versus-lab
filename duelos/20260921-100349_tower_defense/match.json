@@ -1,0 +1,416 @@
+{
+  "id": "20260921-100349_tower_defense",
+  "challenge": {
+    "id": "tower_defense",
+    "category": "game",
+    "title_es": "Defensa Mini",
+    "title_en": "Mini Defense",
+    "prompt": "Create a mini Tower Defense game on an HTML5 Canvas. Enemies spawn at the left edge and follow a winding path to a base on the right. There are 8 fixed tower slots along the path. Keys 1-4 buy a tower of that type (cannon, frost, laser, splash) and place it in the next free slot if the player has enough gold. Towers shoot automatically; enemies have health bars and give gold when killed. Waves get harder. The base has limited HP; the game ends when it reaches 0. Show gold, wave, base HP and score. Space starts or restarts. Place one free cannon at start so the first wave is playable. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.",
+    "keys": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "Space"
+    ],
+    "rubric": [
+      {
+        "id": "camino",
+        "c": "Camino sinuoso",
+        "es": "Hay un camino sinuoso de izquierda a derecha hasta una base",
+        "w": 2
+      },
+      {
+        "id": "torres",
+        "c": "Torres distintas",
+        "es": "Hay torres de varios tipos que se distinguen",
+        "w": 2
+      },
+      {
+        "id": "disparos",
+        "c": "Disparan",
+        "es": "Las torres disparan a los enemigos (proyectiles o rayos visibles)",
+        "w": 2
+      },
+      {
+        "id": "enemigos",
+        "c": "Enemigos con vida",
+        "es": "Los enemigos avanzan por el camino y tienen barra de vida",
+        "w": 2
+      },
+      {
+        "id": "marcador",
+        "c": "Oro, oleada y vida",
+        "es": "Se muestran el oro, la oleada, la vida de la base y la puntuación",
+        "w": 1
+      },
+      {
+        "id": "demo",
+        "c": "Juega solo",
+        "es": "En el modo demo se compran torres y se defienden oleadas",
+        "w": 1
+      }
+    ],
+    "excelente": "Un tower defense entendible de un vistazo: camino sinuoso claro, torres distintas por tipo con disparos visibles, enemigos con barra de vida, oleadas cada vez más duras y marcador de oro, oleada, vida de la base y puntos. El modo demo compra torres y defiende."
+  },
+  "prompt": "Create a mini Tower Defense game on an HTML5 Canvas. Enemies spawn at the left edge and follow a winding path to a base on the right. There are 8 fixed tower slots along the path. Keys 1-4 buy a tower of that type (cannon, frost, laser, splash) and place it in the next free slot if the player has enough gold. Towers shoot automatically; enemies have health bars and give gold when killed. Waves get harder. The base has limited HP; the game ends when it reaches 0. Show gold, wave, base HP and score. Space starts or restarts. Place one free cannon at start so the first wave is playable. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.\n\nAlso include an autoplay demo mode toggled with the P key, in which the game plays itself competently (an AI controls the player) so a viewer can watch a good run.\n\nRequirements: deliver everything in ONE self-contained HTML file (inline CSS and JavaScript; no external resources, CDNs, fonts or images). Reply with the complete file in a single ```html code block.",
+  "contestants": [
+    {
+      "contestant": "or:deepseek/deepseek-v4.1-flash",
+      "first_token_s": 1.278,
+      "first_answer_s": 956.103,
+      "total_s": 1252.39,
+      "prompt_tokens": 279,
+      "completion_tokens": 35742,
+      "reasoning_tokens": 25201,
+      "cost": 0.021501,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 384000,
+      "cuts": [],
+      "side": "a",
+      "dir": "a-or-deepseek-deepseek-v4-1-flash",
+      "tokens_per_s": 28.6,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.02,
+        "visual": {
+          "contrast": 24.62,
+          "detail_pct": 3.24,
+          "box": [
+            0.048,
+            0.014,
+            0.95,
+            0.989
+          ]
+        },
+        "motion": [
+          13085,
+          18535,
+          11859,
+          5852,
+          13562,
+          2956,
+          3742,
+          7945,
+          6564,
+          8903,
+          6292,
+          13027,
+          7998,
+          6680,
+          6241,
+          2552
+        ],
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 70,
+        "raw": 70.5,
+        "base_score": 100,
+        "requirements": {
+          "ok": 6,
+          "total": 6,
+          "pct": 75
+        },
+        "quality": 6.5,
+        "fps": 60.5,
+        "faults": [
+          "(leve) Las torres son genéricas (círculos naranjas) y no se distingue visualmente entre los 4 tipos que se ofrecen en el menú.",
+          "(leve) El modo demo no demuestra la mecánica de compra de torres, ya que el jugador no adquiere nuevas torres durante las oleadas."
+        ],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "camino",
+            "es": "Hay un camino sinuoso de izquierda a derecha hasta una base",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Se ve un camino sinuoso de color azul oscuro que recorre la pantalla de izquierda a derecha, terminando en una estructura de base."
+          },
+          {
+            "id": "torres",
+            "es": "Hay torres de varios tipos que se distinguen",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "Captura 1 y 16: Se ven solo 2 torres (naranjas) en todo el juego. No se ven torres de otros tipos (frost, laser, splash) colocadas, aunque aparecen en el menú inferior."
+          },
+          {
+            "id": "disparos",
+            "es": "Las torres disparan a los enemigos (proyectiles o rayos visibles)",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "Captura 11: Se observa un pequeño proyectil naranja entre la torre y el enemigo, pero es muy pequeño y se ve poco."
+          },
+          {
+            "id": "enemigos",
+            "es": "Los enemigos avanzan por el camino y tienen barra de vida",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 3: Enemigos verdes y blancos avanzando por el camino, con una barra de vida verde visible sobre ellos."
+          },
+          {
+            "id": "marcador",
+            "es": "Se muestran el oro, la oleada, la vida de la base y la puntuación",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: La barra superior muestra claramente '$ 40', 'WAVE 1', 'BASE HP 20/20' y 'SCORE 0'."
+          },
+          {
+            "id": "demo",
+            "es": "En el modo demo se compran torres y se defienden oleadas",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "Captura 1: El botón dice 'AUTOPLAY DEMO', pero en las capturas siguientes (3 a 16) el juego no compra torres adicionales, solo usa las dos iniciales para defender."
+          }
+        ],
+        "probe": {
+          "fps": 60.5,
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png",
+          "evidence/15.png"
+        ]
+      }
+    },
+    {
+      "contestant": "or:z-ai/glm-5.3-flash",
+      "first_token_s": 2.019,
+      "first_answer_s": 1271.099,
+      "total_s": 1463.529,
+      "prompt_tokens": 256,
+      "completion_tokens": 60314,
+      "reasoning_tokens": 39723,
+      "cost": 0.01811724,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 131072,
+      "cuts": [],
+      "side": "b",
+      "dir": "b-or-z-ai-glm-5-3-flash",
+      "tokens_per_s": 41.3,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.02,
+        "visual": {
+          "contrast": 11.53,
+          "detail_pct": 3.78,
+          "box": [
+            0.109,
+            0.028,
+            0.891,
+            0.942
+          ]
+        },
+        "motion": [
+          22065,
+          7018,
+          6635,
+          3122,
+          3548,
+          4389,
+          6433,
+          7454,
+          6576,
+          9280,
+          4869,
+          4411,
+          3690,
+          3310,
+          5801,
+          3357
+        ],
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 76,
+        "raw": 75.8,
+        "base_score": 100,
+        "requirements": {
+          "ok": 6,
+          "total": 6,
+          "pct": 90
+        },
+        "quality": 6.5,
+        "fps": 60.5,
+        "faults": [
+          "(leve) Los disparos de las torres son extremadamente difíciles de ver (pequeños puntos o rayos finos) en comparación con el tamaño de los enemigos y el fondo.",
+          "(leve) Los enemigos son círculos rojos simples sin mucho detalle visual o diferenciación entre tipos.",
+          "(leve) Las torres y los enemigos son formas geométricas simples (círculos y anillos) que resultan algo genéricas visualmente."
+        ],
+        "penalty": 3,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "camino",
+            "es": "Hay un camino sinuoso de izquierda a derecha hasta una base",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 2: Se observa un camino sinuoso y claro que serpentea desde la izquierda hasta la base en la derecha."
+          },
+          {
+            "id": "torres",
+            "es": "Hay torres de varios tipos que se distinguen",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 9: Se distinguen claramente torres de diferentes tipos (una amarilla, una azul y una verde) situadas en los huecos junto al camino."
+          },
+          {
+            "id": "disparos",
+            "es": "Las torres disparan a los enemigos (proyectiles o rayos visibles)",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "Captura 16: Se aprecia un pequeño proyectil o rayo disparado, pero es muy sutil y no destaca sobre el fondo oscuro."
+          },
+          {
+            "id": "enemigos",
+            "es": "Los enemigos avanzan por el camino y tienen barra de vida",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 8: Los enemigos (círculos rojos) avanzan por el camino y muestran barras de vida verdes sobre ellos."
+          },
+          {
+            "id": "marcador",
+            "es": "Se muestran el oro, la oleada, la vida de la base y la puntuación",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: La parte superior muestra claramente los valores de GOLD, WAVE, BASE HP y SCORE."
+          },
+          {
+            "id": "demo",
+            "es": "En el modo demo se compran torres y se defienden oleadas",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 3: El indicador 'AUTOPILOT' está activo y se observa una torre nueva (frost) comprada y colocada en el mapa."
+          }
+        ],
+        "probe": {
+          "fps": 60.5,
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png",
+          "evidence/15.png"
+        ]
+      }
+    }
+  ],
+  "winner": "or:z-ai/glm-5.3-flash",
+  "winner_side": "b",
+  "decided_by": "score",
+  "comparison": {
+    "winner": null,
+    "margin": null,
+    "items": {
+      "camino": null,
+      "torres": null,
+      "disparos": null,
+      "enemigos": null,
+      "marcador": null,
+      "demo": null
+    },
+    "why": [
+      "Ambos cumplen con la mecánica y la lógica del juego, pero el resultado 1 ofrece un diseño visual mucho más limpio, legible y pulido.",
+      "Ambas IAs han implementado de forma idéntica y correcta todos los requisitos del reto, mostrando la misma mecánica de juego, marcador y estética."
+    ],
+    "raw": {
+      "a_izquierda": "1",
+      "b_izquierda": "igual"
+    },
+    "judged_by": [
+      "local-gpu"
+    ]
+  }
+}

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script type="importmap">{"imports":{"three":"/vendor/three/three.module.js","three/addons/":"/vendor/three/addons/"}}</script>
+<meta charset="UTF-8">
+<title>Breakout — with Autoplay Demo (press P)</</title>
+<style>
+  html,body{
+    margin:0;padding:0;height:100%;background:#07070f;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    font-family:monospace;
+  }
+  canvas{
+    background:#0a0a14;
+    box-shadow:0 0 40px rgba(0,120,255,.25), 0 0 0 1px #1a1a2e;
+    max-width:96vw;max-height:96vh;
+  }
+</style>
+</head>
+<body>
+<canvas id="game" width="800" height="600"></canvas>
+<script>
+(function(){
+"use strict";
+const cvs = document.getElementById('game');
+const ctx = cvs.getContext('2d');
+const W = cvs.width, H = cvs.height;
+
+// ---------- Config ----------
+const PADDLE_W = 100, PADDLE_H = 14, PADDLE_Y = H - 40;
+const BALL_R = 7;
+const BASE_SPEED = 7.2;
+const MAX_SPEED  = 17;
+const SPEED_UP_BLOCK = 0.28;
+const SPEED_UP_PADDLE = 0.18;
+const COLS = 8, MAX_ROWS = 6, START_ROWS = 4;
+const B_SPACE = 6, B_TOP = 64, B_H = 22;
+const B_W = (W - (COLS + 1) * B_SPACE) / COLS;
+const PADDLE_MAX_V = 13;
+const ROW_COLORS = ['#ff4d5e','#ff9f43','#ffe14d','#4dff88','#38e1ff','#5d7cff'];
+
+// ---------- State ----------
+let blocks = [], blockCount = 0;
+let ball = {}, paddle = {};
+let speed = BASE_SPEED;
+let score = 0, lives = 3, level = 1;
+let state = 'serve';            // 'serve' | 'play' | 'over'
+let demo = true;                // autoplay ON at start
+let demoWait = 0;               // frames until demo auto-launch / restart
+let aiErr = 0;
+const keys = { left:false, right:false };
+
+function buildLevel(rows){
+  blocks = []; blockCount = 0;
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<COLS;c++){
+      blocks.push({
+        x: B_SPACE + c*(B_W+B_SPACE),
+        y: B_TOP + r*(B_H+B_SPACE),
+        w: B_W, h: B_H,
+        color: ROW_COLORS[r % ROW_COLORS.length],
+        alive: true
+      });
+      blockCount++;
+    }
+  }
+}
+
+function resetBall(){
+  state = 'serve';
+  speed = BASE_SPEED;
+  ball = { x: W/2, y: PADDLE_Y - BALL_R - 1, vx: 0, vy: 0 };
+  paddle.x = W/2 - PADDLE_W/2;
+  demoWait = demo ? 45 : 0;
+}
+
+function newGame(){
+  score = 0; lives = 3; level = 1;
+  buildLevel(START_ROWS);
+  resetBall();
+}
+
+function launch(){
+  const a = (Math.random()*0.5 + 0.25) * Math.PI/2;   // 45..90 deg from vertical, random side
+  const dir = (Math.random()<0.5 ? 1 : -1);
+  ball.vx = Math.sin(a)*dir*speed;
+  ball.vy = -Math.cos(a)*speed;
+  state = 'play';
+  pickAiError();
+}
+
+function bumpSpeed(inc){
+  const ns = Math.min(MAX_SPEED, speed + inc);
+  const f = ns / speed;
+  ball.vx *= f; ball.vy *= f; speed = ns;
+}
+
+// ---------- AI ----------
+function pickAiError(){
+  // mostly precise, occasionally slips a bit (so lives UI can be shown)
+  if(Math.random() < 0.10) aiErr = (Math.random()<0.5?-1:1) * (22 + Math.random()*16);
+  else aiErr = (Math.random()-0.5) * 6;
+}
+
+function aiTarget(){
+  if(ball.vy > 0.001){
+    // simple linear prediction with wall reflection
+    const t = (PADDLE_Y - BALL_R - ball.y) / ball.vy;
+    let x = ball.x + ball.vx * t;
+    const m = BALL_R, span = W - 2*m;
+    x = (x - m) % (2*span);
+    if(x < 0) x += 2*span;
+    if(x > span) x = 2*span - x;
+    x += m;
+    return x + aiErr;
+  }
+  return paddle.x + PADDLE_W/2; // hover near current pos
+}
+
+// ---------- Input ----------
+window.addEventListener('keydown', function(e){
+  if(e.code === 'ArrowLeft'  || e.code === 'KeyA') keys.left  = true;
+  if(e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+  if(e.code === 'Space'){
+    e.preventDefault();
+    if(state === 'serve') launch();
+    else if(state === 'over') { demo=false; newGame(); demoWait=0; }
+    return;
+  }
+  if(e.code === 'KeyP'){
+    demo = !demo;
+    if(demo && state === 'serve') demoWait = 30;
+    if(demo && state === 'over'){ newGame(); }
+  }
+});
+window.addEventListener('keyup', function(e){
+  if(e.code === 'ArrowLeft'  || e.code === 'KeyA') keys.left  = false;
+  if(e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+});
+
+// ---------- Update ----------
+function update(){
+  if(state === 'over'){
+    if(demo){
+      demoWait--;
+      if(demoWait <= 0) newGame();
+    }
+    return;
+  }
+
+  // paddle movement
+  if(demo){
+    const tx = aiTarget();
+    const dx = tx - (paddle.x + PADDLE_W/2);
+    const step = Math.max(-PADDLE_MAX_V, Math.min(PADDLE_MAX_V, dx * 0.35));
+    paddle.x += step;
+    if(state === 'serve'){
+      ball.x = paddle.x + PADDLE_W/2;
+      if(--demoWait <= 0) launch();
+    }
+  } else {
+    if(keys.left)  paddle.x -= 9;
+    if(keys.right) paddle.x += 9;
+    if(state === 'serve') ball.x = paddle.x + PADDLE_W/2;
+  }
+  paddle.x = Math.max(0, Math.min(W - PADDLE_W, paddle.x));
+
+  if(state === 'serve'){
+    ball.y = PADDLE_Y - BALL_R - 1;
+    return;
+  }
+
+  // sub-steps to avoid tunneling at high speed
+  const steps = Math.ceil(speed / (BALL_R * 0.9));
+  for(let s=0;s<steps;s++){
+    ball.x += ball.vx / steps;
+    ball.y += ball.vy / steps;
+
+    // walls
+    if(ball.x < BALL_R){ ball.x = BALL_R; ball.vx = Math.abs(ball.vx); }
+    if(ball.x > W - BALL_R){ ball.x = W - BALL_R; ball.vx = -Math.abs(ball.vx); }
+    if(ball.y < BALL_R){ ball.y = BALL_R; ball.vy = Math.abs(ball.vy); }
+
+    // paddle
+    if(ball.vy > 0 &&
+       ball.y + BALL_R >= PADDLE_Y && ball.y + BALL_R <= PADDLE_Y + PADDLE_H + 10 &&
+       ball.x >= paddle.x - BALL_R && ball.x <= paddle.x + PADDLE_W + BALL_R){
+      const rel = Math.max(-1, Math.min(1, (ball.x - paddle.x - PADDLE_W/2)/(PADDLE_W/2)));
+      const a = rel * (Math.PI/3); // up to 60 deg
+      ball.vx = Math.sin(a) * speed;
+      ball.vy = -Math.cos(a) * speed;
+      ball.y = PADDLE_Y - BALL_R;
+      bumpSpeed(SPEED_UP_PADDLE);
+      if(demo) pickAiError();
+    }
+
+    // blocks
+    if(ball.y - BALL_R <= B_TOP + MAX_ROWS*(B_H+B_SPACE)){
+      for(const b of blocks){
+        if(!b.alive) continue;
+        const nx = Math.max(b.x, Math.min(ball.x, b.x + b.w));
+        const ny = Math.max(b.y, Math.min(ball.y, b.y + b.h));
+        const dx = ball.x - nx, dy = ball.y - ny;
+        if(dx*dx + dy*dy <= BALL_R*BALL_R){
+          b.alive = false; blockCount--;
+          score += 10;
+          if(Math.abs(dx) > Math.abs(dy)) ball.vx = (dx >= 0 ? 1 : -1) * Math.abs(ball.vx);
+          else                            ball.vy = (dy >= 0 ? 1 : -1) * Math.abs(ball.vy);
+          bumpSpeed(SPEED_UP_BLOCK);
+          // avoid degenerate near-zero vertical component
+          if(Math.abs(ball.vy) < 0.25 * speed){
+            ball.vy = (ball.vy < 0 ? -1 : 1) * 0.25 * speed;
+            const f = 0.25 / Math.abs(ball.vy / speed);
+            ball.vx *= Math.min(1, f);
+          }
+          break;
+        }
+      }
+    }
+
+    // ball lost
+    if(ball.y - BALL_R > H){
+      lives--;
+      if(lives <= 0){
+        state = 'over';
+        demoWait = 110;
+      } else {
+        resetBall();
+      }
+      return;
+    }
+  }
+
+  // level cleared
+  if(blockCount === 0){
+    score += lives * 50;
+    level++;
+    buildLevel(Math.min(MAX_ROWS, START_ROWS + level - 1));
+    resetBall();
+  }
+}
+
+// ---------- Draw ----------
+function draw(){
+  ctx.fillStyle = '#0a0a14';
+  ctx.fillRect(0,0,W,H);
+
+  // subtle grid backdrop
+  ctx.strokeStyle = 'rgba(60,70,110,0.10)';
+  ctx.lineWidth = 1;
+  for(let x=0;x<W;x+=40){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for(let y=0;y<H;y+=40){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  // blocks
+  for(const b of blocks){
+    if(!b.alive) continue;
+    ctx.fillStyle = b.color;
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    ctx.fillRect(b.x, b.y, b.w, 4);
+    ctx.fillStyle = 'rgba(0,0,0,0.28)';
+    ctx.fillRect(b.x, b.y + b.h - 4, b.w, 4);
+  }
+
+  // paddle
+  const g = ctx.createLinearGradient(0,PADDLE_Y,0,PADDLE_Y+PADDLE_H);
+  g.addColorStop(0,'#8fd8ff'); g.addColorStop(1,'#1f6fb2');
+  ctx.fillStyle = g;
+  ctx.fillRect(paddle.x, PADDLE_Y, PADDLE_W, PADDLE_H);
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillRect(paddle.x, PADDLE_Y, PADDLE_W, 3);
+
+  // ball
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI*2);
+  const bg = ctx.createRadialGradient(ball.x-2, ball.y-2, 1, ball.x, ball.y, BALL_R);
+  bg.addColorStop(0,'#ffffff'); bg.addColorStop(1,'#9fdcff');
+  ctx.fillStyle = bg; ctx.fill();
+
+  // HUD
+  ctx.font = 'bold 18px monospace';
+  ctx.fillStyle = '#dfe8ff';
+  ctx.textAlign = 'left';
+  ctx.fillText('SCORE ' + String(score).padStart(6,'0'), 12, 30);
+  ctx.fillText('LVL ' + level, 230, 30);
+  ctx.textAlign = 'right';
+  ctx.fillText('LIVES', W - 12, 30);
+  // life icons
+  for(let i=0;i<lives;i++){
+    ctx.beginPath();
+    ctx.arc(W - 24 - i*20, 46, 6, 0, Math.PI*2);
+    ctx.fillStyle = i===0 ? '#ff4d5e' : '#38e1ff';
+    ctx.fill();
+  }
+
+  // demo / help
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 14px monospace';
+  if(demo){
+    ctx.fillStyle = '#4dff88';
+    ctx.fillText('\u25CF DEMO (AI) — press P to play', W/2, 42);
+  } else {
+    ctx.fillStyle = 'rgba(223,232,255,0.6)';
+    ctx.fillText('\u2190/\u2192 move   SPACE launch/restart   P demo', W/2, 42);
+  }
+
+  if(state === 'serve' && !demo){
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.font = 'bold 16px monospace';
+    ctx.fillText('PRESS SPACE TO LAUNCH', W/2, H/2 + 60);
+  }
+
+  if(state === 'over'){
+    ctx.fillStyle = 'rgba(5,5,12,0.72)';
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = '#ff4d5e';
+    ctx.font = 'bold 46px monospace';
+    ctx.fillText('GAME OVER', W/2, H/2 - 10);
+    ctx.fillStyle = '#dfe8ff';
+    ctx.font = 'bold 18px monospace';
+    ctx.fillText('FINAL SCORE ' + score, W/2, H/2 + 30);
+    ctx.fillStyle = 'rgba(223,232,255,0.7)';
+    ctx.font = 'bold 15px monospace';
+    if(demo) ctx.fillText('RESTARTING\u2026', W/2, H/2 + 60);
+    else     ctx.fillText('PRESS SPACE TO RESTART   \u00b7   P FOR DEMO', W/2, H/2 + 60);
+  }
+}
+
+// ---------- Loop ----------
+function frame(){
+  update();
+  draw();
+  requestAnimationFrame(frame);
+}
+
+// auto-start
+newGame();
+demo = true;
+demoWait = 50; // brief pause then AI launches — everything visible quickly
+frame();
+})();
+</script>
+</body>
+</html>

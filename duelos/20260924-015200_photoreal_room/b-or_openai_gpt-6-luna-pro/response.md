@@ -1,0 +1,546 @@
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quiet afternoon — WebGL path tracer</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #111; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .hud {
+    position: fixed; left: 18px; top: 16px; color: #f1eee7;
+    padding: 10px 13px; border: 1px solid rgba(255,255,255,.18);
+    border-radius: 7px; background: rgba(18,20,22,.48);
+    font: 12px/1.45 system-ui, sans-serif; letter-spacing: .025em;
+    backdrop-filter: blur(8px); pointer-events: none;
+    text-shadow: 0 1px 4px #000;
+  }
+  .hud strong { font-size: 13px; font-weight: 600; }
+  .hud span { opacity: .72; }
+  #error { display:none; color:#ffd4c9; }
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div class="hud"><strong>Afternoon light</strong><br><span id="samples">Accumulating samples: 0</span><br><span id="error"></span></div>
+
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("view");
+  const sampleLabel = document.getElementById("samples");
+  const errorLabel = document.getElementById("error");
+  const gl = canvas.getContext("webgl2", {
+    alpha: false, antialias: false, depth: false, stencil: false,
+    premultipliedAlpha: false, preserveDrawingBuffer: false
+  });
+
+  if (!gl) {
+    errorLabel.style.display = "inline";
+    errorLabel.textContent = "WebGL2 is required.";
+    return;
+  }
+
+  const colorFloat = gl.getExtension("EXT_color_buffer_float");
+  if (!colorFloat) {
+    errorLabel.style.display = "inline";
+    errorLabel.textContent = "This browser needs floating-point render targets.";
+    return;
+  }
+
+  const vertexSource = `#version 300 es
+  precision highp float;
+  void main() {
+    vec2 p = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+    gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+  }`;
+
+  const traceSource = `#version 300 es
+  precision highp float;
+  precision highp int;
+  out vec4 outColor;
+  uniform vec2 uResolution;
+  uniform int uFrame;
+  uniform float uTime;
+  uniform sampler2D uPrevious;
+
+  const float PI = 3.14159265359;
+  const float FAR = 35.0;
+
+  float hash21(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+  }
+  float random(inout float seed) {
+    seed += 0.61803398875;
+    return fract(sin(seed * 91.3458) * 47453.5453);
+  }
+
+  float sdBox(vec3 p, vec3 b) {
+    vec3 q = abs(p) - b;
+    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+  }
+  float sdRoundBox(vec3 p, vec3 b, float r) {
+    vec3 q = abs(p) - b;
+    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r;
+  }
+  float sdCylinder(vec3 p, float r, float h) {
+    vec2 d = abs(vec2(length(p.xz), p.y)) - vec2(r, h);
+    return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
+  }
+  float sdSphere(vec3 p, float r) { return length(p) - r; }
+
+  void addShape(inout vec2 hit, float d, float materialId) {
+    if (d < hit.x) hit = vec2(d, materialId);
+  }
+
+  vec2 scene(vec3 p) {
+    vec2 h = vec2(1e5, 0.0);
+
+    // Room shell: the back wall is split around the window opening.
+    addShape(h, sdBox(p - vec3(0.0, -0.12, -0.20), vec3(4.0, 0.12, 5.25)), 1.0);
+    addShape(h, sdBox(p - vec3(0.0,  3.64, -0.20), vec3(4.0, 0.14, 5.25)), 2.0);
+    addShape(h, sdBox(p - vec3(-4.08, 1.75, -0.20), vec3(0.10, 1.90, 5.25)), 0.0);
+    addShape(h, sdBox(p - vec3( 4.08, 1.75, -0.20), vec3(0.10, 1.90, 5.25)), 0.0);
+
+    addShape(h, sdBox(p - vec3(-3.45, 1.75, -5.12), vec3(0.55, 1.90, 0.12)), 0.0);
+    addShape(h, sdBox(p - vec3( 1.83, 1.75, -5.12), vec3(2.17, 1.90, 0.12)), 0.0);
+    addShape(h, sdBox(p - vec3(-1.575, 0.675, -5.12), vec3(1.325, 0.675, 0.12)), 0.0);
+    addShape(h, sdBox(p - vec3(-1.575, 3.275, -5.12), vec3(1.325, 0.325, 0.12)), 0.0);
+
+    // Bright window, timber surround, and sill.
+    addShape(h, sdBox(p - vec3(-1.575, 2.20, -5.015), vec3(1.20, 0.80, 0.014)), 10.0);
+    addShape(h, sdBox(p - vec3(-2.86, 2.20, -4.91), vec3(0.075, 0.91, 0.09)), 9.0);
+    addShape(h, sdBox(p - vec3(-0.29, 2.20, -4.91), vec3(0.075, 0.91, 0.09)), 9.0);
+    addShape(h, sdBox(p - vec3(-1.575, 3.08, -4.91), vec3(1.36, 0.075, 0.09)), 9.0);
+    addShape(h, sdBox(p - vec3(-1.575, 1.32, -4.88), vec3(1.39, 0.075, 0.17)), 5.0);
+    addShape(h, sdBox(p - vec3(-1.575, 2.20, -4.90), vec3(0.025, 0.80, 0.075)), 9.0);
+    addShape(h, sdBox(p - vec3(-1.575, 2.20, -4.90), vec3(1.28, 0.022, 0.075)), 9.0);
+
+    // Sofa: frame, seat cushions, back cushions, arms, and feet.
+    addShape(h, sdRoundBox(p - vec3(1.22, 0.43, -2.43), vec3(1.53, 0.28, 0.82), 0.08), 3.0);
+    addShape(h, sdRoundBox(p - vec3(1.22, 1.14, -3.08), vec3(1.48, 0.70, 0.24), 0.12), 3.0);
+    addShape(h, sdRoundBox(p - vec3(0.48, 0.76, -2.21), vec3(0.70, 0.18, 0.61), 0.10), 4.0);
+    addShape(h, sdRoundBox(p - vec3(1.94, 0.76, -2.21), vec3(0.70, 0.18, 0.61), 0.10), 4.0);
+    addShape(h, sdRoundBox(p - vec3(-0.40, 0.72, -2.43), vec3(0.24, 0.48, 0.80), 0.09), 3.0);
+    addShape(h, sdRoundBox(p - vec3(2.84, 0.72, -2.43), vec3(0.24, 0.48, 0.80), 0.09), 3.0);
+    addShape(h, sdCylinder(p - vec3(0.12, 0.16, -1.86), 0.055, 0.16), 9.0);
+    addShape(h, sdCylinder(p - vec3(2.32, 0.16, -1.86), 0.055, 0.16), 9.0);
+    addShape(h, sdCylinder(p - vec3(0.12, 0.16, -2.93), 0.055, 0.16), 9.0);
+    addShape(h, sdCylinder(p - vec3(2.32, 0.16, -2.93), 0.055, 0.16), 9.0);
+
+    // Coffee table and legs.
+    addShape(h, sdRoundBox(p - vec3(-0.35, 1.00, 0.68), vec3(1.43, 0.085, 0.73), 0.035), 5.0);
+    addShape(h, sdCylinder(p - vec3(-1.58, 0.52, 0.12), 0.065, 0.48), 9.0);
+    addShape(h, sdCylinder(p - vec3( 0.88, 0.52, 0.12), 0.065, 0.48), 9.0);
+    addShape(h, sdCylinder(p - vec3(-1.58, 0.52, 1.24), 0.065, 0.48), 9.0);
+    addShape(h, sdCylinder(p - vec3( 0.88, 0.52, 1.24), 0.065, 0.48), 9.0);
+
+    // Clear, open-topped tumbler; the inner cylinder is cut through the top.
+    vec3 glassP = p - vec3(-0.88, 1.085, 0.62);
+    float glassOuter = sdCylinder(glassP - vec3(0.0, 0.34, 0.0), 0.17, 0.34);
+    float glassInner = sdCylinder(glassP - vec3(0.0, 0.49, 0.0), 0.137, 0.43);
+    addShape(h, max(glassOuter, -glassInner), 7.0);
+
+    // Small table lamp: weighted base, stem, brass shade, and glowing bulb.
+    addShape(h, sdCylinder(p - vec3(0.42, 1.13, 0.58), 0.20, 0.045), 6.0);
+    addShape(h, sdCylinder(p - vec3(0.42, 1.38, 0.58), 0.035, 0.22), 6.0);
+    vec3 shadeP = p - vec3(0.42, 1.78, 0.58);
+    float shadeY = abs(shadeP.y) - 0.23;
+    float shadeR = mix(0.34, 0.15, clamp((shadeP.y + 0.23) / 0.46, 0.0, 1.0));
+    float shadeSide = (length(shadeP.xz) - shadeR) * 0.91;
+    addShape(h, max(shadeSide, shadeY), 6.0);
+    addShape(h, sdSphere(p - vec3(0.42, 1.51, 0.58), 0.085), 11.0);
+
+    // Polished wall mirror and a simple dark frame.
+    addShape(h, sdBox(p - vec3(3.88, 2.02, -1.52), vec3(0.045, 0.83, 1.02)), 8.0);
+    addShape(h, sdBox(p - vec3(3.83, 2.91, -1.52), vec3(0.065, 0.075, 1.10)), 9.0);
+    addShape(h, sdBox(p - vec3(3.83, 1.13, -1.52), vec3(0.065, 0.075, 1.10)), 9.0);
+    addShape(h, sdBox(p - vec3(3.83, 2.02, -2.61), vec3(0.065, 0.96, 0.075)), 9.0);
+    addShape(h, sdBox(p - vec3(3.83, 2.02, -0.43), vec3(0.065, 0.96, 0.075)), 9.0);
+
+    return h;
+  }
+
+  float march(vec3 ro, vec3 rd, out float materialId) {
+    float t = 0.0;
+    materialId = 0.0;
+    for (int i = 0; i < 120; i++) {
+      vec2 h = scene(ro + rd * t);
+      if (h.x < 0.0018) {
+        materialId = h.y;
+        return t;
+      }
+      t += max(h.x * 0.82, 0.0015);
+      if (t > FAR) break;
+    }
+    return FAR;
+  }
+
+  vec3 normalAt(vec3 p) {
+    const float e = 0.0015;
+    return normalize(vec3(
+      scene(p + vec3(e,0,0)).x - scene(p - vec3(e,0,0)).x,
+      scene(p + vec3(0,e,0)).x - scene(p - vec3(0,e,0)).x,
+      scene(p + vec3(0,0,e)).x - scene(p - vec3(0,0,e)).x
+    ));
+  }
+
+  bool blocked(vec3 ro, vec3 rd, float maxDistance) {
+    float t = 0.018;
+    for (int i = 0; i < 90; i++) {
+      float d = scene(ro + rd * t).x;
+      if (d < 0.002) return true;
+      t += max(d * 0.82, 0.003);
+      if (t >= maxDistance) return false;
+    }
+    return false;
+  }
+
+  vec3 albedo(int id, vec3 p) {
+    if (id == 0) return vec3(0.70, 0.66, 0.58);
+    if (id == 1) {
+      vec2 cell = vec2(p.x / 0.56, (p.z + floor(p.x / 0.56) * 0.63) / 1.55);
+      vec2 f = fract(cell);
+      float seam = smoothstep(0.012, 0.030, min(f.x, f.y));
+      float variation = 0.90 + 0.16 * hash21(floor(cell));
+      vec3 wood = vec3(0.42, 0.235, 0.105) * variation;
+      return mix(vec3(0.105, 0.055, 0.028), wood, seam);
+    }
+    if (id == 2) return vec3(0.73, 0.72, 0.68);
+    if (id == 3) return vec3(0.105, 0.16, 0.19);
+    if (id == 4) return vec3(0.15, 0.22, 0.25);
+    if (id == 5) return vec3(0.34, 0.17, 0.075);
+    if (id == 6) return vec3(0.72, 0.49, 0.19);
+    if (id == 7) return vec3(0.96, 0.99, 1.0);
+    if (id == 8) return vec3(0.96, 0.98, 1.0);
+    if (id == 9) return vec3(0.15, 0.075, 0.035);
+    return vec3(0.8);
+  }
+
+  vec3 cosineHemisphere(vec3 n, inout float seed) {
+    float r = sqrt(random(seed));
+    float phi = 2.0 * PI * random(seed);
+    vec3 helper = abs(n.y) < 0.95 ? vec3(0,1,0) : vec3(1,0,0);
+    vec3 tangent = normalize(cross(helper, n));
+    vec3 bitangent = cross(n, tangent);
+    return normalize(tangent * (r * cos(phi)) +
+                     bitangent * (r * sin(phi)) +
+                     n * sqrt(max(0.0, 1.0 - r * r)));
+  }
+
+  vec3 tracePath(vec3 ro, vec3 rd, inout float seed) {
+    vec3 radiance = vec3(0.0);
+    vec3 throughput = vec3(1.0);
+    bool previousWasDiffuse = false;
+
+    for (int bounce = 0; bounce < 5; bounce++) {
+      float materialId;
+      float t = march(ro, rd, materialId);
+      if (t >= FAR) {
+        radiance += throughput * vec3(0.025, 0.034, 0.050);
+        break;
+      }
+
+      vec3 p = ro + rd * t;
+      vec3 n = normalAt(p);
+      bool frontFace = dot(rd, n) < 0.0;
+      vec3 faceN = frontFace ? n : -n;
+      int id = int(materialId + 0.5);
+
+      if (id == 10) {
+        if (!previousWasDiffuse) radiance += throughput * vec3(13.0, 10.6, 7.6);
+        break;
+      }
+      if (id == 11) {
+        if (!previousWasDiffuse) radiance += throughput * vec3(7.0, 4.2, 1.7);
+        break;
+      }
+
+      vec3 base = albedo(id, p);
+
+      // Next-event estimation: a broad, warm window source gives soft shadows.
+      bool diffuseSurface = (id != 7 && id != 8);
+      if (diffuseSurface) {
+        vec3 lightPoint = vec3(-2.775 + 2.40 * random(seed),
+                               1.40 + 1.58 * random(seed),
+                              -5.00);
+        vec3 toLight = lightPoint - p;
+        float d2 = dot(toLight, toLight);
+        float d = sqrt(d2);
+        vec3 wi = toLight / d;
+        float cosSurface = max(dot(faceN, wi), 0.0);
+        float cosWindow = max(dot(vec3(0,0,1), -wi), 0.0);
+        if (cosSurface > 0.0 && cosWindow > 0.0 &&
+            !blocked(p + faceN * 0.012, wi, d - 0.035)) {
+          float area = 2.40 * 1.58;
+          vec3 light = vec3(13.0, 10.6, 7.6);
+          radiance += throughput * (base / PI) * light *
+                      (cosSurface * cosWindow * area / max(d2, 0.02));
+        }
+
+        // A small warm pool of light below the lamp shade.
+        vec3 lampPoint = vec3(0.42, 1.50, 0.58);
+        vec3 lampDelta = lampPoint - p;
+        float lampD2 = dot(lampDelta, lampDelta);
+        float lampD = sqrt(lampD2);
+        vec3 lampDir = lampDelta / lampD;
+        float lampCos = max(dot(faceN, lampDir), 0.0);
+        if (lampCos > 0.0 &&
+            !blocked(p + faceN * 0.012, lampDir, lampD - 0.12)) {
+          radiance += throughput * (base / PI) *
+                      vec3(17.0, 9.5, 3.8) * lampCos /
+                      max(lampD2, 0.10);
+        }
+      }
+
+      if (id == 8) {
+        rd = reflect(rd, faceN);
+        throughput *= vec3(0.96, 0.98, 1.0);
+        ro = p + faceN * 0.012;
+        previousWasDiffuse = false;
+      } else if (id == 7) {
+        float eta = frontFace ? (1.0 / 1.48) : 1.48;
+        float cosTheta = clamp(dot(-rd, faceN), 0.0, 1.0);
+        float sin2Theta = eta * eta * (1.0 - cosTheta * cosTheta);
+        float r0 = (1.0 - 1.48) / (1.0 + 1.48);
+        r0 *= r0;
+        float fresnel = r0 + (1.0 - r0) * pow(1.0 - cosTheta, 5.0);
+        if (sin2Theta > 1.0 || random(seed) < fresnel) {
+          rd = reflect(rd, faceN);
+          ro = p + faceN * 0.012;
+        } else {
+          rd = refract(rd, faceN, eta);
+          ro = p - faceN * 0.012;
+          throughput *= vec3(0.99, 0.995, 1.0);
+        }
+        previousWasDiffuse = false;
+      } else if (id == 6) {
+        // Soft, slightly imperfect brass reflections.
+        if (random(seed) < 0.84) {
+          vec3 perfect = reflect(rd, faceN);
+          rd = normalize(perfect + cosineHemisphere(faceN, seed) * 0.11);
+          if (dot(rd, faceN) < 0.0) rd = reflect(rd, faceN);
+          throughput *= vec3(0.82, 0.60, 0.31) / 0.84;
+          previousWasDiffuse = false;
+        } else {
+          rd = cosineHemisphere(faceN, seed);
+          throughput *= base * 0.12 / 0.16;
+          previousWasDiffuse = true;
+        }
+        ro = p + faceN * 0.012;
+      } else {
+        rd = cosineHemisphere(faceN, seed);
+        throughput *= base;
+        ro = p + faceN * 0.012;
+        previousWasDiffuse = true;
+      }
+
+      if (bounce >= 2) {
+        float survive = clamp(max(throughput.r, max(throughput.g, throughput.b)), 0.12, 0.88);
+        if (random(seed) > survive) break;
+        throughput /= survive;
+      }
+    }
+    return radiance;
+  }
+
+  void main() {
+    ivec2 pixel = ivec2(gl_FragCoord.xy);
+    float seed = hash21(vec2(pixel) + float(uFrame) * vec2(17.13, 31.71)) * 1000.0
+               + float(uFrame) * 0.173;
+
+    vec2 jitter = vec2(random(seed), random(seed));
+    vec2 uv = (vec2(pixel) + jitter) / uResolution;
+    vec2 screen = uv * 2.0 - 1.0;
+    screen.x *= uResolution.x / uResolution.y;
+
+    // Delicate, continuous camera drift: enough to reveal the space, not a fast orbit.
+    vec3 camera = vec3(0.10 * sin(uTime * 0.10), 1.66, 5.80);
+    vec3 target = vec3(0.04 * sin(uTime * 0.10), 1.31, -1.55);
+    vec3 forward = normalize(target - camera);
+    vec3 right = normalize(cross(forward, vec3(0,1,0)));
+    vec3 up = cross(right, forward);
+    float focal = 1.0 / tan(radians(21.0));
+    vec3 direction = normalize(forward * focal + right * screen.x + up * screen.y);
+
+    // Small lens aperture for a restrained depth-of-field effect.
+    float lensR = 0.025 * sqrt(random(seed));
+    float lensA = 2.0 * PI * random(seed);
+    vec3 lensOffset = (right * cos(lensA) + up * sin(lensA)) * lensR;
+    float focusDistance = 8.0 / max(dot(direction, forward), 0.1);
+    vec3 focusPoint = camera + direction * focusDistance;
+    vec3 rayOrigin = camera + lensOffset;
+    vec3 rayDirection = normalize(focusPoint - rayOrigin);
+
+    vec3 sampleColor = tracePath(rayOrigin, rayDirection, seed);
+    if (uFrame == 0) {
+      outColor = vec4(sampleColor, 1.0);
+    } else {
+      vec3 oldColor = texelFetch(uPrevious, pixel, 0).rgb;
+      float n = float(uFrame);
+      outColor = vec4(oldColor + (sampleColor - oldColor) / (n + 1.0), 1.0);
+    }
+  }`;
+
+  const displaySource = `#version 300 es
+  precision highp float;
+  out vec4 outColor;
+  uniform sampler2D uImage;
+  uniform vec2 uResolution;
+
+  vec3 aces(vec3 x) {
+    return clamp((x * (2.51 * x + 0.03)) /
+                 (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
+  }
+  void main() {
+    ivec2 pixel = ivec2(gl_FragCoord.xy);
+    vec3 c = texelFetch(uImage, pixel, 0).rgb;
+    c = aces(c);
+    c = pow(c, vec3(1.0 / 2.2));
+    vec2 uv = gl_FragCoord.xy / uResolution;
+    float vignette = 1.0 - 0.12 * dot((uv - 0.5) * vec2(1.0, 0.78),
+                                      (uv - 0.5) * vec2(1.0, 0.78));
+    outColor = vec4(c * vignette, 1.0);
+  }`;
+
+  function compile(type, source) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      const message = gl.getShaderInfoLog(shader);
+      gl.deleteShader(shader);
+      throw new Error(message);
+    }
+    return shader;
+  }
+
+  function makeProgram(fragmentSource) {
+    const program = gl.createProgram();
+    gl.attachShader(program, compile(gl.VERTEX_SHADER, vertexSource));
+    gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragmentSource));
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      throw new Error(gl.getProgramInfoLog(program));
+    }
+    return program;
+  }
+
+  let traceProgram, displayProgram;
+  try {
+    traceProgram = makeProgram(traceSource);
+    displayProgram = makeProgram(displaySource);
+  } catch (e) {
+    errorLabel.style.display = "inline";
+    errorLabel.textContent = "Shader error: " + e.message;
+    return;
+  }
+
+  const traceLoc = {
+    resolution: gl.getUniformLocation(traceProgram, "uResolution"),
+    frame: gl.getUniformLocation(traceProgram, "uFrame"),
+    time: gl.getUniformLocation(traceProgram, "uTime"),
+    previous: gl.getUniformLocation(traceProgram, "uPrevious")
+  };
+  const displayLoc = {
+    resolution: gl.getUniformLocation(displayProgram, "uResolution"),
+    image: gl.getUniformLocation(displayProgram, "uImage")
+  };
+
+  gl.useProgram(displayProgram);
+  gl.uniform1i(displayLoc.image, 0);
+
+  let width = 0, height = 0, frame = 0;
+  let textures = [], framebuffers = [];
+
+  function resize() {
+    const scale = Math.min(1.0, 820 / Math.max(1, innerWidth),
+                           640 / Math.max(1, innerHeight));
+    const w = Math.max(1, Math.floor(innerWidth * scale));
+    const h = Math.max(1, Math.floor(innerHeight * scale));
+    if (w === width && h === height) return;
+
+    width = w;
+    height = h;
+    canvas.width = width;
+    canvas.height = height;
+    frame = 0;
+
+    for (const t of textures) gl.deleteTexture(t);
+    for (const f of framebuffers) gl.deleteFramebuffer(f);
+    textures = [];
+    framebuffers = [];
+
+    for (let i = 0; i < 2; i++) {
+      const texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, width, height, 0,
+                    gl.RGBA, gl.HALF_FLOAT, null);
+      const fbo = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
+                              gl.TEXTURE_2D, texture, 0);
+      if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+        errorLabel.style.display = "inline";
+        errorLabel.textContent = "Could not create a floating-point render target.";
+        return;
+      }
+      textures.push(texture);
+      framebuffers.push(fbo);
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+
+  window.addEventListener("resize", resize);
+  resize();
+
+  const start = performance.now();
+  function render(now) {
+    if (!textures.length) {
+      requestAnimationFrame(render);
+      return;
+    }
+
+    const time = (now - start) * 0.001;
+    const writeIndex = frame & 1;
+    const readIndex = 1 - writeIndex;
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers[writeIndex]);
+    gl.viewport(0, 0, width, height);
+    gl.useProgram(traceProgram);
+    gl.uniform2f(traceLoc.resolution, width, height);
+    gl.uniform1i(traceLoc.frame, frame);
+    gl.uniform1f(traceLoc.time, time);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, frame > 0 ? textures[readIndex] : textures[writeIndex]);
+    gl.uniform1i(traceLoc.previous, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, width, height);
+    gl.useProgram(displayProgram);
+    gl.uniform2f(displayLoc.resolution, width, height);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, textures[writeIndex]);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    frame++;
+    sampleLabel.textContent = "Accumulating samples: " + frame.toLocaleString();
+    requestAnimationFrame(render);
+  }
+
+  requestAnimationFrame(render);
+})();
+</script>
+</body>
+</html>
+```

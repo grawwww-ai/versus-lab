@@ -1,0 +1,511 @@
+ I'll provide a complete HTML page that generates a small, interactive Minecraft-style voxel world using Three.js, with chunked geometry, texturing, and a flying camera animation.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Voxel World</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #87CEEB; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.128.0/build/three.module.js';
+
+// ---------- Utilities ----------
+function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function() {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+// Simple value noise (seeded)
+function valueNoise(x, z, seed) {
+    const X = Math.floor(x), Z = Math.floor(z);
+    const fx = x - X, fz = z - Z;
+    const sx = fx * fx * (3 - 2 * fx);
+    const sz = fz * fz * (3 - 2 * fz);
+    const hash = (x, z) => {
+        let h = (X * 374761 + z * 668265263 + seed * 974711) >>> 0;
+        h = (h ^ (h >> 13)) * 1274126177;
+        return ((h ^ (h >> 16)) >>> 0) / 4294967295;
+    };
+    const v00 = hash(X, Z), v10 = hash(X + 1, Z);
+    const v01 = hash(X, Z + 1), v11 = hash(X + 1, Z + 1);
+    const i0 = v00 + (v10 - v00) * sx;
+    const i1 = v01 + (v11 - v01) * sx;
+    return i0 + (i1 - i0) * sz;
+}
+
+function fbm(x, z, seed, octaves = 4) {
+    let value = 0, freq = 1, amp = 1, maxVal = 0;
+    for (let i = 0; i < octaves; i++) {
+        value += amp * valueNoise(x * freq, z * freq, seed + i * 100);
+        freq *= 2.1;
+        amp *= 0.55;
+        maxVal += amp;
+    }
+    return value / maxVal;
+}
+
+// ---------- Constants ----------
+const WORLD_SIZE = 64;             // world is WORLD_SIZE x WORLD_SIZE columns
+const MAX_HEIGHT = 32;
+const SEA_LEVEL = 8;
+const SNOW_LEVEL = 24;
+const CHUNK_SIZE = 16;
+const CHUNKS = WORLD_SIZE / CHUNK_SIZE;
+
+const GRASS = 1, DIRT = 2, STONE = 3, SAND = 4, SNOW = 5;
+const WOOD = 6, LEAVES = 7, WATER = 8;
+
+// Block types (for cell lookup)
+const AIR = 0;
+
+// ---------- World Data ----------
+const worldData = new Uint8Array(WORLD_SIZE * MAX_HEIGHT * WORLD_SIZE);
+const heights = new Uint16Array(WORLD_SIZE * WORLD_SIZE);
+
+function getBlock(x, y, z) {
+    if (x < 0 || x >= WORLD_SIZE || z < 0 || z >= WORLD_SIZE) return AIR;
+    if (y < 0) return STONE;
+    if (y >= MAX_HEIGHT) return AIR;
+    return worldData[(y * WORLD_SIZE + z) * WORLD_SIZE + x];
+}
+
+function setBlock(x, y, z, type) {
+    if (x < 0 || x >= WORLD_SIZE || y < 0 || y >= MAX_HEIGHT || z < 0 || z >= WORLD_SIZE) return;
+    worldData[(y * WORLD_SIZE + z) * WORLD_SIZE + x] = type;
+}
+
+// ---------- Terrain Generation ----------
+const WORLD_SEED = Math.floor(Math.random() * 100000);
+for (let x = 0; x < WORLD_SIZE; x++) {
+    for (let z = 0; z < WORLD_SIZE; z++) {
+        // Layered height function
+        const n = fbm(x * 0.02, z * 0.02, WORLD_SEED);
+        const h = Math.floor(3 + n * 20);
+        const hh = Math.max(1, Math.min(MAX_HEIGHT - 5, h));
+        heights[x + z * WORLD_SIZE] = hh;
+
+        // Terrain blocks
+        for (let y = 1; y <= hh; y++) {
+            let type;
+            if (y === hh) {
+                if (hh < SEA_LEVEL) type = SAND;
+                else if (hh > SNOW_LEVEL) type = SNOW;
+                else type = GRASS;
+            } else {
+                if (y < hh - 3) type = STONE;
+                else type = (hh < SEA_LEVEL) ? SAND : DIRT;
+            }
+            setBlock(x, y, z, type);
+        }
+
+        // Water
+        if (hh < SEA_LEVEL) {
+            for (let y = hh + 1; y <= SEA_LEVEL; y++) setBlock(x, y, z, WATER);
+        }
+    }
+}
+
+// ---------- Trees ----------
+const treeRng = mulberry32(WORLD_SEED + 9999);
+for (let x = 3; x < WORLD_SIZE - 3; x++) {
+    for (let z = 3; z < WORLD_SIZE - 3; z++) {
+        if (getBlock(x, 0, z) !== AIR && getBlock(x, 1, z) === GRASS && treeRng() < 0.06) {
+            const hh = heights[x + z * WORLD_SIZE];
+            if (hh < SNOW_LEVEL - 4) {
+                const trunkH = 4 + Math.floor(treeRng() * 3);
+                for (let y = 0; y < trunkH; y++) setBlock(x, hh + y, z, WOOD);
+                for (let dy = -2; dy <= 2; dy++) {
+                    for (let dx = -2; dx <= 2; dx++) {
+                        for (let dz = -2; dz <= 2; dz++) {
+                            if (Math.abs(dx) === 2 && Math.abs(dz) === 2 && Math.abs(dy) === 2) continue;
+                            const lx = x + dx, ly = hh + trunkH + dy, lz = z + dz;
+                            if (ly >= 3 && ly < MAX_HEIGHT && getBlock(lx, ly, lz) === AIR) {
+                                setBlock(lx, ly, lz, LEAVES);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ---------- Texture Atlas ----------
+const ATLAS_ROWS = 4, ATLAS_COLS = 4;
+const TEX_SIZE = 16;
+const atlasCanvas = document.createElement('canvas');
+atlasCanvas.width = TEX_SIZE * ATLAS_COLS;
+atlasCanvas.height = TEX_SIZE * ATLAS_ROWS;
+const ctx = atlasCanvas.getContext('2d');
+
+function createTexture(seed, palette, customDraw) {
+    const rng = mulberry32(seed);
+    const c = document.createElement('canvas');
+    c.width = TEX_SIZE; c.height = TEX_SIZE;
+    const cc = c.getContext('2d');
+    for (let y = 0; y < TEX_SIZE; y++) {
+        for (let x = 0; x < TEX_SIZE; x++) {
+            const r = rng();
+            let col = palette.base;
+            if (r < 0.25) col = palette.dark;
+            else if (r > 0.8) col = palette.light;
+            cc.fillStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
+            cc.fillRect(x, y, 1, 1);
+        }
+    }
+    if (customDraw) customDraw(cc, rng);
+    return c;
+}
+
+// Grass top
+const grassTopTex = createTexture(WORLD_SEED + 1, {base:[96,180,64], dark:[64,140,32], light:[128,220,96]});
+// Dirt
+const dirtTex = createTexture(WORLD_SEED + 2, {base:[130,90,50], dark:[100,65,35], light:[150,110,70]});
+const stoneTex = createTexture(WORLD_SEED + 3, {base:[120,120,125], dark:[90,90,95], light:[150,150,155]});
+const sandTex = createTexture(WORLD_SEED + 4, {base:[200,180,120], dark:[170,150,90], light:[230,210,160]});
+const snowTex = createTexture(WORLD_SEED + 5, {base:[240,248,255], dark:[200,215,235], light:[255,255,255]});
+const logSideTex = createTexture(WORLD_SEED + 6, {base:[120,80,45], dark:[90,60,30], light:[140,100,60]}, (cc) => {
+    cc.fillStyle = 'rgba(80,50,20,0.5)';
+    for (let i=0;i<16;i++) cc.fillRect(i, 0, 1, 16);
+});
+const logTopTex = createTexture(WORLD_SEED + 7, {base:[140,100,60], dark:[110,70,40], light:[160,120,80]});
+const leavesTex = createTexture(WORLD_SEED + 8, {base:[60,150,40], dark:[30,110,20], light:[90,190,70]});
+const waterTex = createTexture(WORLD_SEED + 9, {base:[40,90,180,0.6], dark:[20,50,120,0.5], light:[60,130,220,0.7]});
+
+// Grass side: dirt + grass strip
+const grassSide = document.createElement('canvas');
+grassSide.width = TEX_SIZE; grassSide.height = TEX_SIZE;
+{
+    const g = grassSide.getContext('2d');
+    g.drawImage(dirtTex, 0, 0);
+    for (let y=0; y<3; y++) {
+        for (let x=0; x<TEX_SIZE; x++) {
+            const c = [80,160,50];
+            g.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
+            g.fillRect(x, y, 1, 1);
+        }
+    }
+}
+
+// Draw into atlas (row 0)
+ctx.drawImage(grassTopTex, 0, 0);
+ctx.drawImage(grassSide, 16, 0);
+ctx.drawImage(dirtTex, 32, 0);
+ctx.drawImage(stoneTex, 48, 0);
+// row 1
+ctx.drawImage(sandTex, 0, 16);
+ctx.drawImage(snowTex, 16, 16);
+ctx.drawImage(logSideTex, 32, 16);
+ctx.drawImage(logTopTex, 48, 16);
+// row 2
+ctx.drawImage(leavesTex, 0, 32);
+ctx.drawImage(waterTex, 16, 32);
+
+// ---------- Face & UV Tables ----------
+const FACES = [
+    { // +X
+        normal: [1,0,0],
+        corners: [
+            {pos:[1,0,1], uv:[1,0]},
+            {pos:[1,1,1], uv:[1,1]},
+            {pos:[1,1,0], uv:[0,1]},
+            {pos:[1,0,0], uv:[0,0]},
+        ]
+    },
+    { // -X
+        normal: [-1,0,0],
+        corners: [
+            {pos:[0,0,0], uv:[0,0]},
+            {pos:[0,1,0], uv:[0,1]},
+            {pos:[0,1,1], uv:[1,1]},
+            {pos:[0,0,1], uv:[1,0]},
+        ]
+    },
+    { // +Y
+        normal: [0,1,0],
+        corners: [
+            {pos:[0,1,0], uv:[0,0]},
+            {pos:[1,1,0], uv:[1,0]},
+            {pos:[1,1,1], uv:[1,1]},
+            {pos:[0,1,1], uv:[0,1]},
+        ]
+    },
+    { // -Y
+        normal: [0,-1,0],
+        corners: [
+            {pos:[0,0,0], uv:[0,0]},
+            {pos:[0,0,1], uv:[0,1]},
+            {pos:[1,0,1], uv:[1,1]},
+            {pos:[1,0,0], uv:[1,0]},
+        ]
+    },
+    { // +Z
+        normal: [0,0,1],
+        corners: [
+            {pos:[0,0,1], uv:[0,0]},
+            {pos:[1,0,1], uv:[1,0]},
+            {pos:[1,1,1], uv:[1,1]},
+            {pos:[0,1,1], uv:[0,1]},
+        ]
+    },
+    { // -Z
+        normal: [0,0,-1],
+        corners: [
+            {pos:[1,0,0], uv:[0,0]},
+            {pos:[0,0,0], uv:[1,0]},
+            {pos:[0,1,0], uv:[1,1]},
+            {pos:[1,1,0], uv:[0,1]},
+        ]
+    },
+];
+
+const FACE_BRIGHTNESS = [0.6, 0.6, 1.0, 0.55, 0.85, 0.85];
+
+// Atlas cell rectangles: {u0,v0,u1,v1}
+function cellRect(cell) {
+    const col = cell % ATLAS_COLS;
+    const row = Math.floor(cell / ATLAS_COLS);
+    const w = 1 / ATLAS_COLS, h = 1 / ATLAS_ROWS;
+    // v0 = bottom of cell, v1 = top
+    return {u0: col*w, v0: 1.0 - (row+1)*h, u1: (col+1)*w, v1: 1.0 - row*h};
+}
+
+const GRASS_TOP_CELL = 0, GRASS_SIDE_CELL = 1, DIRT_CELL = 2, STONE_CELL = 3;
+const SAND_CELL = 4, SNOW_CELL = 5, LOG_SIDE_CELL = 6, LOG_TOP_CELL = 7;
+const LEAVES_CELL = 8, WATER_CELL = 9;
+
+function cellForType(type, face) {
+    if (type === GRASS) return (face === 2) ? GRASS_TOP_CELL : (face === 3 ? DIRT_CELL : GRASS_SIDE_CELL);
+    if (type === STONE) return STONE_CELL;
+    if (type === SAND) return SAND_CELL;
+    if (type === SNOW) return SNOW_CELL;
+    if (type === DIRT) return DIRT_CELL;
+    if (type === WOOD) return (face === 2 || face === 3) ? LOG_TOP_CELL : LOG_SIDE_CELL;
+    if (type === LEAVES) return LEAVES_CELL;
+    if (type === WATER) return WATER_CELL;
+    return DIRT_CELL;
+}
+
+// ---------- Chunk Building ----------
+function buildChunkGeometry(cx, cz, transparent) {
+    const geoC = { positions: [], normals: [], uvs: [], colors: [], indices: [] };
+
+    for (let x = 0; x < CHUNK_SIZE; x++) {
+        for (let z = 0; z < CHUNK_SIZE; z++) {
+            for (let y = 0; y < MAX_HEIGHT; y++) {
+                const wx = cx * CHUNK_SIZE + x;
+                const wz = cz * CHUNK_SIZE + z;
+                const type = getBlock(wx, y, wz);
+                if (type === AIR) continue;
+                const isWater = (type === WATER);
+
+                // Skip if geometry type doesn't match
+                if (transparent && !isWater) continue;
+                if (!transparent && isWater) continue;
+
+                for (let face = 0; face < 6; face++) {
+                    const dx = FACES[face].normal[0];
+                    const dy = FACES[face].normal[1];
+                    const dz = FACES[face].normal[2];
+                    const nx = wx + dx, ny = y + dy, nz = wz + dz;
+                    const ntype = getBlock(nx, ny, nz);
+
+                    let draw;
+                    if (isWater) {
+                        draw = (ntype === AIR);
+                    } else {
+                        draw = (ntype === AIR || (ntype === WATER));
+                    }
+                    if (!draw) continue;
+
+                    const f = FACES[face];
+                    const brightness = FACE_BRIGHTNESS[face];
+                    const cell = cellRect(cellForType(type, face));
+                    const w = cell.u1 - cell.u0, h = cell.v1 - cell.v0;
+
+                    const start = geoC.positions.length / 3;
+
+                    for (let i = 0; i < 4; i++) {
+                        const p = f.corners[i].pos;
+                        geoC.positions.push(wx + p[0], y + p[1], wz + p[2]);
+                        geoC.normals.push(...f.normal);
+                        geoC.colors.push(brightness, brightness, brightness);
+                        const u = cell.u0 + f.corners[i].uv[0] * w;
+                        const v = cell.v0 + f.corners[i].uv[1] * h;
+                        geoC.uvs.push(u, v);
+                    }
+
+                    // Two triangles
+                    geoC.indices.push(start, start+1, start+2, start, start+2, start+3);
+                }
+            }
+        }
+    }
+
+    if (geoC.positions.length === 0) return null;
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(geoC.positions, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(geoC.normals, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(geoC.uvs, 2));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(geoC.colors, 3));
+    geo.setIndex(geoC.indices);
+    return geo;
+}
+
+// ---------- Three.js Setup ----------
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87CEEB);
+scene.fog = new THREE.Fog(0x87CEEB, 60, 120);
+
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(0, 20, 0);
+
+// Lights (for Lambert)
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+directionalLight.position.set(30, 60, 0);
+scene.add(directionalLight);
+
+// Material setup
+const atlasTexture = new THREE.CanvasTexture(atlasCanvas);
+atlasTexture.magFilter = THREE.NearestFilter;
+atlasTexture.minFilter = THREE.NearestFilter;
+atlasTexture.colorSpace = THREE.SRGBColorSpace;
+
+const opaqueMat = new THREE.MeshLambertMaterial({
+    map: atlasTexture,
+    vertexColors: true,
+    side: THREE.DoubleSide,
+    transparent: false
+});
+const waterMat = new THREE.MeshLambertMaterial({
+    map: atlasTexture,
+    vertexColors: true,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.7,
+    depthWrite: false
+});
+
+// Build world chunks
+const chunks = [];
+for (let cx = 0; cx < CHUNKS; cx++) {
+    for (let cz = 0; cz < CHUNKS; cz++) {
+        const opaqueGeo = buildChunkGeometry(cx, cz, false);
+        const waterGeo = buildChunkGeometry(cx, cz, true);
+        if (opaqueGeo) {
+            const mesh = new THREE.Mesh(opaqueGeo, opaqueMat);
+            mesh.position.set(cx * CHUNK_SIZE, 0, cz * CHUNK_SIZE);
+            scene.add(mesh);
+        }
+        if (waterGeo) {
+            const mesh = new THREE.Mesh(waterGeo, waterMat);
+            mesh.position.set(cx * CHUNK_SIZE, 0, cz * CHUNK_SIZE);
+            scene.add(mesh);
+        }
+    }
+}
+
+// ---------- Camera Path ----------
+const pathPoints = [];
+for (let i = 0; i < 20; i++) {
+    const t = i / 19;
+    const angle = t * Math.PI * 2;
+    const r = 15 + Math.sin(angle * 3) * 8;
+    const x = WORLD_SIZE / 2 + Math.cos(angle) * r;
+    const z = WORLD_SIZE / 2 + Math.sin(angle) * r;
+    const y = 8 + Math.sin(angle * 2) * 5 + 5;
+    pathPoints.push(new THREE.Vector3(x, y, z));
+}
+const cameraCurve = new THREE.CatmullRomCurve3(pathPoints, true);
+
+// ---------- Clouds ----------
+const cloudGroup = [];
+for (let i = 0; i < 6; i++) {
+    const cloud = new THREE.Group();
+    const blocks = [
+        [0,0,0], [1,0,0], [2,0,0], [0,0,1], [1,0,1], [2,0,1],
+        [0,0,-1], [1,0,-1], [2,0,-1]
+    ];
+    const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
+    for (const [dx, dy, dz] of blocks) {
+        const cube = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 1.2), mat);
+        cube.position.set(dx*1.2, dy*0.5 + Math.random()*0.3, dz*1.2);
+        cloud.add(cube);
+    }
+    cloud.position.set(Math.random()*WORLD_SIZE, 25 + Math.random()*5, Math.random()*WORLD_SIZE);
+    scene.add(cloud);
+    cloudGroup.push(cloud);
+}
+
+// ---------- Sun (visual) ----------
+const sunCanvas = document.createElement('canvas');
+sunCanvas.width = 64; sunCanvas.height = 64;
+const sctx = sunCanvas.getContext('2d');
+sctx.beginPath();
+sctx.arc(32,32,28,0,Math.PI*2);
+sctx.fillStyle = '#FFF7D6';
+sctx.shadowBlur = 30;
+sctx.shadowColor = '#FFF';
+sctx.fill();
+const sunTexture = new THREE.CanvasTexture(sunCanvas);
+const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunTexture, depthTest: false }));
+sunSprite.scale.set(8,8,1);
+sunSprite.position.set(50, 40, -30);
+scene.add(sunSprite);
+
+// ---------- Animation ----------
+const clock = new THREE.Clock();
+
+function animate() {
+    requestAnimationFrame(animate);
+    const elapsed = clock.getElapsedTime();
+
+    // Move camera along path
+    const t = (elapsed * 0.03) % 1;
+    const point = cameraCurve.getPoint(t);
+    camera.position.copy(point);
+    const look = cameraCurve.getPoint((t + 0.01) % 1);
+    camera.lookAt(look);
+
+    // Animate clouds
+    for (let i = 0; i < cloudGroup.length; i++) {
+        cloudGroup[i].position.x += Math.sin(elapsed * 0.2 + i) * 0.01;
+        if (cloudGroup[i].position.x > WORLD_SIZE + 5) cloudGroup[i].position.x = -5;
+    }
+
+    renderer.render(scene, camera);
+}
+
+animate();
+
+// Resize
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
+```
+
+This creates a small voxel world with grass, dirt, stone, sand, snow, trees, and water. Chunks are built once. The camera flies in a loop around the world while clouds drift overhead. Textures are generated procedurally into an atlas, giving the scene a clean, classic voxel look.

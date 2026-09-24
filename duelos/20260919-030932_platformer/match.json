@@ -1,0 +1,455 @@
+{
+  "id": "20260919-030932_platformer",
+  "challenge": {
+    "id": "platformer",
+    "category": "game",
+    "title_es": "Juego de plataformas",
+    "title_en": "Platformer",
+    "prompt": "Create a polished side-scrolling 2D platformer on Canvas in the style of the 16-bit classics, with an original hero (not an existing character) drawn with code as colorful pixel art. The level scrolls horizontally and is at least 6 screens long, with ground, floating platforms, gaps to jump, moving platforms, coins to collect, enemies that walk back and forth (the hero defeats them by jumping on them) and a goal flag at the end. Include parallax background layers (sky, clouds, hills), a coin counter and a score, simple particle effects when collecting coins or defeating enemies, and a win screen when the flag is reached. Controls: Arrow Left/Right to move, Space or Arrow Up to jump, R to restart. No external assets. Vanilla JS.",
+    "keys": [
+      "ArrowRight",
+      "ArrowRight",
+      "ArrowUp",
+      "Space"
+    ],
+    "rubric": [
+      {
+        "id": "heroe",
+        "c": "Héroe",
+        "es": "Hay un héroe dibujado en pixel art, reconocible como personaje",
+        "w": 1
+      },
+      {
+        "id": "nivel",
+        "c": "Nivel con huecos",
+        "es": "Hay un nivel de plataformas: suelo, plataformas flotantes y huecos para saltar",
+        "w": 2
+      },
+      {
+        "id": "scroll",
+        "c": "Avanza el nivel",
+        "es": "El nivel avanza en horizontal (el escenario cambia entre capturas, no es siempre la misma pantalla)",
+        "w": 2
+      },
+      {
+        "id": "monedas",
+        "c": "Monedas y marcador",
+        "es": "Hay monedas para recoger y un contador de monedas o puntos que sube",
+        "w": 1
+      },
+      {
+        "id": "enemigos",
+        "c": "Enemigos",
+        "es": "Hay enemigos que caminan",
+        "w": 1
+      },
+      {
+        "id": "parallax",
+        "c": "Fondo con capas",
+        "es": "Hay fondo con capas (cielo, nubes, colinas)",
+        "w": 1
+      },
+      {
+        "id": "juega_solo",
+        "c": "Juega solo",
+        "es": "El personaje se mueve y juega solo (cambia de posición y salta entre capturas)",
+        "w": 2
+      },
+      {
+        "id": "pantalla_llena",
+        "c": "Se ve grande",
+        "es": "El juego se ve grande y cuidado, no un recuadro pequeño en una esquina",
+        "w": 1
+      },
+      {
+        "id": "fluido",
+        "c": "Fluido (30+ fps)",
+        "es": "Va fluido (al menos 30 fotogramas por segundo)",
+        "probe": "fps",
+        "arg": 30,
+        "w": 1
+      }
+    ]
+  },
+  "prompt": "Create a polished side-scrolling 2D platformer on Canvas in the style of the 16-bit classics, with an original hero (not an existing character) drawn with code as colorful pixel art. The level scrolls horizontally and is at least 6 screens long, with ground, floating platforms, gaps to jump, moving platforms, coins to collect, enemies that walk back and forth (the hero defeats them by jumping on them) and a goal flag at the end. Include parallax background layers (sky, clouds, hills), a coin counter and a score, simple particle effects when collecting coins or defeating enemies, and a win screen when the flag is reached. Controls: Arrow Left/Right to move, Space or Arrow Up to jump, R to restart. No external assets. Vanilla JS.\n\nAlso include an autoplay demo mode toggled with the P key, in which the game plays itself competently (an AI controls the player) so a viewer can watch a good run.\n\nRequirements: deliver everything in ONE self-contained HTML file (inline CSS and JavaScript; no external resources, CDNs, fonts or images). Reply with the complete file in a single ```html code block.",
+  "contestants": [
+    {
+      "contestant": "or:deepseek/deepseek-v4-flash-0731:free",
+      "first_token_s": 1.141,
+      "first_answer_s": 314.486,
+      "total_s": 610.372,
+      "prompt_tokens": 326,
+      "completion_tokens": 21862,
+      "reasoning_tokens": 11196,
+      "cost": 0,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 393216,
+      "side": "a",
+      "dir": "a-or-deepseek-deepseek-v4-flash-0731-free",
+      "tokens_per_s": 35.9,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": false,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": false
+        },
+        "errors": [
+          "pageerror: win is not defined"
+        ],
+        "score": 65,
+        "load_s": 0.02,
+        "visual": {
+          "contrast": 86.67,
+          "detail_pct": 6.44,
+          "box": [
+            0.122,
+            0.119,
+            0.878,
+            0.881
+          ]
+        },
+        "motion": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "external_requests": [],
+        "capture": {
+          "frames": 900,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "works": true,
+        "score": 38,
+        "base_score": 65,
+        "requirements": {
+          "ok": 2,
+          "total": 9,
+          "pct": 29
+        },
+        "quality": 2.0,
+        "fps": 61,
+        "faults": [
+          "No hay héroe ni personaje pixel art en ninguna captura; el juego carece del elemento central requerido.",
+          "Las 16 capturas son idénticas: no hay scroll, movimiento ni progresión del nivel en absoluto.",
+          "No hay monedas, contador de monedas ni sistema de puntuación visible.",
+          "No hay enemigos que caminen de ida y vuelta.",
+          "No hay bandera de meta ni pantalla de victoria.",
+          "No hay partículas, efectos visuales ni HUD de juego."
+        ],
+        "judged_by": [
+          "inclusionai/ling-3.0-flash-vl:free"
+        ],
+        "doubtful": [
+          "nivel",
+          "parallax"
+        ],
+        "items": [
+          {
+            "id": "heroe",
+            "es": "Hay un héroe dibujado en pixel art, reconocible como personaje",
+            "w": 1,
+            "how": "vision",
+            "ok": false,
+            "prueba": "Captura 1 (y todas las demás): No se ve ningún personaje ni héroe en ninguna parte de la escena; solo hay paisaje estático."
+          },
+          {
+            "id": "nivel",
+            "es": "Hay un nivel de plataformas: suelo, plataformas flotantes y huecos para saltar",
+            "w": 2,
+            "how": "vision",
+            "ok": null,
+            "prueba": "1ª: si (Captura 1: Se ven suelo marrón con línea verde de hierba y dos plataformas flotantes grises/marrón en el centro de la pantalla.) · 2ª: dudoso (Captura 1: hay suelo (capas marrones inferiores) y lo que parecen ser pequeñas plataformas grises flotantes entre los árboles, pero no se distinguen huecos claros para saltar ni diseño de nivel explícito.)"
+          },
+          {
+            "id": "scroll",
+            "es": "El nivel avanza en horizontal (el escenario cambia entre capturas, no es siempre la misma pantalla)",
+            "w": 2,
+            "how": "vision",
+            "ok": false,
+            "prueba": "Captura 1 vs Captura 16: Ambas capturas son idénticas pixel a pixel; no hay avance horizontal ni cambio de escena."
+          },
+          {
+            "id": "monedas",
+            "es": "Hay monedas para recoger y un contador de monedas o puntos que sube",
+            "w": 1,
+            "how": "vision",
+            "ok": false,
+            "prueba": "Captura 5: No hay monedas visibles en el nivel ni hay contador de monedas/puntos en pantalla."
+          },
+          {
+            "id": "enemigos",
+            "es": "Hay enemigos que caminan",
+            "w": 1,
+            "how": "vision",
+            "ok": false,
+            "prueba": "Captura 10: No se observa ningún enemigo caminando en el escenario."
+          },
+          {
+            "id": "parallax",
+            "es": "Hay fondo con capas (cielo, nubes, colinas)",
+            "w": 1,
+            "how": "vision",
+            "ok": null,
+            "prueba": "1ª: dudoso (Captura 3: Existen capas visuales (cielo azul, nubes blancas, colinas verdes, árboles oscuros), pero al ser todas las capturas idénticas no se puede confirmar que las capas se muevan a distintas velocidades.) · 2ª: dudoso (Captura 1: visualmente existen capas (cielo azul, nubes blancas, colinas verdes, árboles), pero al ser todas las capturas idénticas no se puede confirmar que haya movimiento parallax real.)"
+          },
+          {
+            "id": "juega_solo",
+            "es": "El personaje se mueve y juega solo (cambia de posición y salta entre capturas)",
+            "w": 2,
+            "how": "vision",
+            "ok": false,
+            "prueba": "Captura 7 vs Captura 14: No hay cambio de posición ni acción alguna entre capturas; la escena permanece completamente estática."
+          },
+          {
+            "id": "pantalla_llena",
+            "es": "El juego se ve grande y cuidado, no un recuadro pequeño en una esquina",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "prueba": "Captura 12: El juego se presenta en una ventana centrada de tamaño considerable (~640×360) sobre fondo oscuro, no como un pequeño recuadro en una esquina."
+          },
+          {
+            "id": "fluido",
+            "es": "Va fluido (al menos 30 fotogramas por segundo)",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "prueba": "fps: 61"
+          }
+        ],
+        "probe": {
+          "fps": 61,
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png",
+          "evidence/15.png"
+        ]
+      }
+    },
+    {
+      "contestant": "or:nvidia/nemotron-3-ultra-550b-a55b:free",
+      "first_token_s": 1.489,
+      "first_answer_s": 8.075,
+      "total_s": 245.38,
+      "prompt_tokens": 262,
+      "completion_tokens": 16770,
+      "reasoning_tokens": 537,
+      "cost": 0,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 65536,
+      "side": "b",
+      "dir": "b-or-nvidia-nemotron-3-ultra-550b-a55b-free",
+      "tokens_per_s": 68.8,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": false,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [
+          "pageerror: Cannot read properties of undefined (reading 'walk')"
+        ],
+        "score": 80,
+        "load_s": 0.35,
+        "visual": {
+          "contrast": 16.97,
+          "detail_pct": 2.3,
+          "box": [
+            0.18,
+            0.028,
+            0.82,
+            0.978
+          ]
+        },
+        "motion": [
+          330,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "external_requests": [],
+        "capture": {
+          "frames": 900,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "works": true,
+        "score": 32,
+        "base_score": 80,
+        "requirements": {
+          "ok": 2,
+          "total": 9,
+          "pct": 21
+        },
+        "quality": 2.0,
+        "fps": 60.5,
+        "faults": [
+          "Nivel completamente vacío sin plataformas, suelo jugable ni huecos para saltar",
+          "Sin desplazamiento horizontal: las 16 capturas son idénticas, el nivel no avanza",
+          "Sin enemigos visibles en ninguna captura",
+          "Contador de monedas y SCORE permanecen en 0, sin monedas visibles",
+          "Juego renderizado en ventana pequeña centrada, no a pantalla completa",
+          "El personaje flota en el aire sin superficie sobre la que caminar"
+        ],
+        "judged_by": [
+          "inclusionai/ling-3.0-flash-vl:free"
+        ],
+        "doubtful": [
+          "parallax"
+        ],
+        "items": [
+          {
+            "id": "heroe",
+            "es": "Hay un héroe dibujado en pixel art, reconocible como personaje",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "prueba": "Captura 1: se ve un pequeño personaje pixel art centrado (cabeza rojo/naranja, cuerpo azul) sobre el fondo oscuro."
+          },
+          {
+            "id": "nivel",
+            "es": "Hay un nivel de plataformas: suelo, plataformas flotantes y huecos para saltar",
+            "w": 2,
+            "how": "vision",
+            "ok": false,
+            "prueba": "Captura 1: no hay suelo, plataformas flotantes ni huecos visibles; solo hay colinas decorativas en la base y el personaje flota en el aire."
+          },
+          {
+            "id": "scroll",
+            "es": "El nivel avanza en horizontal (el escenario cambia entre capturas, no es siempre la misma pantalla)",
+            "w": 2,
+            "how": "vision",
+            "ok": false,
+            "prueba": "Captura 1 y Captura 16: las capturas son idénticas; no hay cambio en la posición del escenario ni del personaje."
+          },
+          {
+            "id": "monedas",
+            "es": "Hay monedas para recoger y un contador de monedas o puntos que sube",
+            "w": 1,
+            "how": "vision",
+            "ok": false,
+            "prueba": "Captura 1: el contador muestra '0' y en la escena no aparece ninguna moneta visible; el SCORE también es 0."
+          },
+          {
+            "id": "enemigos",
+            "es": "Hay enemigos que caminan",
+            "w": 1,
+            "how": "vision",
+            "ok": false,
+            "prueba": "Captura 1: no hay enemigos visibles en ninguna parte de la pantalla."
+          },
+          {
+            "id": "parallax",
+            "es": "Hay fondo con capas (cielo, nubes, colinas)",
+            "w": 1,
+            "how": "vision",
+            "ok": null,
+            "prueba": "1ª: dudoso (Captura 1: existen capas visuales (cielo oscuro, nubes grises, colinas verdes), pero al ser todas las capturas idéenticas no se puede confirmar que el fondo se desplace a diferentes velocidades.) · 2ª: si (Captura 1: se distinguen al menos dos capas visuales: nubes grises en el cielo y colinas/bosques verdes en la base, creando una estructura de fondo con profundidad.)"
+          },
+          {
+            "id": "juega_solo",
+            "es": "El personaje se mueve y juega solo (cambia de posición y salta entre capturas)",
+            "w": 2,
+            "how": "vision",
+            "ok": false,
+            "prueba": "Captura 1 vs Captura 16: el personaje permanece en la misma posición exacta entre ambas capturas; no se mueve ni salta."
+          },
+          {
+            "id": "pantalla_llena",
+            "es": "El juego se ve grande y cuidado, no un recuadro pequeño en una esquina",
+            "w": 1,
+            "how": "vision",
+            "ok": false,
+            "prueba": "Captura 1: el juego se muestra en un recuadro pequeño centrado (~640x400 px) con borde rojo, rodeado de gran área oscura vacía; no ocupa la pantalla."
+          },
+          {
+            "id": "fluido",
+            "es": "Va fluido (al menos 30 fotogramas por segundo)",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "prueba": "fps: 60.5"
+          }
+        ],
+        "probe": {
+          "fps": 60.5,
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png",
+          "evidence/15.png"
+        ]
+      }
+    }
+  ],
+  "winner": "or:deepseek/deepseek-v4-flash-0731:free",
+  "winner_side": "a",
+  "decided_by": "score"
+}

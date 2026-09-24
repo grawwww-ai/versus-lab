@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Maze Solver Visualization</title>
+<style>
+  body { margin:0; overflow:hidden; background:#111; font-family: monospace; }
+  canvas { display:block; position:absolute; top:0; left:0; }
+  #info {
+    position:absolute; top:10px; left:10px; color:#fff; z-index:10;
+    pointer-events:none; text-shadow:0 0 4px #000;
+  }
+  #info div { margin:4px 0; font-size:18px; }
+  #info span { color:#0ff; font-weight:bold; }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="info">
+  <div>Explored: <span id="explored">0</span></div>
+  <div>Path length: <span id="pathlen">-</span></div>
+</div>
+<script>
+const mazeStr = `#####################
+#S#.....#...........#
+#.###.#.#.#.#####.#.#
+#...#.#.#.#.....#.#.#
+###.#.###...###.#.#.#
+#.#.#...#.#...#.#...#
+#.#.###.#.#.###.#####
+#.#.......#...#.....#
+#.#.#.#.#.###.#####.#
+#.#.#.#.#.#...#.....#
+#.#.#.###.#.###.###.#
+#.#.#.#...#.#...#...#
+#.#.#.#.###.#.###.###
+#...#.......#.#...#.#
+#.###.#######...###.#
+#.#.....#.....#...#.#
+#.#######.#######.#.#
+#.#.....#...#...#.#.#
+#.#.###.###.#.###.#.#
+#...#.......#......E#
+#####################`;
+
+const rows = mazeStr.trim().split('\n');
+const H = rows.length;
+const W = rows[0].length;
+let start = null, end = null;
+const grid = [];
+for (let r = 0; r < H; r++) {
+  const row = [];
+  for (let c = 0; c < W; c++) {
+    const ch = rows[r][c];
+    row.push(ch);
+    if (ch === 'S') start = {r, c};
+    if (ch === 'E') end = {r, c};
+  }
+  grid.push(row);
+}
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let cellSize = 0, offsetX = 0, offsetY = 0;
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  canvas.style.width = width + 'px';
+  canvas.style.height = height + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const padding = 40;
+  const maxCellWidth = (width - padding * 2) / W;
+  const maxCellHeight = (height - padding * 2) / H;
+  cellSize = Math.min(maxCellWidth, maxCellHeight);
+  offsetX = (width - cellSize * W) / 2;
+  offsetY = (height - cellSize * H) / 2;
+}
+window.addEventListener('resize', resize);
+resize();
+
+const queue = [start];
+const visited = Array.from({length: H}, () => Array(W).fill(false));
+const parent = Array.from({length: H}, () => Array(W).fill(null));
+visited[start.r][start.c] = true;
+let exploredCount = 0;
+let found = false;
+let path = [];
+let pathAnimIndex = 0;
+const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+
+const stepInterval = 30;
+const pathStepInterval = 50;
+let lastStepTime = 0, lastPathStepTime = 0;
+let bfsComplete = false;
+
+function bfsStep() {
+  if (queue.length === 0) return;
+  const cur = queue.shift();
+  exploredCount++;
+  document.getElementById('explored').textContent = exploredCount;
+  if (cur.r === end.r && cur.c === end.c) {
+    found = true;
+    let p = cur;
+    while (p) {
+      path.unshift([p.r, p.c]);
+      p = parent[p.r][p.c];
+    }
+    bfsComplete = true;
+    return;
+  }
+  for (const [dr, dc] of dirs) {
+    const nr = cur.r + dr, nc = cur.c + dc;
+    if (nr >= 0 && nr < H && nc >= 0 && nc < W && !visited[nr][nc] && grid[nr][nc] !== '#') {
+      visited[nr][nc] = true;
+      parent[nr][nc] = cur;
+      queue.push({r: nr, c: nc});
+    }
+  }
+}
+
+function draw() {
+  const w = canvas.width / (window.devicePixelRatio || 1);
+  const h = canvas.height / (window.devicePixelRatio || 1);
+  ctx.clearRect(0, 0, w, h);
+
+  // Maze base
+  for (let r = 0; r < H; r++) {
+    for (let c = 0; c < W; c++) {
+      const x = offsetX + c * cellSize;
+      const y = offsetY + r * cellSize;
+      if (grid[r][c] === '#') {
+        ctx.fillStyle = '#222';
+      } else {
+        ctx.fillStyle = '#1a1a2e';
+      }
+      ctx.fillRect(x, y, cellSize, cellSize);
+    }
+  }
+
+  // Visited
+  ctx.fillStyle = 'rgba(0, 200, 255, 0.35)';
+  for (let r = 0; r < H; r++) {
+    for (let c = 0; c < W; c++) {
+      if (visited[r][c] && !(r === start.r && c === start.c) && !(r === end.r && c === end.c)) {
+        const x = offsetX + c * cellSize, y = offsetY + r * cellSize;
+        ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+      }
+    }
+  }
+
+  // Frontier
+  ctx.fillStyle = 'rgba(255, 255, 0, 0.6)';
+  for (const cell of queue) {
+    const x = offsetX + cell.c * cellSize, y = offsetY + cell.r * cellSize;
+    ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+  }
+
+  // Start / End markers
+  const drawMarker = (r, c, color) => {
+    const x = offsetX + c * cellSize + cellSize / 2;
+    const y = offsetY + r * cellSize + cellSize / 2;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y, cellSize / 3, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  drawMarker(start.r, start.c, '#0f0');
+  drawMarker(end.r, end.c, '#f00');
+
+  // Path animation
+  if (pathAnimIndex > 1) {
+    ctx.save();
+    ctx.strokeStyle = 'gold';
+    ctx.lineWidth = cellSize * 0.3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = 'gold';
+    ctx.shadowBlur = cellSize * 0.6;
+    ctx.beginPath();
+    const [r0, c0] = path[0];
+    ctx.moveTo(offsetX + c0 * cellSize + cellSize / 2, offsetY + r0 * cellSize + cellSize / 2);
+    for (let i = 1; i < pathAnimIndex; i++) {
+      const [r, c] = path[i];
+      ctx.lineTo(offsetX + c * cellSize + cellSize / 2, offsetY + r * cellSize + cellSize / 2);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function animate(ts) {
+  if (!lastStepTime) lastStepTime = ts;
+  if (!lastPathStepTime) lastPathStepTime = ts;
+
+  if (!bfsComplete) {
+    if (ts - lastStepTime >= stepInterval) {
+      bfsStep();
+      lastStepTime = ts;
+    }
+  } else {
+    if (pathAnimIndex < path.length) {
+      if (ts - lastPathStepTime >= pathStepInterval) {
+        pathAnimIndex++;
+        lastPathStepTime = ts;
+        if (pathAnimIndex === path.length) {
+          document.getElementById('pathlen').textContent = path.length - 1;
+        }
+      }
+    }
+  }
+
+  draw();
+  requestAnimationFrame(animate);
+}
+
+// Expose solution globally
+window.solution = [];
+const originalBfsStep = bfsStep;
+bfsStep = function() {
+  originalBfsStep();
+  if (found && window.solution.length === 0) {
+    window.solution = path.map(([r, c]) => [r, c]);
+  }
+};
+
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

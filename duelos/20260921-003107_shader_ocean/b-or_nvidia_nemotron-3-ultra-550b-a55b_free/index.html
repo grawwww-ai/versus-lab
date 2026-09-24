@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script type="importmap">{"imports":{"three":"/vendor/three/three.module.js","three/addons/":"/vendor/three/addons/"}}</script>
+<meta charset="UTF-8">
+<title>Stormy Ocean at Sunset</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { overflow: hidden; background: #000; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<script>
+const canvas = document.getElementById('gl');
+const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, depth: false });
+if (!gl) { alert('WebGL2 not supported'); throw new Error('WebGL2 not supported'); }
+
+// Vertex shader - full screen quad
+const vsSource = `#version 300 es
+precision highp float;
+out vec2 vUv;
+void main() {
+  vec2 pos = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2)) * 2.0 - 1.0;
+  vUv = pos * 0.5 + 0.5;
+  gl_Position = vec4(pos, 0.0, 1.0);
+}
+`;
+
+// Fragment shader - raymarched stormy ocean
+const fsSource = `#version 300 es
+precision highp float;
+
+in vec2 vUv;
+out vec4 fragColor;
+
+uniform float uTime;
+uniform vec2 uResolution;
+uniform float uPixelRatio;
+
+// ---- Hash / Noise ----
+uint hash32(uint x) {
+  x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16; return x;
+}
+uint hash32(vec2 p) { return hash32(uint(p.x * 1973.0 + p.y * 9277.0)); }
+float rand(vec2 p) { return float(hash32(p)) / 4294967295.0; }
+float rand(vec3 p) { return rand(vec2(p.x ^ p.y * 19.0, p.z * 73.0)); }
+
+float noise(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = rand(i), b = rand(i + vec2(1,0)), c = rand(i + vec2(0,1)), d = rand(i + vec2(1,1));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+float fbm(vec2 p, int octaves, float lacunarity, float gain) {
+  float amp = 0.5, freq = 1.0, sum = 0.0;
+  for (int i = 0; i < 8; i++) {
+    if (i >= octaves) break;
+    sum += amp * noise(p * freq);
+    amp *= gain; freq *= lacunarity;
+  }
+  return sum;
+}
+float fbm3(vec3 p, int octaves, float lacunarity, float gain) {
+  float amp = 0.5, freq = 1.0, sum = 0.0;
+  for (int i = 0; i < 8; i++) {
+    if (i >= octaves) break;
+    sum += amp * noise(p.xz * freq + p.y * 0.1);
+    amp *= gain; freq *= lacunarity;
+  }
+  return sum;
+}
+
+// ---- Gerstner wave ----
+vec3 gerstner(vec2 xz, float t, vec2 dir, float amp, float wavelength, float phase) {
+  float k = 2.0 * 3.14159265 / wavelength;
+  float c = sqrt(9.81 / k);
+  float f = k * dot(dir, xz) - c * t + phase;
+  float s = sin(f);
+  float cs = cos(f);
+  float qi = amp * k;
+  return vec3(qi * dir.x * cs, amp * s, qi * dir.y * cs);
+}
+
+// ---- Ocean height field ----
+float oceanHeight(vec2 xz, float t) {
+  float h = 0.0;
+  // Large rolling swells (primary)
+  h += 2.8 * sin(0.12 * xz.x - 0.45 * t + 0.3 * sin(0.08 * xz.y - 0.15 * t));
+  h += 2.2 * sin(0.10 * xz.y - 0.38 * t + 0.4 * sin(0.07 * xz.x - 0.12 * t));
+  h += 1.5 * sin(0.08 * (xz.x + xz.y) * 0.707 - 0.32 * t);
+  // Medium waves
+  h += 0.7 * sin(0.25 * xz.x - 0.7 * t + 0.5 * noise(vec2(0.03*xz.x, 0.03*xz.y) + t*0.05));
+  h += 0.5 * sin(0.22 * xz.y - 0.65 * t + 0.4 * noise(vec2(0.03*xz.y, -0.03*xz.x) + t*0.04));
+  h += 0.4 * sin(0.30 * (xz.x - xz.y) * 0.707 - 0.8 * t);
+  // Chop / high freq detail
+  h += 0.15 * fbm(xz * 0.5 + t * 0.02, 4, 2.0, 0.5);
+  h += 0.08 * fbm(xz * 1.2 + t * 0.05, 3, 2.0, 0.5);
+  // Foam-generating sharp crests
+  float slope = length(vec2(
+    0.12*0.12*cos(0.12*xz.x - 0.45*t) + 0.25*0.7*cos(0.25*xz.x - 0.7*t),
+    0.10*0.10*cos(0.10*xz.y - 0.38*t) + 0.22*0.5*cos(0.22*xz.y - 0.65*t)
+  ));
+  return h;
+}
+
+// Gradient of height for normal
+vec3 oceanNormal(vec2 xz, float t) {
+  float eps = 0.01;
+  float h = oceanHeight(xz, t);
+  float hx = oceanHeight(xz + vec2(eps, 0), t);
+  float hy = oceanHeight(xz + vec2(0, eps), t);
+  return normalize(vec3(h - hx, eps, h - hy));
+}
+
+// ---- Sky ----
+vec3 skyColor(vec3 rd, float t) {
+  float sunY = -0.15; // low sun
+  vec3 sunDir = normalize(vec3(0.3, sunY, -0.95));
+  float sunDot = max(dot(rd, sunDir), 0.0);
+  float horizon = max(rd.y, 0.0);
+  
+  // Base gradient
+  vec3 zenith = vec3(0.02, 0.03, 0.08);
+  vec3 horizonCol = vec3(0.15, 0.08, 0.06);
+  vec3 col = mix(zenith, horizonCol, pow(horizon, 0.4));
+  
+  // Clouds - multiple layers
+  vec2 cloudUV = rd.xz / max(rd.y, 0.01) * 0.5;
+  float clouds = 0.0;
+  clouds += 0.6 * fbm(cloudUV * 0.8 + vec2(t*0.002, t*0.001), 5, 2.0, 0.55);
+  clouds += 0.3 * fbm(cloudUV * 2.0 - vec2(t*0.003, 0.0), 4, 2.0, 0.5);
+  clouds = smoothstep(0.45, 0.75, clouds);
+  clouds *= smoothstep(0.0, 0.3, rd.y); // fade toward zenith
+  col += clouds * vec3(0.08, 0.06, 0.05) * (1.0 - rd.y * 0.5);
+  
+  // Dark storm clouds
+  float storm = fbm(cloudUV * 0.4 + vec2(t*0.001, 0.0), 4, 2.2, 0.6);
+  storm = smoothstep(0.55, 0.85, storm);
+  storm *= smoothstep(0.05, 0.4, rd.y);
+  col -= storm * vec3(0.08, 0.07, 0.06);
+  
+  // Sun disk
+  float sunSize = 0.012;
+  float sun = pow(sunDot, 1200.0) * 1.5;
+  float glare = pow(sunDot, 40.0) * 0.15;
+  col += (sun + glare) * vec3(1.0, 0.55, 0.2);
+  
+  // Sun rays / atmospheric scattering
+  float ray = pow(max(dot(rd, normalize(vec3(0.0, sunY, -1.0))), 0.0), 3.0) * 0.15;
+  col += ray * vec3(1.0, 0.4, 0.15);
+  
+  // Horizon fog
+  float fog = exp(-rd.y * 15.0) * 0.6;
+  col = mix(col, vec3(0.12, 0.08, 0.06), fog);
+  
+  return max(col, vec3(0.0));
+}
+
+// ---- Water shading ----
+vec3 waterColor(vec3 ro, vec3 rd, vec3 hitPos, vec3 normal, float t, vec3 sunDir, vec3 viewDir) {
+  // Fresnel
+  float fresnel = pow(1.0 - max(dot(viewDir, normal), 0.0), 3.0);
+  
+  // Reflected ray
+  vec3 refl = reflect(viewDir, normal);
+  float reflSun = max(dot(refl, sunDir), 0.0);
+  float spec = pow(reflSun, 180.0) * 2.5;
+  float glint = pow(reflSun, 20.0) * 0.3;
+  
+  // Foam on crests
+  float height = hitPos.y;
+  float slope = 1.0 - abs(normal.y);
+  float foam = smoothstep(0.35, 0.65, slope) * smoothstep(0.5, 1.5, height);
+  foam *= 0.5 + 0.5 * noise(hitPos.xz * 0.2 + t * 0.3);
+  
+  // Water base color (dark, slightly green-blue)
+  vec3 waterBase = vec3(0.01, 0.03, 0.05);
+  
+  // Reflected sky
+  vec3 reflSky = skyColor(refl, t);
+  reflSky *= 0.3 + 0.4 * fresnel;
+  
+  // Subsurface scattering approximation
+  vec3 scatter = vec3(0.0, 0.08, 0.12) * (1.0 - fresnel) * 0.5;
+  
+  // Depth darkening
+  float depth = max(-hitPos.y, 0.0);
+  float depthFade = exp(-depth * 0.5);
+  
+  vec3 col = waterBase * depthFade + reflSky + scatter;
+  col += (spec + glint) * vec3(1.0, 0.7, 0.35);
+  col += foam * vec3(0.85, 0.85, 0.9);
+  
+  // Underwater caustics-ish
+  float caust = noise(hitPos.xz * 0.5 + t * 0.1) * noise(hitPos.xz * 2.0 - t * 0.05);
+  col += caust * 0.02 * vec3(0.2, 0.5, 0.8) * depthFade;
+  
+  return col;
+}
+
+// ---- Raymarch ocean ----
+bool intersectOcean(vec3 ro, vec3 rd, float t, out float dist, out vec3 hitPos, out vec3 normal) {
+  dist = 0.0;
+  float maxDist = 200.0;
+  float minStep = 0.02;
+  float maxStep = 5.0;
+  
+  for (int i = 0; i < 120; i++) {
+    vec3 pos = ro + rd * dist;
+    float h = oceanHeight(pos.xz, t);
+    float diff = pos.y - h;
+    
+    if (diff < 0.0) {
+      // Binary search for precise intersection
+      float d0 = dist - maxStep;
+      float d1 = dist;
+      for (int j = 0; j < 8; j++) {
+        float dm = (d0 + d1) * 0.5;
+        vec3 pm = ro + rd * dm;
+        float hm = oceanHeight(pm.xz, t);
+        if (pm.y < hm) d1 = dm; else d0 = dm;
+      }
+      dist = d1;
+      hitPos = ro + rd * dist;
+      normal = oceanNormal(hitPos.xz, t);
+      return true;
+    }
+    
+    float step = max(minStep, min(maxStep, diff * 0.5));
+    dist += step;
+    if (dist > maxDist) break;
+  }
+  return false;
+}
+
+// ---- Camera with boat bobbing ----
+vec3 getCameraPos(float t) {
+  // Slow boat bobbing
+  float bobX = sin(t * 0.37) * 0.15 + sin(t * 0.53) * 0.08;
+  float bobY = sin(t * 0.43) * 0.12 + sin(t * 0.61) * 0.06 + 1.8; // eye height ~1.8m
+  float bobZ = cos(t * 0.29) * 0.2 + cos(t * 0.47) * 0.1;
+  return vec3(bobX, bobY, bobZ);
+}
+
+mat3 getCameraRot(float t) {
+  // Gentle pitch/roll/yaw
+  float pitch = sin(t * 0.41) * 0.03 + sin(t * 0.67) * 0.015;
+  float roll  = sin(t * 0.33) * 0.04 + sin(t * 0.59) * 0.02;
+  float yaw   = sin(t * 0.23) * 0.02;
+  
+  vec3 c = vec3(cos(pitch), cos(roll), cos(yaw));
+  vec3 s = vec3(sin(pitch), sin(roll), sin(yaw));
+  
+  mat3 rx = mat3(1,0,0, 0,c.x,-s.x, 0,s.x,c.x);
+  mat3 rz = mat3(c.z,-s.z,0, s.z,c.z,0, 0,0,1);
+  mat3 ry = mat3(c.y,0,s.y, 0,1,0, -s.y,0,c.y);
+  
+  return ry * rx * rz;
+}
+
+// ---- Main ----
+void main() {
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution) / min(uResolution.x, uResolution.y);
+  float t = uTime * 0.001; // seconds
+  
+  // Camera
+  vec3 ro = getCameraPos(t);
+  mat3 rot = getCameraRot(t);
+  vec3 rd = normalize(rot * vec3(uv, -1.0));
+  
+  // Sun direction
+  vec3 sunDir = normalize(vec3(0.3, -0.15, -0.95));
+  
+  // Raymarch
+  float dist;
+  vec3 hitPos, normal;
+  vec3 col;
+  
+  if (intersectOcean(ro, rd, t, dist, hitPos, normal)) {
+    col = waterColor(ro, rd, hitPos, normal, t, sunDir, -rd);
+    // Atmospheric fog on water
+    float fogAmt = 1.0 - exp(-dist * 0.008);
+    vec3 fogCol = vec3(0.12, 0.08, 0.06);
+    col = mix(col, fogCol, fogAmt * 0.7);
+  } else {
+    col = skyColor(rd, t);
+  }
+  
+  // Vignette
+  float vign = 1.0 - length(uv) * 0.15;
+  col *= vign;
+  
+  // Tone mapping (ACES filmic)
+  col = col / (col + 0.15);
+  col = pow(col, vec3(1.0/2.2));
+  
+  fragColor = vec4(col, 1.0);
+}
+`;
+
+// Compile shader
+function createShader(gl, type, source) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+    return null;
+  }
+  return shader;
+}
+
+function createProgram(gl, vs, fs) {
+  const program = gl.createProgram();
+  gl.attachShader(program, vs);
+  gl.attachShader(program, fs);
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.error(gl.getProgramInfoLog(program));
+    return null;
+  }
+  return program;
+}
+
+const vs = createShader(gl, gl.VERTEX_SHADER, vsSource);
+const fs = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+const program = createProgram(gl, vs, fs);
+
+const uTime = gl.getUniformLocation(program, 'uTime');
+const uResolution = gl.getUniformLocation(program, 'uResolution');
+const uPixelRatio = gl.getUniformLocation(program, 'uPixelRatio');
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio, 2);
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+  gl.viewport(0, 0, canvas.width, canvas.height);
+}
+
+window.addEventListener('resize', resize);
+resize();
+
+function render(time) {
+  gl.useProgram(program);
+  gl.uniform1f(uTime, time);
+  gl.uniform2f(uResolution, canvas.width, canvas.height);
+  gl.uniform1f(uPixelRatio, canvas.width / window.innerWidth);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  requestAnimationFrame(render);
+}
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

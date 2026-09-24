@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script type="importmap">{"imports":{"three":"/vendor/three/three.module.js","three/addons/":"/vendor/three/addons/"}}</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WebGL2 Path Tracer — Sunlit Interior</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;background:#000;overflow:hidden;}
+  canvas{display:block;width:100vw;height:100vh;}
+  #label{
+    position:fixed;left:12px;bottom:12px;z-index:10;
+    font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    color:#dff3ff;background:rgba(8,12,18,.55);
+    padding:6px 10px;border-radius:8px;letter-spacing:.4px;
+    border:1px solid rgba(140,200,255,.18);
+    backdrop-filter:blur(4px);pointer-events:none;user-select:none;
+  }
+  #label b{color:#ffd9a0;font-weight:600;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="label">initialising…</div>
+
+<script>
+"use strict";
+(function () {
+
+const canvas = document.getElementById('c');
+const label  = document.getElementById('label');
+
+const gl = canvas.getContext('webgl2', {
+  antialias: false, alpha: false, depth: false, stencil: false,
+  preserveDrawingBuffer: false, powerPreference: 'high-performance'
+});
+if (!gl) {
+  document.body.innerHTML = '<div style="color:#fff;font:16px sans-serif;padding:24px">WebGL2 is required for this demo.</div>';
+  return;
+}
+gl.getExtension('EXT_color_buffer_float');
+
+/* ------------------------------------------------------------------ */
+/*  Shaders                                                            */
+/* ------------------------------------------------------------------ */
+
+const VS = `#version 300 es
+void main(){
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+}`;
+
+const FS_PT = `#version 300 es
+precision highp float;
+precision highp int;
+
+out vec4 fragColor;
+
+uniform vec2  uRes;
+uniform vec3  uCamPos;
+uniform vec3  uCamF;
+uniform vec3  uCamR;
+uniform vec3  uCamU;
+uniform float uAperture;
+uniform float uFocus;
+uniform vec3  uSunC;
+uniform float uSunR;
+uniform float uSunLe;
+uniform uint  uFrame;
+uniform int   uSpp;
+
+#define PI      3.14159265358979
+#define INV_PI  0.31830988618379
+#define IOR     1.5
+#define MAXB    4
+#define NBOX    22
+
+/* ---------------- random ---------------- */
+uint rngState;
+uint pcg(){
+  rngState = rngState * 747796405u + 2891336453u;
+  uint w = ((rngState >> ((rngState >> 28u) + 4u)) ^ rngState) * 277803737u;
+  return (w >> 22u) ^ w;
+}
+float rnd(){ return float(pcg()) * 2.3283064365386963e-10; }
+
+/* ---------------- scene ---------------- */
+const vec4 BC[NBOX] = vec4[NBOX](
+  vec4( 0.00,-0.05, 0.00, 0.0),   // 0  floor
+  vec4( 0.00, 3.05, 0.00, 0.0),   // 1  ceiling
+  vec4(-4.05, 1.50, 0.00, 0.0),   // 2  wall -x
+  vec4( 0.00, 1.50,-4.05, 0.0),   // 3  wall -z
+  vec4( 0.00, 1.50, 4.05, 0.0),   // 4  wall +z
+  vec4( 4.05, 0.45, 0.00, 0.0),   // 5  window wall below
+  vec4( 4.05, 2.70, 0.00, 0.0),   // 6  window wall above
+  vec4( 4.05, 1.50,-2.70, 0.0),   // 7  window wall -z
+  vec4( 4.05, 1.50, 2.70, 0.0),   // 8  window wall +z
+  vec4(-0.90, 0.15,-3.00, 0.0),   // 9  sofa base
+  vec4(-0.90, 0.42,-3.00, 0.0),   // 10 sofa cushion
+  vec4(-0.90, 0.75,-3.40, 0.0),   // 11 sofa back
+  vec4(-1.85, 0.45,-3.00, 0.0),   // 12 sofa arm L
+  vec4( 0.05, 0.45,-3.00, 0.0),   // 13 sofa arm R
+  vec4( 1.60, 0.72, 0.00, 0.0),   // 14 table top
+  vec4( 1.15, 0.34,-0.32, 0.0),   // 15 leg
+  vec4( 2.05, 0.34,-0.32, 0.0),   // 16 leg
+  vec4( 1.15, 0.34, 0.32, 0.0),   // 17 leg
+  vec4( 2.05, 0.34, 0.32, 0.0),   // 18 leg
+  vec4(-3.96, 1.60, 0.00, 0.0),   // 19 mirror
+  vec4( 1.95, 0.88,-0.10, 0.0),   // 20 lamp stand
+  vec4( 0.00, 0.45, 3.78, 0.0)    // 21 sideboard
+);
+
+const vec4 BH[NBOX] = vec4[NBOX](
+  vec4(4.20,0.05,4.20, 0.0),
+  vec4(4.20,0.05,4.20, 3.0),
+  vec4(0.05,1.60,4.20, 2.0),
+  vec4(4.20,1.60,0.05, 1.0),
+  vec4(4.20,1.60,0.05, 2.0),
+  vec4(0.05,0.45,4.20, 2.0),
+  vec4(0.05,0.30,4.20, 2.0),
+  vec4(0.05,1.60,1.50, 2.0),
+  vec4(0.05,1.60,1.50, 2.0),
+  vec4(0.85,0.15,0.50, 4.0),
+  vec4(0.80,0.12,0.48, 4.0),
+  vec4(0.85,0.45,0.12, 4.0),
+  vec4(0.12,0.45,0.55, 4.0),
+  vec4(0.12,0.45,0.55, 4.0),
+  vec4(0.55,0.04,0.42, 5.0),
+  vec4(0.03,0.34,0.03, 5.0),
+  vec4(0.03,0.34,0.03, 5.0),
+  vec4(0.03,0.34,0.03, 5.0),
+  vec4(0.03,0.34,0.03, 5.0),
+  vec4(0.02,0.70,1.00, 7.0),
+  vec4(0.02,0.12,0.02, 6.0),
+  vec4(0.90,0.45,0.20, 5.0)
+);
+
+/* glass sphere, metal lamp sphere (sun is handled analytically) */
+const vec4 SP[2] = vec4[2](
+  vec4(1.45, 0.85,  0.05, 0.090),   // glass on the table
+  vec4(1.95, 1.02, -0.10, 0.160)    // lamp shade
+);
+
+/* ---------------- materials ---------------- */
+struct Mat { vec3 alb; float rough; float spec; float metal; float trans; vec3 emis; };
+
+Mat getMat(int id){
+  Mat m;
+  m.alb = vec3(0.7); m.rough = 0.9; m.spec = 0.0; m.metal = 0.0; m.trans = 0.0;
+  m.emis = vec3(0.0);
+  if (id == 0){                                  // varnished wooden floor
+    m.alb = vec3(0.42, 0.22, 0.10); m.rough = 0.30; m.spec = 0.22;
+  } else if (id == 1){                           // warm terracotta wall
+    m.alb = vec3(0.72, 0.34, 0.20); m.rough = 0.95;
+  } else if (id == 2){                           // white wall
+    m.alb = vec3(0.82, 0.82, 0.80); m.rough = 0.92;
+  } else if (id == 3){                           // ceiling
+    m.alb = vec3(0.88, 0.88, 0.86); m.rough = 0.95;
+  } else if (id == 4){                           // sofa fabric
+    m.alb = vec3(0.36, 0.06, 0.07); m.rough = 0.88;
+  } else if (id == 5){                           // table wood
+    m.alb = vec3(0.32, 0.16, 0.07); m.rough = 0.38; m.spec = 0.28;
+  } else if (id == 6){                           // brushed gold metal
+    m.alb = vec3(0.95, 0.82, 0.55); m.rough = 0.13; m.spec = 1.0; m.metal = 1.0;
+  } else if (id == 7){                           // mirror
+    m.alb = vec3(0.97, 0.97, 0.97); m.rough = 0.0; m.spec = 1.0; m.metal = 1.0;
+  } else if (id == 8){                           // glass
+    m.alb = vec3(0.94, 0.98, 0.94); m.trans = 1.0;
+  } else if (id == 9){                           // sun
+    m.emis = vec3(1.0, 0.93, 0.80) * uSunLe;
+  }
+  return m;
+}
+
+/* ---------------- intersection ---------------- */
+bool boxHit(vec3 ro, vec3 rd, vec3 c, vec3 h, out float t){
+  vec3 o = ro - c;
+  vec3 inv = 1.0 / rd;
+  vec3 t1 = (-h - o) * inv;
+  vec3 t2 = ( h - o) * inv;
+  vec3 tmin = min(t1, t2);
+  vec3 tmax = max(t1, t2);
+  float tn = max(max(tmin.x, tmin.y), tmin.z);
+  float tf = min(min(tmax.x, tmax.y), tmax.z);
+  if (tn > tf) return false;
+  if (tf < 1e-4) return false;
+  t = tn > 1e-4 ? tn : tf;
+  return t < 1e6;
+}
+vec3 boxNormal(vec3 p, vec3 c, vec3 h){
+  vec3 d = (p - c) / h;
+  vec3 a = abs(d);
+  if (a.x >= a.y && a.x >= a.z) return vec3(d.x > 0.0 ? 1.0 : -1.0, 0.0, 0.0);
+  if (a.y >= a.z)               return vec3(0.0, d.y > 0.0 ? 1.0 : -1.0, 0.0);
+  return vec3(0.0, 0.0, d.z > 0.0 ? 1.0 : -1.0);
+}
+bool sphHit(vec3 ro, vec3 rd, vec3 c, float r, out float t){
+  vec3 oc = ro - c;
+  float b = dot(oc, rd);
+  float cc = dot(oc, oc) - r * r;
+  float d = b * b - cc;
+  if (d < 0.0) return false;
+  d = sqrt(d);
+  t = -b - d;
+  if (t < 1e-4){ t = -b + d; if (t < 1e-4) return false; }
+  return true;
+}
+bool sunHit(vec3 ro, vec3 rd, out float t){
+  return sphHit(ro, rd, uSunC, uSunR, t);
+}
+
+struct Hit { bool hit; float t; vec3 p; vec3 n; int mat; };
+
+Hit traceScene(vec3 ro, vec3 rd){
+  Hit h;
+  h.hit = false; h.t = 1e30; h.mat = -1; h.n = vec3(0.0); h.p = vec3(0.0);
+  for (int i = 0; i < NBOX; i++){
+    float t;
+    if (boxHit(ro, rd, BC[i].xyz, BH[i].xyz, t)){
+      if (t < h.t){
+        h.t = t; h.hit = true; h.mat = int(BH[i].w);
+        h.p = ro + rd * t;
+        h.n = boxNormal(h.p, BC[i].xyz, BH[i].xyz);
+      }
+    }
+  }
+  for (int i = 0; i < 2; i++){
+    float t;
+    if (sphHit(ro, rd, SP[i].xyz, SP[i].w, t)){
+      if (t < h.t){
+        h.t = t; h.hit = true; h.mat = (i == 0) ? 8 : 6;
+        h.p = ro + rd * t;
+        h.n = normalize(h.p - SP[i].xyz);
+      }
+    }
+  }
+  {
+    float t;
+    if (sunHit(ro, rd, t)){
+      if (t < h.t){
+        h.t = t; h.hit = true; h.mat = 9;
+        h.p = ro + rd * t;
+        h.n = normalize(h.p - uSunC);
+      }
+    }
+  }
+  return h;
+}
+
+bool occluded(vec3 ro, vec3 rd, float maxT){
+  for (int i = 0; i < NBOX; i++){
+    float t;
+    if (boxHit(ro, rd, BC[i].xyz, BH[i].xyz, t) && t < maxT) return true;
+  }
+  for (int i = 0; i < 2; i++){
+    float t;
+    if (sphHit(ro, rd, SP[i].xyz, SP[i].w, t) && t < maxT) return true;
+  }
+  return false;
+}
+
+/* ---------------- lights ---------------- */
+float lightOmega(vec3 p){
+  float d = length(uSunC - p);
+  float s = clamp(uSunR / d, 0.0, 0.9999);
+  return 2.0 * PI * (1.0 - sqrt(1.0 - s * s));
+}
+float lightPdf(vec3 p){ return 1.0 / lightOmega(p); }
+
+vec3 sampleSun(vec3 p, out vec3 wi, out float pdf){
+  vec3 d = uSunC - p;
+  float dist = length(d);
+  float s = clamp(uSunR / dist, 0.0, 0.9999);
+  float cosA = sqrt(1.0 - s * s);
+  float omega = 2.0 * PI * (1.0 - cosA);
+  pdf = 1.0 / omega;
+  vec3 w = d / dist;
+  vec3 t = normalize(cross(abs(w.y) < 0.9 ? vec3(0.0,1.0,0.0) : vec3(1.0,0.0,0.0), w));
+  vec3 b = cross(w, t);
+  float u1 = rnd(), u2 = rnd();
+  float ct = 1.0 - u1 * (1.0 - cosA);
+  float st = sqrt(max(0.0, 1.0 - ct * ct));
+  float ph = 2.0 * PI * u2;
+  wi = normalize(t * (st * cos(ph)) + b * (st * sin(ph)) + w * ct);
+  return vec3(1.0, 0.93, 0.80) * uSunLe;
+}
+
+vec3 skyColor(vec3 rd){
+  float y = rd.y;
+  vec3 horizon = vec3(0.86, 0.82, 0.74) * 1.15;
+  vec3 zenith  = vec3(0.28, 0.47, 0.98) * 1.90;
+  vec3 c = mix(horizon, zenith, smoothstep(0.0, 0.65, y));
+  c = mix(vec3(0.22, 0.20, 0.18), c, smoothstep(-0.20, 0.03, y));
+  vec3 sd = normalize(uSunC - vec3(4.0, 1.65, 0.0));
+  float g = max(dot(rd, sd), 0.0);
+  c += vec3(1.0, 0.85, 0.62) * pow(g, 180.0) * 6.0;
+  return c;
+}
+
+/* ---------------- sampling helpers ---------------- */
+float lum(vec3 c){ return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
+
+vec3 sampleCos(vec3 n){
+  vec3 t = normalize(cross(abs(n.y) < 0.9 ? vec3(0.0,1.0,0.0) : vec3(1.0,0.0,0.0), n));
+  vec3 b = cross(n, t);
+  float u1 = rnd(), u2 = rnd();
+  float r = sqrt(u1);
+  float ph = 2.0 * PI * u2;
+  return normalize(t * (r * cos(ph)) + b * (r * sin(ph)) + n * sqrt(max(0.0, 1.0 - u1)));
+}
+vec3 sampleSpec(vec3 r, float ex){
+  vec3 t = normalize(cross(abs(r.y) < 0.9 ? vec3(0.0,1.0,0.0) : vec3(1.0,0.0,0.0), r));
+  vec3 b = cross(r, t);
+  float u1 = rnd(), u2 = rnd();
+  float ct = pow(u1, 1.0 / (ex + 1.0));
+  float st = sqrt(max(0.0, 1.0 - ct * ct));
+  float ph = 2.0 * PI * u2;
+  return normalize(t * (st * cos(ph)) + b * (st * sin(ph)) + r * ct);
+}
+
+/* ---------------- path tracing ---------------- */
+vec3 tracePath(vec3 ro, vec3 rd){
+  vec3 col = vec3(0.0);
+  vec3 thr = vec3(1.0);
+  bool prevDelta = true;
+  float prevPdf = 1.0;
+  vec3 prevPos = ro;
+
+  for (int bounce = 0; bounce < MAXB; bounce++){
+    Hit h = traceScene(ro, rd);
+    if (!h.hit){
+      col += thr * skyColor(rd);
+      break;
+    }
+    Mat m = getMat(h.mat);
+
+    if (m.emis.r > 0.0){
+      float w = 1.0;
+      if (!prevDelta){
+        float pl = lightPdf(prevPos);
+        w = prevPdf / (prevPdf + pl);
+      }
+      col += thr * m.emis * w;
+      break;
+    }
+
+    vec3 n  = h.n;
+    vec3 wo = -rd;
+    vec3 nf = (dot(wo, n) > 0.0) ? n : -n;
+
+    /* ---- glass --------------------------------------------------- */
+    if (m.trans > 0.5){
+      vec3 gn = h.n;
+      bool entering = dot(rd, gn) < 0.0;
+      float eta = entering ? (1.0 / IOR) : IOR;
+      vec3 nn = entering ? gn : -gn;
+      float cosi = clamp(dot(wo, nn), 0.0, 1.0);
+      float sin2t = eta * eta * (1.0 - cosi * cosi);
+      vec3 nd;
+      if (sin2t >= 1.0){
+        nd = reflect(rd, nn);
+      } else {
+        float r0 = (1.0 - IOR) / (1.0 + IOR); r0 *= r0;
+        float F = r0 + (1.0 - r0) * pow(1.0 - cosi, 5.0);
+        nd = (rnd() < F) ? reflect(rd, nn) : refract(rd, nn, eta);
+        if (dot(nd, nd) < 1e-8) nd = reflect(rd, nn);
+      }
+      thr *= m.alb;
+      prevDelta = true;
+      ro = h.p + nd * 1e-4;
+      rd = normalize(nd);
+      continue;
+    }
+
+    /* ---- perfect mirror ------------------------------------------ */
+    if (m.rough < 0.05 && m.spec > 0.5){
+      vec3 nd = reflect(rd, nf);
+      thr *= mix(vec3(1.0), m.alb, m.metal) * m.spec;
+      prevDelta = true;
+      ro = h.p + nd * 1e-4;
+      rd = nd;
+      continue;
+    }
+
+    /* ---- diffuse + glossy ---------------------------------------- */
+    vec3 kd = m.alb * (1.0 - m.spec);
+    vec3 ks = mix(vec3(1.0), m.alb, m.metal) * m.spec;
+    float ex = clamp(2.0 / (m.rough * m.rough) - 2.0, 1.0, 4000.0);
+    float pS = lum(ks) / max(1e-3, lum(ks) + lum(kd));
+    vec3 rdir = reflect(rd, nf);
+
+    /* -- next event estimation (sun disc) -- */
+    {
+      vec3 wi; float pdfL;
+      vec3 Le = sampleSun(h.p, wi, pdfL);
+      float cosT = dot(wi, nf);
+      if (cosT > 0.0){
+        if (!occluded(h.p + nf * 5e-4, wi, 1e9)){
+          float cA = max(dot(wi, rdir), 0.0);
+          vec3  f  = kd * INV_PI + ks * ((ex + 2.0) / (2.0 * PI)) * pow(cA, ex);
+          float pSd = ((ex + 1.0) / (2.0 * PI)) * pow(cA, ex);
+          float pDd = cosT * INV_PI;
+          float pdfB = pS * pSd + (1.0 - pS) * pDd;
+          float w = pdfL / (pdfL + pdfB);
+          col += thr * f * cosT * Le * (w / pdfL);
+        }
+      }
+    }
+
+    /* -- bsdf sampling -- */
+    vec3 wi;
+    if (rnd() < pS) wi = sampleSpec(rdir, ex);
+    else            wi = sampleCos(nf);
+
+    float cosT = dot(wi, nf);
+    if (cosT <= 0.0) break;
+
+    float cA   = max(dot(wi, rdir), 0.0);
+    float pdfS = ((ex + 1.0) / (2.0 * PI)) * pow(cA, ex);
+    float pdfD = cosT * INV_PI;
+    float pdfB = pS * pdfS + (1.0 - pS) * pdfD;
+    if (pdfB < 1e-6) break;
+
+    vec3 f = kd * INV_PI + ks * ((ex + 2.0) / (2.0 * PI)) * pow(cA, ex);
+    thr *= f * cosT / pdfB;
+
+    prevDelta = false;
+    prevPdf   = pdfB;
+    prevPos   = h.p;
+    ro = h.p + nf * 5e-4;
+    rd = wi;
+  }
+  return col;
+}
+
+/* ---------------- main ---------------- */
+vec2 apertureSample(){
+  float r = sqrt(rnd());
+  float a = 2.0 * PI * rnd();
+  return vec2(r * cos(a), r * sin(a));
+}
+
+void main(){
+  rngState = uint(gl_FragCoord.x) * 1973u
+           + uint(gl_FragCoord.y) * 9277u
+           + uFrame * 26699u;
+  pcg(); pcg();
+
+  vec3 rightU = normalize(uCamR);
+  vec3 upU    = normalize(uCamU);
+
+  vec3 acc = vec3(0.0);
+  for (int s = 0; s < 8; s++){
+    if (s >= uSpp) break;
+    vec2 jit = vec2(rnd(), rnd());
+    vec2 uv  = (gl_FragCoord.xy + jit - 0.5 * uRes) / (0.5 * uRes.y);
+    vec3 dir = normalize(uCamF + uCamR * uv.x + uCamU * uv.y);
+
+    vec2 ap = apertureSample() * uAperture;
+    vec3 ro = uCamPos + rightU * ap.x + upU * ap.y;
+    vec3 focusP = uCamPos + dir * uFocus;
+    vec3 rd = normalize(focusP - ro);
+
+    acc += tracePath(ro, rd);
+  }
+  acc /= float(uSpp);
+  acc = min(acc, vec3(40.0));      // firefly clamp
+  fragColor = vec4(acc, 1.0);
+}`;
+
+const FS_BLIT = `#version 300 es
+precision highp float;
+uniform sampler2D uTex;
+uniform vec2  uScreen;
+uniform float uExposure;
+out vec4 o;
+void main(){
+  vec2 uv = gl_FragCoord.xy / uScreen;
+  vec3 c = texture(uTex, uv).rgb * uExposure;
+  c = (c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14);
+  c = pow(clamp(c, 0.0, 1.0), vec3(0.4545));
+  o = vec4(c, 1.0);
+}`;
+
+/* ------------------------------------------------------------------ */
+/*  WebGL plumbing                                                     */
+/* ------------------------------------------------------------------ */
+
+function compile(type, src){
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+    console.error(gl.getShaderInfoLog(s), src);
+    throw new Error('shader compile failed');
+  }
+  return s;
+}
+function program(vsSrc, fsSrc){
+  const p = gl.createProgram();
+  gl.attachShader(p, compile(gl.VERTEX_SHADER, vsSrc));
+  gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fsSrc));
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)){
+    console.error(gl.getProgramInfoLog(p));
+    throw new Error('link failed');
+  }
+  return p;
+}
+
+const progPT   = program(VS, FS_PT);
+const progBlit = program(VS, FS_BLIT);
+
+const uPT = {
+  res:      gl.getUniformLocation(progPT, 'uRes'),
+  camPos:   gl.getUniformLocation(progPT, 'uCamPos'),
+  camF:     gl.getUniformLocation(progPT, 'uCamF'),
+  camR:     gl.getUniformLocation(progPT, 'uCamR'),
+  camU:     gl.getUniformLocation(progPT, 'uCamU'),
+  aperture: gl.getUniformLocation(progPT, 'uAperture'),
+  focus:    gl.getUniformLocation(progPT, 'uFocus'),
+  sunC:     gl.getUniformLocation(progPT, 'uSunC'),
+  sunR:     gl.getUniformLocation(progPT, 'uSunR'),
+  sunLe:    gl.getUniformLocation(progPT, 'uSunLe'),
+  frame:    gl.getUniformLocation(progPT, 'uFrame'),
+  spp:      gl.getUniformLocation(progPT, 'uSpp')
+};
+const uBL = {
+  tex:      gl.getUniformLocation(progBlit, 'uTex'),
+  screen:   gl.getUniformLocation(progBlit, 'uScreen'),
+  exposure: gl.getUniformLocation(progBlit, 'uExposure')
+};
+
+const vao = gl.createVertexArray();
+gl.bindVertexArray(vao);
+
+/* render target ---------------------------------------------------- */
+let rtW = 0, rtH = 0, rtTex = null, rtFbo = null, rtIsFloat = true;
+
+function makeRT(w, h){
+  if (rtTex){ gl.deleteTexture(rtTex); gl.deleteFramebuffer(rtFbo); }
+  rtW = w; rtH = h;
+  rtTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, rtTex);
+  rtIsFloat = true;
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA, gl.HALF_FLOAT, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  rtFbo = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, rtFbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rtTex, 0);
+
+  if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE){
+    /* fallback for devices without float render targets */
+    rtIsFloat = false;
+    gl.bindTexture(gl.TEXTURE_2D, rtTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, rtTex, 0);
+  }
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+}
+
+let resetAccum = true;
+
+function resize(){
+  const w = Math.max(320, window.innerWidth | 0);
+  const h = Math.max(240, window.innerHeight | 0);
+  canvas.width  = w;
+  canvas.height = h;
+  const maxPix = 500000;
+  const s = Math.min(0.72, Math.sqrt(maxPix / (w * h)));
+  const rw = Math.max(200, Math.round(w * s));
+  const rh = Math.max(150, Math.round(h * s));
+  if (rw !== rtW || rh !== rtH){ makeRT(rw, rh); resetAccum = true; }
+}
+window.addEventListener('resize', resize);
+
+/* ------------------------------------------------------------------ */
+/*  Camera + sun animation                                             */
+/* ------------------------------------------------------------------ */
+
+function normalize3(v){
+  const l = Math.hypot(v[0], v[1], v[2]) || 1;
+  return [v[0]/l, v[1]/l, v[2]/l];
+}
+function cross3(a, b){
+  return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+}
+
+const FOV = 48 * Math.PI / 180;
+
+function cameraAt(t){
+  // slow orbit: the camera sits near the middle and looks outward at a
+  // different wall every few seconds  (full revolution ~ 30 s)
+  const a  = Math.PI + t * 0.21;
+  const r  = 1.45 + 0.28 * Math.sin(t * 0.13);
+  const px = Math.cos(a) * r;
+  const pz = Math.sin(a) * r;
+  const py = 1.45 + 0.22 * Math.sin(t * 0.17);
+
+  const b  = a + Math.PI;
+  const tr = 1.00 + 0.55 * Math.sin(t * 0.09);
+  const tx = Math.cos(b) * tr;
+  const tz = Math.sin(b) * tr;
+  const ty = 1.00 + 0.35 * Math.sin(t * 0.11);
+
+  const pos = [px, py, pz];
+  const tgt = [tx, ty, tz];
+
+  const fwd = normalize3([tgt[0]-pos[0], tgt[1]-pos[1], tgt[2]-pos[2]]);
+  const right = normalize3(cross3(fwd, [0,1,0]));
+  const up = cross3(right, fwd);
+
+  const aspect = rtW / Math.max(1, rtH);
+  const tanH = Math.tan(FOV * 0.5);
+
+  return {
+    pos,
+    f: fwd,
+    r: [right[0]*tanH*aspect, right[1]*tanH*aspect, right[2]*tanH*aspect],
+    u: [up[0]*tanH, up[1]*tanH, up[2]*tanH],
+    focus: Math.hypot(tgt[0]-pos[0], tgt[1]-pos[1], tgt[2]-pos[2])
+  };
+}
+
+function sunAt(t){
+  const az = 0.78 * Math.sin(t * 0.075);          // ±45°
+  const el = 0.72 + 0.16 * Math.sin(t * 0.053);   // ~32° .. 50°
+  const dx = Math.cos(el) * Math.cos(az);
+  const dy = Math.sin(el);
+  const dz = Math.cos(el) * Math.sin(az);
+  const D  = 25.0;
+  return [
+    [4.0 + dx * D, 1.65 + dy * D, 0.0 + dz * D],
+    2.2,
+    700.0
+  ];
+}
+
+/* ------------------------------------------------------------------ */
+/*  Main loop                                                          */
+/* ------------------------------------------------------------------ */
+
+const SPP = 2;
+const EMA_ALPHA = 0.5;     // temporal blend (never freezes — always new samples)
+
+let simTime = 0;
+let last = performance.now();
+let frame = 0;
+let totalSamples = 0;
+
+resize();
+
+function render(now){
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  simTime += dt;
+
+  const cam = cameraAt(simTime);
+  const [sunC, sunR, sunLe] = sunAt(simTime);
+
+  /* ---- pass 1 : path trace into accumulation buffer ---- */
+  gl.bindFramebuffer(gl.FRAMEBUFFER, rtFbo);
+  gl.viewport(0, 0, rtW, rtH);
+
+  if (resetAccum){
+    gl.disable(gl.BLEND);
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    resetAccum = false;
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ZERO);            // first frame replaces
+  } else {
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.CONSTANT_ALPHA, gl.ONE_MINUS_CONSTANT_ALPHA);
+    gl.blendColor(0, 0, 0, EMA_ALPHA);
+  }
+
+  gl.useProgram(progPT);
+  gl.uniform2f(uPT.res, rtW, rtH);
+  gl.uniform3fv(uPT.camPos, cam.pos);
+  gl.uniform3fv(uPT.camF, cam.f);
+  gl.uniform3fv(uPT.camR, cam.r);
+  gl.uniform3fv(uPT.camU, cam.u);
+  gl.uniform1f(uPT.aperture, 0.035);
+  gl.uniform1f(uPT.focus, cam.focus);
+  gl.uniform3fv(uPT.sunC, sunC);
+  gl.uniform1f(uPT.sunR, sunR);
+  gl.uniform1f(uPT.sunLe, sunLe);
+  gl.uniform1ui(uPT.frame, frame >>> 0);
+  gl.uniform1i(uPT.spp, SPP);
+
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.disable(gl.BLEND);
+
+  /* ---- pass 2 : tonemap to screen ---- */
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.useProgram(progBlit);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, rtTex);
+  gl.uniform1i(uBL.tex, 0);
+  gl.uniform2f(uBL.screen, canvas.width, canvas.height);
+  gl.uniform1f(uBL.exposure, 1.0);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+  frame++;
+  totalSamples += SPP;
+  if ((frame & 7) === 0){
+    label.innerHTML =
+      'samples&nbsp;<b>' + totalSamples.toLocaleString() + '</b>' +
+      '&nbsp;·&nbsp;' + SPP + ' spp/frame' +
+      '&nbsp;·&nbsp;frame ' + frame +
+      '&nbsp;·&nbsp;' + rtW + '×' + rtH;
+  }
+
+  requestAnimationFrame(render);
+}
+
+requestAnimationFrame(render);
+
+})();
+</script>
+</body>
+</html>

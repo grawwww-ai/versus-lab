@@ -1,0 +1,242 @@
+{
+  "id": "20260924-085621_mus_balada_rock",
+  "challenge": {
+    "id": "mus_balada_rock",
+    "category": "musica",
+    "cerebro": "lenguaje",
+    "title_es": "Balada rock de verano",
+    "title_en": "Summer rock ballad",
+    "segundos": 60,
+    "idioma": "es",
+    "bpm": 72,
+    "tonalidad": "D major",
+    "compas": "4",
+    "estilo": "Balada rock en español, voz femenina potente y emotiva, empieza con piano suave y crece con guitarra eléctrica, batería y bajo en el estribillo, 72 BPM, sonido de estadio.",
+    "letra": "[Verse]\nSe apagan las luces del paseo\ny el mar se lleva lo que fue\nguardé tu risa en un recuerdo\nque no sé cómo devolver\n\n[Chorus]\nÚltima noche de verano\nno me sueltes de la mano\nque mañana es otra vida\ny hoy aún eres mía\n\n[Verse]\nLa arena guarda nuestros pasos\nla luna sabe tu canción",
+    "excelente": "Una balada que empieza íntima al piano y estalla en el estribillo con guitarras y batería, con una voz femenina potente que canta la letra en español con emoción y dicción clara, y un crecimiento que se nota de verdad.",
+    "rubric": [
+      {
+        "id": "estilo",
+        "c": "Suena a balada rock",
+        "es": "Suena a balada rock, con piano al principio y guitarras y batería en el estribillo",
+        "w": 3
+      },
+      {
+        "id": "voz",
+        "c": "Voz potente y natural",
+        "es": "La voz femenina suena potente, emotiva y natural, sin artefactos",
+        "w": 3
+      },
+      {
+        "id": "letra",
+        "c": "Se entiende la letra",
+        "es": "Se entiende la letra en español y es la que se pidió",
+        "w": 2
+      },
+      {
+        "id": "crece",
+        "c": "Crece en el estribillo",
+        "es": "La canción crece de verdad del piano suave al estribillo con toda la banda",
+        "w": 2
+      },
+      {
+        "id": "gancho",
+        "c": "Te emociona",
+        "es": "Te emociona o te la pondrías otra vez",
+        "w": 2
+      }
+    ],
+    "nivel": 3,
+    "tema": "musica",
+    "prompt": "Estilo: Balada rock en español, voz femenina potente y emotiva, empieza con piano suave y crece con guitarra eléctrica, batería y bajo en el estribillo, 72 BPM, sonido de estadio.\n\nLetra:\n[Verse]\nSe apagan las luces del paseo\ny el mar se lleva lo que fue\nguardé tu risa en un recuerdo\nque no sé cómo devolver\n\n[Chorus]\nÚltima noche de verano\nno me sueltes de la mano\nque mañana es otra vida\ny hoy aún eres mía\n\n[Verse]\nLa arena guarda nuestros pasos\nla luna sabe tu canción"
+  },
+  "prompt": "Estilo: Balada rock en español, voz femenina potente y emotiva, empieza con piano suave y crece con guitarra eléctrica, batería y bajo en el estribillo, 72 BPM, sonido de estadio.\n\nLetra:\n[Verse]\nSe apagan las luces del paseo\ny el mar se lleva lo que fue\nguardé tu risa en un recuerdo\nque no sé cómo devolver\n\n[Chorus]\nÚltima noche de verano\nno me sueltes de la mano\nque mañana es otra vida\ny hoy aún eres mía\n\n[Verse]\nLa arena guarda nuestros pasos\nla luna sabe tu canción",
+  "contestants": [
+    {
+      "first_token_s": null,
+      "first_answer_s": null,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": null,
+      "max_tokens": 0,
+      "cuts": [],
+      "tokens_per_s": null,
+      "contestant": "mus:minimax-music-3",
+      "side": "a",
+      "dir": "a-mus-minimax-music-3",
+      "error": null,
+      "familia": "musica",
+      "total_s": 109.5,
+      "segundos_por_pieza": 56.2,
+      "ficha": {
+        "nombre": "MiniMax Music 3",
+        "casa": "MiniMax",
+        "pasos": 30,
+        "licencia": "Apache 2.0",
+        "salida": "2026-08",
+        "id": "minimax-music-3",
+        "familia": "musica"
+      },
+      "piezas": [
+        {
+          "modelo": "minimax-music-3",
+          "nombre": "MiniMax Music 3",
+          "fichero": "mus_0.flac",
+          "seed": 7,
+          "pasos": 30,
+          "segundos_pedidos": 60.0,
+          "segundos": 44.2
+        },
+        {
+          "modelo": "minimax-music-3",
+          "nombre": "MiniMax Music 3",
+          "fichero": "mus_1.flac",
+          "seed": 21,
+          "pasos": 30,
+          "segundos_pedidos": 60.0,
+          "segundos": 56.2
+        }
+      ],
+      "validation": {
+        "checks": {
+          "genera": true,
+          "duracion": false,
+          "sin_silencios": true,
+          "sin_saturar": true,
+          "canta_la_letra": true
+        },
+        "errors": [],
+        "score": 88,
+        "piezas": 2,
+        "duraciones": [
+          43.9,
+          60.0
+        ],
+        "volumen": [
+          {
+            "media": -19.2,
+            "pico": -0.0,
+            "a_0db": 88
+          },
+          {
+            "media": -17.9,
+            "pico": 0.0,
+            "a_0db": 2047
+          }
+        ],
+        "letra": [
+          {
+            "versos_oidos": 10,
+            "versos": 10
+          },
+          {
+            "versos_oidos": 10,
+            "versos": 10
+          }
+        ],
+        "transcripcion": [
+          "Si apagan las luces del paseo y el mar se lleva lo que fue, guardé tu risa en un recuerdo que no sé cómo devolver. Última noche de verano, no me sueltes de la mano, que mañana es otra vida y hoy aún eres mía. La arena guarda nuestros pasos, la luna sabe tu canción y el leí vaso le voy a...",
+          "Se apagan las luces del paseo, y el mar se lleva a lo que fue. Guardé tu risa en un recuerdo que no sé cómo devolver. Última noche de verano, no me sueltes de la mano, que mañana es otra vida y hoy aún eres mía. La arena guarda en nuestros pasos, la luna sabe tu canción. Con la tonido, soy el detecide, y hoy aún eres mía."
+        ]
+      },
+      "judge": null
+    },
+    {
+      "first_token_s": null,
+      "first_answer_s": null,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": null,
+      "max_tokens": 0,
+      "cuts": [],
+      "tokens_per_s": null,
+      "contestant": "mus:yue-2",
+      "side": "b",
+      "dir": "b-mus-yue-2",
+      "error": null,
+      "familia": "musica",
+      "total_s": 46.4,
+      "segundos_por_pieza": 10.1,
+      "ficha": {
+        "nombre": "YuE 2",
+        "casa": "m-a-p",
+        "pasos": 32,
+        "licencia": "CC BY-NC 4.0 (no comercial)",
+        "salida": "2026-09",
+        "id": "yue-2",
+        "familia": "musica"
+      },
+      "piezas": [
+        {
+          "modelo": "yue-2",
+          "nombre": "YuE 2",
+          "fichero": "mus_0.flac",
+          "seed": 7,
+          "pasos": 32,
+          "segundos_pedidos": 60.0,
+          "segundos": 10.1
+        },
+        {
+          "modelo": "yue-2",
+          "nombre": "YuE 2",
+          "fichero": "mus_1.flac",
+          "seed": 21,
+          "pasos": 32,
+          "segundos_pedidos": 60.0,
+          "segundos": 10.1
+        }
+      ],
+      "validation": {
+        "checks": {
+          "genera": true,
+          "duracion": true,
+          "sin_silencios": true,
+          "sin_saturar": true,
+          "canta_la_letra": true
+        },
+        "errors": [],
+        "score": 100,
+        "piezas": 2,
+        "duraciones": [
+          60.0,
+          60.0
+        ],
+        "volumen": [
+          {
+            "media": -16.1,
+            "pico": 0.0,
+            "a_0db": 31
+          },
+          {
+            "media": -14.8,
+            "pico": 0.0,
+            "a_0db": 1154
+          }
+        ],
+        "letra": [
+          {
+            "versos_oidos": 8,
+            "versos": 10
+          },
+          {
+            "versos_oidos": 9,
+            "versos": 10
+          }
+        ],
+        "transcripcion": [
+          "¡Ah! Se apagan las luces del paseo Y el mar se lleva lo que fue Guarde tu risa en un recuerdo Que no sé cómo devolver Última noche de verano No me sueltes de la mano Que mañana es otra vida Y hoy aún eres mía",
+          "Se apagan las luces del paseo Y el mar se lleva lo que fue Guardé tu risa en un recuerdo Que no sé cómo devolver Última noche del verano No me sueltes de la mano Que mañana es otra vida Y hoy aún eres mía La reina guarda nuestros pasos"
+        ]
+      },
+      "judge": null
+    }
+  ],
+  "comparison": null,
+  "winner": "mus:yue-2",
+  "winner_side": "b",
+  "decided_by": "score"
+}

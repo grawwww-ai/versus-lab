@@ -1,0 +1,221 @@
+{
+  "id": "20260924-091909_mus_lofi_estudio",
+  "challenge": {
+    "id": "mus_lofi_estudio",
+    "category": "musica",
+    "cerebro": "diseno",
+    "title_es": "Lo-fi para estudiar",
+    "title_en": "Lo-fi to study to",
+    "segundos": 60,
+    "idioma": "en",
+    "bpm": 80,
+    "tonalidad": "Eb major",
+    "compas": "4",
+    "estilo": "Instrumental lo-fi hip hop to study to, no vocals, mellow jazzy Rhodes piano chords, dusty boom-bap drums with swing, warm sub bass, vinyl crackle, soft rain in the background, relaxed and cozy, 80 BPM.",
+    "excelente": "Un lo-fi que da ganas de ponerse a estudiar: acordes de Rhodes con aire de jazz, batería con swing, bajo cálido, crujido de vinilo y lluvia de fondo, sin voces, con una textura que no cansa y que no se nota que es un bucle corto.",
+    "rubric": [
+      {
+        "id": "estilo",
+        "c": "Suena a lo-fi",
+        "es": "Suena a lo-fi hip hop de verdad, con Rhodes, batería con swing y crujido de vinilo",
+        "w": 3
+      },
+      {
+        "id": "sin_voz",
+        "c": "Sin voces",
+        "es": "Es instrumental, sin voces ni palabras inventadas",
+        "w": 2
+      },
+      {
+        "id": "textura",
+        "c": "No cansa",
+        "es": "Tiene variación y no parece un bucle corto que se repite",
+        "w": 2
+      },
+      {
+        "id": "mezcla",
+        "c": "Mezcla cálida",
+        "es": "La mezcla suena cálida y limpia, sin ruidos raros ni saturación",
+        "w": 2
+      },
+      {
+        "id": "ambiente",
+        "c": "Te pondrías a estudiar",
+        "es": "Te la pondrías de fondo para estudiar o trabajar",
+        "w": 2
+      }
+    ],
+    "nivel": 1,
+    "tema": "musica",
+    "prompt": "Estilo: Instrumental lo-fi hip hop to study to, no vocals, mellow jazzy Rhodes piano chords, dusty boom-bap drums with swing, warm sub bass, vinyl crackle, soft rain in the background, relaxed and cozy, 80 BPM.\n\nInstrumental, sin letra."
+  },
+  "prompt": "Estilo: Instrumental lo-fi hip hop to study to, no vocals, mellow jazzy Rhodes piano chords, dusty boom-bap drums with swing, warm sub bass, vinyl crackle, soft rain in the background, relaxed and cozy, 80 BPM.\n\nInstrumental, sin letra.",
+  "contestants": [
+    {
+      "first_token_s": null,
+      "first_answer_s": null,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": null,
+      "max_tokens": 0,
+      "cuts": [],
+      "tokens_per_s": null,
+      "contestant": "mus:ace-step-1.5-xl",
+      "side": "a",
+      "dir": "a-mus-ace-step-1-5-xl",
+      "error": null,
+      "familia": "musica",
+      "total_s": 20.3,
+      "segundos_por_pieza": 10.1,
+      "ficha": {
+        "nombre": "ACE-Step 1.5 XL",
+        "casa": "ACE Studio y StepFun",
+        "pasos": 8,
+        "licencia": "MIT",
+        "salida": "2026-04",
+        "id": "ace-step-1.5-xl",
+        "familia": "musica"
+      },
+      "piezas": [
+        {
+          "modelo": "ace-step-1.5-xl",
+          "nombre": "ACE-Step 1.5 XL",
+          "fichero": "mus_0.flac",
+          "seed": 7,
+          "pasos": 8,
+          "segundos_pedidos": 60.0,
+          "segundos": 10.1
+        },
+        {
+          "modelo": "ace-step-1.5-xl",
+          "nombre": "ACE-Step 1.5 XL",
+          "fichero": "mus_1.flac",
+          "seed": 21,
+          "pasos": 8,
+          "segundos_pedidos": 60.0,
+          "segundos": 10.1
+        }
+      ],
+      "validation": {
+        "checks": {
+          "genera": true,
+          "duracion": true,
+          "sin_silencios": false,
+          "sin_saturar": true
+        },
+        "errors": [],
+        "score": 80,
+        "piezas": 2,
+        "duraciones": [
+          60.0,
+          60.0
+        ],
+        "volumen": [
+          {
+            "media": -14.0,
+            "pico": 0.0,
+            "a_0db": 2395
+          },
+          {
+            "media": -14.0,
+            "pico": 0.0,
+            "a_0db": 3415
+          }
+        ],
+        "letra": [],
+        "transcripcion": [
+          "",
+          ""
+        ]
+      },
+      "judge": null
+    },
+    {
+      "first_token_s": null,
+      "first_answer_s": null,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": null,
+      "max_tokens": 0,
+      "cuts": [],
+      "tokens_per_s": null,
+      "contestant": "mus:yue-2",
+      "side": "b",
+      "dir": "b-mus-yue-2",
+      "error": null,
+      "familia": "musica",
+      "total_s": 20.4,
+      "segundos_por_pieza": 10.1,
+      "ficha": {
+        "nombre": "YuE 2",
+        "casa": "m-a-p",
+        "pasos": 32,
+        "licencia": "CC BY-NC 4.0 (no comercial)",
+        "salida": "2026-09",
+        "id": "yue-2",
+        "familia": "musica"
+      },
+      "piezas": [
+        {
+          "modelo": "yue-2",
+          "nombre": "YuE 2",
+          "fichero": "mus_0.flac",
+          "seed": 7,
+          "pasos": 32,
+          "segundos_pedidos": 60.0,
+          "segundos": 10.1
+        },
+        {
+          "modelo": "yue-2",
+          "nombre": "YuE 2",
+          "fichero": "mus_1.flac",
+          "seed": 21,
+          "pasos": 32,
+          "segundos_pedidos": 60.0,
+          "segundos": 10.1
+        }
+      ],
+      "validation": {
+        "checks": {
+          "genera": true,
+          "duracion": true,
+          "sin_silencios": true,
+          "sin_saturar": true
+        },
+        "errors": [],
+        "score": 100,
+        "piezas": 2,
+        "duraciones": [
+          60.0,
+          60.0
+        ],
+        "volumen": [
+          {
+            "media": -14.4,
+            "pico": 0.0,
+            "a_0db": 1218
+          },
+          {
+            "media": -15.8,
+            "pico": -0.1,
+            "a_0db": 9
+          }
+        ],
+        "letra": [],
+        "transcripcion": [
+          "",
+          ""
+        ]
+      },
+      "judge": null
+    }
+  ],
+  "comparison": null,
+  "winner": "mus:yue-2",
+  "winner_side": "b",
+  "decided_by": "score"
+}

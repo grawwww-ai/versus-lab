@@ -1,0 +1,15 @@
+**Crafting an HTML Shader**
+
+I need to create a robust HTML shader that utilizes WebGL2. It should be fullscreen and animated, with a focus on aesthetics. I want to ensure compatibility by compiling with ES GLSL 300. The shader will involve designing a coordinate system centered on normalized aspects, featuring a sky horizon at around y=0.30, mountains around y=0.30 to 0.40, and a lake below y=0.23. Additionally, I plan to implement procedural auroras using noise and waves. This will define horizontal positions based on height and time.**Designing Aurora Curtains**
+
+I'm focusing on designing the movement of the aurora curtains, where their position varies with height and time. I plan to use the x coordinate and incorporate sine functions to create brightness stripes. I want to build a noise-based fractal to define ridges across the x-axis, calculating their structure with periodic warped coordinates. For each sky point, I need to mask the vertical range smoothly. The shapes should vary and move smoothly, incorporating vertical streaks and intensity changes for an appealing auroral display.**Modulating Aurora Colors**
+
+I'm thinking about how to create a wide green base for the aurora curtains, influenced by low sine waves for modulation. The height of the aurora envelope will range from y=0.35 to about 0.95 above the horizon, and I think using a smoothstep function would help achieve a natural transition. I want the base bands to vary over time and across the x-axis, incorporating green and violet colors for an appealing visual effect.**Rendering background details**
+
+I'm focusing on creating the main sky background, with a gradient and some haze to add depth. I'll render the normalized UVs for the texture correctly. Then, I need to establish the mountain boundaries using a smoothstep function based on height. That should create a pleasing transition in the scene. I'm curious to see how these elements will come together in the final render!**Exploring aurora reflection**
+
+I'm considering how to represent a reflection of an aurora over a lake. I need to think about how the mountains could create a silhouette against the aurora's colors. I should reuse an aurora function that returns color and intensity based on reflected sky coordinates. For the reflection, I'm hypothesizing the necessary calculations for the y-coordinate based on the horizon. Additionally, I want to incorporate visual elements like ripple effects and vertical/horizontal distortion in the final rendering. There are some costs to manage due to potential shader noise.**Simplifying aurora calculations**
+
+I'm thinking about how to create the aurora. I have some formulas for heights and wave effects I want to implement. Like, for the height of the aurora, I could use a smoothstep function for certain values of y. Then, I can add sinusoidal functions to create waves and bend effects based on both y and x coordinates. 
+
+Rays can have varying strengths, controlled through a modulation defined by the phase I calculate. This way, I can create interesting textures in the aurora display.
