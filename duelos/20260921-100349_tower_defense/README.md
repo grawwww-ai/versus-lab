@@ -7,6 +7,15 @@
 
 ---
 
+### 📸 Capturas del Resultado:
+
+| **A · or:deepseek/deepseek-v4.1-flash** | **B · or:z-ai/glm-5.3-flash** |
+| :---: | :---: |
+| <a href="a-or_deepseek_deepseek-v4.1-flash/shot_end.png"><img src="a-or_deepseek_deepseek-v4.1-flash/shot_end.png" alt="or:deepseek/deepseek-v4.1-flash" width="420" /></a> | <a href="b-or_z-ai_glm-5.3-flash/shot_end.png"><img src="b-or_z-ai_glm-5.3-flash/shot_end.png" alt="or:z-ai/glm-5.3-flash" width="420" /></a> |
+| ⭐ **Nota:** 100/100 · ⏱️ 1252.39s | ⭐ **Nota:** 100/100 · ⏱️ 1463.529s |
+
+---
+
 ### 📝 Prompt suministrado a ambos modelos:
 > Create a mini Tower Defense game on an HTML5 Canvas. Enemies spawn at the left edge and follow a winding path to a base on the right. There are 8 fixed tower slots along the path. Keys 1-4 buy a tower of that type (cannon, frost, laser, splash) and place it in the next free slot if the player has enough gold. Towers shoot automatically; enemies have health bars and give gold when killed. Waves get harder. The base has limited HP; the game ends when it reaches 0. Show gold, wave, base HP and score. Space starts or restarts. Place one free cannon at start so the first wave is playable. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.
 
@@ -28,4 +37,4 @@ Requirements: deliver everything in ONE self-contained HTML file (inline CSS and
 ### 🎮 Cómo probarlo en local:
 Puedes abrir directamente en tu navegador cualquiera de los archivos `index.html` dentro de cada carpeta de contendiente.
 
-*Generado automáticamente por el pipeline de [VERSUS](https://github.com).*
+*Generado automáticamente por el pipeline de [VERSUS](https://github.com/grawwww-ai/versus-lab).*

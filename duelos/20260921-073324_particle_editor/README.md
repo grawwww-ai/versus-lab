@@ -7,6 +7,15 @@
 
 ---
 
+### 📸 Capturas del Resultado:
+
+| **A · or:deepseek/deepseek-v4.1-flash** | **B · or:z-ai/glm-5.3-flash** |
+| :---: | :---: |
+| <a href="a-or_deepseek_deepseek-v4.1-flash/shot_end.png"><img src="a-or_deepseek_deepseek-v4.1-flash/shot_end.png" alt="or:deepseek/deepseek-v4.1-flash" width="420" /></a> | <a href="b-or_z-ai_glm-5.3-flash/shot_end.png"><img src="b-or_z-ai_glm-5.3-flash/shot_end.png" alt="or:z-ai/glm-5.3-flash" width="420" /></a> |
+| ⭐ **Nota:** 100/100 · ⏱️ 421.993s | ⭐ **Nota:** 100/100 · ⏱️ 223.771s |
+
+---
+
 ### 📝 Prompt suministrado a ambos modelos:
 > Generate a single HTML file with a canvas-based particle system editor. A central canvas displays particles emitting from a source point. Controls: Sliders for emission rate, particle speed, and lifetime. A color picker for particle color. A button to toggle gravity on/off. Particles fade out over time. Display FPS counter. All UI elements styled with CSS. No external libraries. Vanilla JS for logic and rendering. Auto-start with default values.
 
@@ -26,4 +35,4 @@ Requirements: deliver everything in ONE self-contained HTML file (inline CSS and
 ### 🎮 Cómo probarlo en local:
 Puedes abrir directamente en tu navegador cualquiera de los archivos `index.html` dentro de cada carpeta de contendiente.
 
-*Generado automáticamente por el pipeline de [VERSUS](https://github.com).*
+*Generado automáticamente por el pipeline de [VERSUS](https://github.com/grawwww-ai/versus-lab).*

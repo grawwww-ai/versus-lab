@@ -7,6 +7,15 @@
 
 ---
 
+### 📸 Capturas del Resultado:
+
+| **A · or:deepseek/deepseek-v4.1-flash** | **B · or:z-ai/glm-5.3-flash** |
+| :---: | :---: |
+| <a href="a-or_deepseek_deepseek-v4.1-flash/shot_end.png"><img src="a-or_deepseek_deepseek-v4.1-flash/shot_end.png" alt="or:deepseek/deepseek-v4.1-flash" width="420" /></a> | <a href="b-or_z-ai_glm-5.3-flash/shot_end.png"><img src="b-or_z-ai_glm-5.3-flash/shot_end.png" alt="or:z-ai/glm-5.3-flash" width="420" /></a> |
+| ⭐ **Nota:** 100/100 · ⏱️ 345.099s | ⭐ **Nota:** 25/100 · ⏱️ 175.408s |
+
+---
+
 ### 📝 Prompt suministrado a ambos modelos:
 > Using three.js, build a beautiful 3D model of the Solar System with a cinematic tour. Requirements: the Sun glowing at the centre (emissive, with a halo) lighting the planets; the 8 planets in the correct order (Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune), with relative sizes that make sense (Jupiter the largest, Mercury the smallest), procedural textures on canvas (Jupiter's bands, Earth's oceans and continents, Mars red), Saturn with its rings, the Moon orbiting the Earth; faint orbit lines; planets orbiting at different speeds; a starfield background; a camera that travels from planet to planet showing each one close up with its name on screen. Use the requestAnimationFrame timestamp for animation time. Full-window canvas that handles resizing. Starts automatically, no interaction needed. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.
 
@@ -28,4 +37,4 @@ Requirements: deliver everything in ONE self-contained HTML file (inline CSS and
 ### 🎮 Cómo probarlo en local:
 Puedes abrir directamente en tu navegador cualquiera de los archivos `index.html` dentro de cada carpeta de contendiente.
 
-*Generado automáticamente por el pipeline de [VERSUS](https://github.com).*
+*Generado automáticamente por el pipeline de [VERSUS](https://github.com/grawwww-ai/versus-lab).*
