@@ -11,6 +11,7 @@ Aquí puedes auditar cada respuesta, ver cómo resolvieron los retos a ciegas y 
 | Fecha | Reto | Contendientes | Ganador | Enlace |
 | :--- | :--- | :--- | :---: | :---: |
 | `20260924-134226` | `kart_race` | deepseek/deepseek-v4.1-flash vs openai/gpt-6-luna-pro | **or:deepseek/deepseek-v4.1-flash** | [Explorar](duelos/20260924-134226_kart_race/) |
+| `20260924-005924` | `kart_race` | ~openai/gpt-luna-latest vs anthropic/claude-opus-5.5 | **or:~openai/gpt-luna-latest** | [Explorar](duelos/20260924-005924_kart_race/) |
 
 ---
 
