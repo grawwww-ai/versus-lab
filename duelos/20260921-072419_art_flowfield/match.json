@@ -1,0 +1,406 @@
+{
+  "id": "20260921-072419_art_flowfield",
+  "challenge": {
+    "id": "art_flowfield",
+    "category": "art",
+    "title_es": "Arte generativo",
+    "title_en": "Generative Art",
+    "prompt": "Create a mesmerizing generative art piece on a full-window HTML5 canvas: thousands of particles following an evolving flow field built from layered noise (implement the noise yourself), leaving soft glowing trails that build up into an intricate, colorful composition. Use a curated palette that slowly shifts over time, additive blending for glow, and occasional gentle \"reset waves\" so the image keeps evolving instead of saturating. Use the requestAnimationFrame timestamp for time. The canvas must always fill the window and handle resizing. Starts automatically, no interaction needed. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.",
+    "rubric": [
+      {
+        "id": "particulas",
+        "c": "Miles de partículas",
+        "es": "Se ven miles de partículas finas (no unas pocas decenas gruesas)",
+        "w": 2
+      },
+      {
+        "id": "flujo",
+        "c": "Flujo orgánico",
+        "es": "Las partículas siguen un flujo curvo y orgánico, no líneas rectas ni movimiento al azar",
+        "w": 2
+      },
+      {
+        "id": "estelas",
+        "c": "Estelas brillantes",
+        "es": "Dejan estelas suaves que se acumulan en una composición con brillo",
+        "w": 2
+      },
+      {
+        "id": "paleta",
+        "c": "Paleta cuidada",
+        "es": "Los colores forman una paleta armoniosa que va cambiando con el tiempo",
+        "w": 1
+      },
+      {
+        "id": "sin_saturar",
+        "c": "No se satura",
+        "es": "La imagen sigue evolucionando y no acaba en una mancha blanca o uniforme",
+        "w": 2
+      },
+      {
+        "id": "pantalla",
+        "c": "Llena la pantalla",
+        "es": "Ocupa toda la pantalla, sin márgenes ni zonas vacías permanentes",
+        "w": 1
+      }
+    ],
+    "excelente": "Miles de partículas finas dibujan trazos sedosos que siguen un flujo orgánico y cambiante; la paleta es armoniosa y va girando; el brillo se acumula sin quemarse en blanco y las ondas de reinicio renuevan la imagen con suavidad. Parece una obra expuesta, no una demo."
+  },
+  "prompt": "Create a mesmerizing generative art piece on a full-window HTML5 canvas: thousands of particles following an evolving flow field built from layered noise (implement the noise yourself), leaving soft glowing trails that build up into an intricate, colorful composition. Use a curated palette that slowly shifts over time, additive blending for glow, and occasional gentle \"reset waves\" so the image keeps evolving instead of saturating. Use the requestAnimationFrame timestamp for time. The canvas must always fill the window and handle resizing. Starts automatically, no interaction needed. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.\n\nRequirements: deliver everything in ONE self-contained HTML file (inline CSS and JavaScript; no external resources, CDNs, fonts or images). Reply with the complete file in a single ```html code block.",
+  "contestants": [
+    {
+      "contestant": "or:deepseek/deepseek-v4.1-flash",
+      "first_token_s": 1.223,
+      "first_answer_s": 125.797,
+      "total_s": 138.674,
+      "prompt_tokens": 206,
+      "completion_tokens": 30556,
+      "reasoning_tokens": 26132,
+      "cost": 0.03379068,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 384000,
+      "cuts": [],
+      "side": "a",
+      "dir": "a-or-deepseek-deepseek-v4-1-flash",
+      "tokens_per_s": 222.3,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.66,
+        "visual": {
+          "contrast": 35.13,
+          "detail_pct": 10.14,
+          "box": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ]
+        },
+        "motion": [
+          268050,
+          337909,
+          330774,
+          198850,
+          161582,
+          383433,
+          268808,
+          185870,
+          360420,
+          415602,
+          238409,
+          211826,
+          216156,
+          494566,
+          238457,
+          94340
+        ],
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 91,
+        "raw": 91.0,
+        "base_score": 100,
+        "requirements": {
+          "ok": 6,
+          "total": 6,
+          "pct": 100
+        },
+        "quality": 8.0,
+        "fps": 60.5,
+        "faults": [],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "particulas",
+            "es": "Se ven miles de partículas finas (no unas pocas decenas gruesas)",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Capturas 3 a 16 muestran una densidad altísima de trazos finos y brillantes, superando claramente la descripción de 'miles de partículas'."
+          },
+          {
+            "id": "flujo",
+            "es": "Las partículas siguen un flujo curvo y orgánico, no líneas rectas ni movimiento al azar",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Capturas 5, 8 y 12 evidencian un movimiento ondulatorio y curvo muy orgánico, sin líneas rectas ni dispersión caótica."
+          },
+          {
+            "id": "estelas",
+            "es": "Dejan estelas suaves que se acumulan en una composición con brillo",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Capturas 7 y 10 muestran un brillo acumulado intenso (glow) en las zonas de alta densidad, creando una composición visualmente rica."
+          },
+          {
+            "id": "paleta",
+            "es": "Los colores forman una paleta armoniosa que va cambiando con el tiempo",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Se observa una paleta coherente de violetas, magentas y azules que se mantiene armónica y elegante en todas las capturas."
+          },
+          {
+            "id": "sin_saturar",
+            "es": "La imagen sigue evolucionando y no acaba en una mancha blanca o uniforme",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Capturas 11 a 16 muestran que la imagen se renueva y no se queda como una mancha blanca uniforme, manteniendo el detalle del fondo oscuro."
+          },
+          {
+            "id": "pantalla",
+            "es": "Ocupa toda la pantalla, sin márgenes ni zonas vacías permanentes",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "El lienzo ocupa el 100% del área visible en todas las capturas, sin márgenes ni zonas vacías permanentes."
+          }
+        ],
+        "probe": {
+          "fps": 60.5,
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png",
+          "evidence/15.png"
+        ]
+      }
+    },
+    {
+      "contestant": "or:z-ai/glm-5.3-flash",
+      "first_token_s": 1.642,
+      "first_answer_s": 331.205,
+      "total_s": 368.203,
+      "prompt_tokens": 186,
+      "completion_tokens": 34728,
+      "reasoning_tokens": 28074,
+      "cost": 0.015304872,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 131072,
+      "cuts": [],
+      "side": "b",
+      "dir": "b-or-z-ai-glm-5-3-flash",
+      "tokens_per_s": 94.7,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.37,
+        "visual": {
+          "contrast": 4.27,
+          "detail_pct": 1.5,
+          "box": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ]
+        },
+        "motion": [
+          101,
+          221,
+          154,
+          84,
+          10491,
+          14341,
+          4015,
+          366,
+          567,
+          351,
+          663,
+          11018,
+          13813,
+          2559,
+          7,
+          0
+        ],
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 57,
+        "raw": 56.8,
+        "base_score": 100,
+        "requirements": {
+          "ok": 6,
+          "total": 6,
+          "pct": 85
+        },
+        "quality": 4.0,
+        "fps": 60.5,
+        "faults": [
+          "(grave) El brillo y la intensidad de color son extremadamente bajos, haciendo que la obra parezca casi vacía o un error de carga.",
+          "(grave) La imagen es excesivamente oscura y tenue, la composición apenas es visible y no transmite el brillo acumulado.",
+          "(leve) La paleta de colores es muy pobre y poco vibrante, no cumple con el requisito de una composición colorida."
+        ],
+        "penalty": 8,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "particulas",
+            "es": "Se ven miles de partículas finas (no unas pocas decenas gruesas)",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1 y 8 muestran una densidad alta de trazos finos, no unas pocas líneas gruesas."
+          },
+          {
+            "id": "flujo",
+            "es": "Las partículas siguen un flujo curvo y orgánico, no líneas rectas ni movimiento al azar",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Las líneas en todas las capturas siguen trayectorias curvas y orgánicas, evidenciando un campo de flujo."
+          },
+          {
+            "id": "estelas",
+            "es": "Dejan estelas suaves que se acumulan en una composición con brillo",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "Hay acumulación de trazos, pero la opacidad es tan baja que la imagen se percibe casi vacía y sin brillo acumulado notable."
+          },
+          {
+            "id": "paleta",
+            "es": "Los colores forman una paleta armoniosa que va cambiando con el tiempo",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "Se observa un cambio de color (naranja en capturas 2-5 a verde azulado en 9-15), pero los tonos son muy apagados y oscuros, no armoniosos ni coloridos."
+          },
+          {
+            "id": "sin_saturar",
+            "es": "La imagen sigue evolucionando y no acaba en una mancha blanca o uniforme",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "La imagen nunca se satura en blanco; por el contrario, la opacidad es tan baja que casi no se ve."
+          },
+          {
+            "id": "pantalla",
+            "es": "Ocupa toda la pantalla, sin márgenes ni zonas vacías permanentes",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "El lienzo ocupa todo el espacio disponible sin márgenes."
+          }
+        ],
+        "probe": {
+          "fps": 60.5,
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png",
+          "evidence/15.png"
+        ]
+      }
+    }
+  ],
+  "winner": "or:deepseek/deepseek-v4.1-flash",
+  "winner_side": "a",
+  "decided_by": "score",
+  "comparison": {
+    "winner": "a",
+    "margin": "clara",
+    "items": {
+      "particulas": null,
+      "flujo": null,
+      "estelas": "a",
+      "paleta": "a",
+      "sin_saturar": null,
+      "pantalla": null
+    },
+    "why": [
+      "El resultado 1 es una obra visualmente completa y vibrante, mientras que el resultado 2 es prácticamente negro e invisible, fallando en mostrar el arte.",
+      "El resultado 2 presenta una composición vibrante y detallada con estelas luminosas y una paleta rica, mientras que el resultado 1 es extremadamente oscuro y apenas visible, careciendo del brillo y la complejidad solicitados."
+    ],
+    "raw": {
+      "a_izquierda": "1",
+      "b_izquierda": "2"
+    },
+    "judged_by": [
+      "local-gpu"
+    ]
+  }
+}

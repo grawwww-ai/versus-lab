@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script type="importmap">{"imports":{"three":"/vendor/three/three.module.js","three/addons/":"/vendor/three/addons/"}}</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alien Planet — Orbit</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+</style>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+
+/* ============================================================
+   Renderer / Scenes / Cameras
+   ============================================================ */
+const canvas = document.createElement('canvas');
+document.body.appendChild(canvas);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+const DPR = Math.min(window.devicePixelRatio || 1, 2);
+renderer.setPixelRatio(DPR);
+renderer.setSize(window.innerWidth, window.innerHeight, false);
+renderer.setClearColor(0x000000, 1);
+renderer.autoClear = false;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 4000);
+
+// Overlay scene for lens-flare ghosts (screen space)
+const overlayScene = new THREE.Scene();
+const overlayCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 10);
+overlayCam.position.z = 2;
+
+/* ============================================================
+   GLSL: 3D simplex noise + fbm (Ashima / Stefan Gustavson)
+   ============================================================ */
+const NOISE_GLSL = `
+vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+vec4 permute(vec4 x) { return mod289(((x * 34.0) + 1.0) * x); }
+vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+
+float snoise(vec3 v) {
+  const vec2 C = vec2(1.0 / 6.0, 1.0 / 3.0);
+  const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+
+  vec3 i  = floor(v + dot(v, C.yyy));
+  vec3 x0 = v - i + dot(i, C.xxx);
+
+  vec3 g = step(x0.yzx, x0.xyz);
+  vec3 l = 1.0 - g;
+  vec3 i1 = min(g.xyz, l.zxy);
+  vec3 i2 = max(g.xyz, l.zxy);
+
+  vec3 x1 = x0 - i1 + C.xxx;
+  vec3 x2 = x0 - i2 + C.yyy;
+  vec3 x3 = x0 - D.yyy;
+
+  i = mod289(i);
+  vec4 p = permute(permute(permute(
+             i.z + vec4(0.0, i1.z, i2.z, 1.0))
+           + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+           + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+
+  float n_ = 0.142857142857;
+  vec3 ns = n_ * D.wyz - D.xzx;
+
+  vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+
+  vec4 x_ = floor(j * ns.z);
+  vec4 y_ = floor(j - 7.0 * x_);
+
+  vec4 x = x_ * ns.x + ns.yyyy;
+  vec4 y = y_ * ns.x + ns.yyyy;
+  vec4 h = 1.0 - abs(x) - abs(y);
+
+  vec4 b0 = vec4(x.xy, y.xy);
+  vec4 b1 = vec4(x.zw, y.zw);
+
+  vec4 s0 = floor(b0) * 2.0 + 1.0;
+  vec4 s1 = floor(b1) * 2.0 + 1.0;
+  vec4 sh = -step(h, vec4(0.0));
+
+  vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
+  vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+
+  vec3 p0 = vec3(a0.xy, h.x);
+  vec3 p1 = vec3(a0.zw, h.y);
+  vec3 p2 = vec3(a1.xy, h.z);
+  vec3 p3 = vec3(a1.zw, h.w);
+
+  vec4 norm = taylorInvSqrt(vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
+  p0 *= norm.x;
+  p1 *= norm.y;
+  p2 *= norm.z;
+  p3 *= norm.w;
+
+  vec4 m = max(0.6 - vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
+  m = m * m;
+  return 42.0 * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
+}
+
+float fbm(vec3 p) {
+  float s = 0.0;
+  float a = 0.5;
+  for (int i = 0; i < 5; i++) {
+    s += a * snoise(p);
+    p *= 2.07;
+    a *= 0.5;
+  }
+  return s;
+}
+
+float fbm3(vec3 p) {
+  float s = 0.0;
+  float a = 0.5;
+  for (int i = 0; i < 3; i++) {
+    s += a * snoise(p);
+    p *= 2.11;
+    a *= 0.5;
+  }
+  return s;
+}
+`;
+
+/* ============================================================
+   Shared uniforms
+   ============================================================ */
+const sunDir = new THREE.Vector3(0.62, -0.35, 0.70).normalize();
+
+const shared = {
+  uSunDirWorld: { value: sunDir },
+  uSunDirObj:   { value: new THREE.Vector3(0, 0, 1) },
+  uMoonPosObj:  { value: new THREE.Vector3(2, 0, 0) },
+  uMoonRadius:  { value: 0.16 },
+  uTime:        { value: 0 }
+};
+
+/* ============================================================
+   Starfield
+   ============================================================ */
+(function buildStars() {
+  const COUNT = 14000;
+  const pos = new Float32Array(COUNT * 3);
+  const col = new Float32Array(COUNT * 3);
+  const tmp = new THREE.Color();
+
+  for (let i = 0; i < COUNT; i++) {
+    const u = Math.random() * 2 - 1;
+    const ang = Math.random() * Math.PI * 2;
+    const s = Math.sqrt(Math.max(0, 1 - u * u));
+    const r = 700 + Math.random() * 400;
+    pos[i * 3 + 0] = Math.cos(ang) * s * r;
+    pos[i * 3 + 1] = u * r;
+    pos[i * 3 + 2] = Math.sin(ang) * s * r;
+
+    const hue = (0.58 + (Math.random() - 0.5) * 0.26 + 1) % 1;
+    const sat = 0.10 + Math.random() * 0.55;
+    const lum = 0.40 + Math.pow(Math.random(), 2.6) * 0.60;
+    tmp.setHSL(hue, sat, lum);
+    col[i * 3 + 0] = tmp.r;
+    col[i * 3 + 1] = tmp.g;
+    col[i * 3 + 2] = tmp.b;
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+
+  const mat = new THREE.PointsMaterial({
+    size: 2.1 * DPR,
+    sizeAttenuation: false,
+    vertexColors: true,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+  scene.add(new THREE.Points(geo, mat));
+})();
+
+/* ============================================================
+   Planet system
+   ============================================================ */
+const planetGroup = new THREE.Group();
+planetGroup.rotation.z = THREE.MathUtils.degToRad(23.5);
+scene.add(planetGroup);
+
+const VERT_COMMON = `
+varying vec3 vObjPos;
+varying vec3 vWorldNormal;
+varying vec3 vWorldPos;
+void main() {
+  vObjPos = position;
+  vec4 wp = modelMatrix * vec4(position, 1.0);
+  vWorldPos = wp.xyz;
+  vWorldNormal = normalize(mat3(modelMatrix) * normal);
+  gl_Position = projectionMatrix * viewMatrix * wp;
+}
+`;
+
+/* ---------- Planet surface ---------- */
+const planetFrag = `
+varying vec3 vObjPos;
+varying vec3 vWorldNormal;
+varying vec3 vWorldPos;
+
+uniform vec3 uSunDirWorld;
+uniform vec3 uSunDirObj;
+uniform vec3 uMoonPosObj;
+uniform float uMoonRadius;
+uniform float uTime;
+
+${NOISE_GLSL}
+
+void main() {
+  vec3 p = normalize(vObjPos);
+  vec3 N = normalize(vWorldNormal);
+  vec3 V = normalize(cameraPosition - vWorldPos);
+  vec3 L = normalize(uSunDirWorld);
+
+  // ---- terrain height field ----
+  float warp = fbm(p * 2.2 + 5.0);
+  float cont = fbm(p * 1.6 + warp * 0.7) * 1.35;
+  float detail = fbm(p * 7.0 + 11.0);
+
+  float landMask = smoothstep(-0.020, 0.060, cont);
+
+  // ---- ocean ----
+  vec3 deepCol    = vec3(0.010, 0.048, 0.150);
+  vec3 shallowCol = vec3(0.035, 0.250, 0.420);
+  vec3 ocean = mix(deepCol, shallowCol, smoothstep(-0.55, -0.02, cont));
+
+  // ---- land ----
+  float elev = cont + detail * 0.10;
+  vec3 cSand   = vec3(0.60, 0.54, 0.37);
+  vec3 cGrass  = vec3(0.17, 0.36, 0.15);
+  vec3 cForest = vec3(0.06, 0.19, 0.09);
+  vec3 cRock   = vec3(0.34, 0.29, 0.25);
+  vec3 cSnow   = vec3(0.90, 0.93, 0.97);
+  vec3 land = mix(cSand, cGrass, smoothstep(0.00, 0.07, elev));
+  land = mix(land, cForest, smoothstep(0.07, 0.24, elev));
+  land = mix(land, cRock,   smoothstep(0.26, 0.42, elev));
+  land = mix(land, cSnow,   smoothstep(0.42, 0.60, elev));
+
+  vec3 albedo = mix(ocean, land, landMask);
+
+  // ---- polar ice caps ----
+  float iceN = fbm(p * 3.5 + 31.0) * 0.12;
+  float ice = smoothstep(0.62 + iceN, 0.78 + iceN, abs(p.y));
+  albedo = mix(albedo, vec3(0.86, 0.92, 0.98), ice);
+
+  // ---- lighting ----
+  float ndl = dot(N, L);
+  float diff = max(ndl, 0.0);
+
+  // soft cloud shadows on the surface
+  vec3 csp = normalize(vObjPos + uSunDirObj * 0.045);
+  float cd = fbm3(csp * 3.0 + uTime * 0.01);
+  diff *= 1.0 - 0.42 * smoothstep(0.05, 0.45, cd);
+
+  vec3 col = albedo * (0.030 + 1.05 * diff);
+
+  // ---- ocean specular ----
+  vec3 H = normalize(L + V);
+  float spec = pow(max(dot(N, H), 0.0), 90.0) * (1.0 - landMask) * (1.0 - ice);
+  spec *= smoothstep(0.0, 0.20, ndl) * 1.3;
+  col += vec3(spec) * vec3(1.0, 0.97, 0.90);
+
+  // ---- inner atmospheric rim ----
+  float fres = pow(1.0 - max(dot(N, V), 0.0), 3.0);
+  col += vec3(0.25, 0.50, 1.0) * fres * (0.12 + 0.90 * diff) * 0.65;
+
+  // ---- moon eclipse shadow on the planet ----
+  vec3 rel = uMoonPosObj - vObjPos;
+  float tAlong = dot(rel, uSunDirObj);
+  float shadow = 0.0;
+  if (tAlong > 0.0) {
+    float dPerp = length(rel - tAlong * uSunDirObj);
+    shadow = (1.0 - smoothstep(uMoonRadius * 0.6, uMoonRadius * 1.7, dPerp))
+           * smoothstep(0.0, 0.35, tAlong);
+  }
+  col *= 1.0 - 0.85 * shadow;
+
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+const planetMat = new THREE.ShaderMaterial({
+  uniforms: Object.assign({}, shared),
+  vertexShader: VERT_COMMON,
+  fragmentShader: planetFrag
+});
+const planetMesh = new THREE.Mesh(new THREE.SphereGeometry(1, 160, 96), planetMat);
+planetGroup.add(planetMesh);
+
+/* ---------- Cloud layer ---------- */
+const cloudFrag = `
+varying vec3 vObjPos;
+varying vec3 vWorldNormal;
+varying vec3 vWorldPos;
+
+uniform vec3 uSunDirWorld;
+uniform float uTime;
+
+${NOISE_GLSL}
+
+void main() {
+  vec3 p = normalize(vObjPos);
+  float n1 = fbm(p * 3.2 + vec3(0.0, 0.0, uTime * 0.012));
+  float n2 = fbm(p * 7.0 + vec3(uTime * 0.02, 0.0, 0.0));
+  float d = n1 * 0.66 + n2 * 0.34;
+
+  float a = smoothstep(0.03, 0.42, d);
+  a *= 0.68 + 0.32 * sin(p.y * 7.0 + 1.0);
+  a *= 0.88;
+
+  vec3 N = normalize(vWorldNormal);
+  vec3 V = normalize(cameraPosition - vWorldPos);
+  vec3 L = normalize(uSunDirWorld);
+  float light = smoothstep(-0.30, 0.45, dot(N, L));
+  vec3 cloudCol = mix(vec3(0.14, 0.20, 0.33), vec3(1.00, 0.99, 0.97), light);
+
+  // slight limb brightening at grazing angles
+  float rim = pow(1.0 - max(dot(N, V), 0.0), 4.0);
+  cloudCol += vec3(0.3, 0.5, 0.9) * rim * 0.35 * light;
+
+  gl_FragColor = vec4(cloudCol, a);
+}
+`;
+
+const cloudMat = new THREE.ShaderMaterial({
+  uniforms: Object.assign({}, shared),
+  vertexShader: VERT_COMMON,
+  fragmentShader: cloudFrag,
+  transparent: true,
+  depthWrite: false,
+  side: THREE.FrontSide
+});
+const cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(1.014, 128, 80), cloudMat);
+cloudMesh.renderOrder = 1;
+planetGroup.add(cloudMesh);
+
+/* ---------- Atmospheric rim glow ---------- */
+const atmoFrag = `
+varying vec3 vObjPos;
+varying vec3 vWorldNormal;
+varying vec3 vWorldPos;
+
+uniform vec3 uSunDirWorld;
+
+void main() {
+  vec3 N = normalize(vWorldNormal);
+  vec3 V = normalize(cameraPosition - vWorldPos);
+  vec3 L = normalize(uSunDirWorld);
+
+  float fres = pow(1.0 - abs(dot(N, V)), 3.2);
+  float sunAmt = max(dot(normalize(vObjPos), L), 0.0);
+  float sunFade = 0.10 + 0.90 * pow(sunAmt, 1.3);
+
+  vec3 col = mix(vec3(0.20, 0.42, 1.00), vec3(0.62, 0.83, 1.00), sunAmt);
+  float intensity = fres * sunFade * 1.75;
+
+  gl_FragColor = vec4(col * intensity, intensity);
+}
+`;
+
+const atmoMat = new THREE.ShaderMaterial({
+  uniforms: Object.assign({}, shared),
+  vertexShader: VERT_COMMON,
+  fragmentShader: atmoFrag,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  side: THREE.BackSide
+});
+const atmoMesh = new THREE.Mesh(new THREE.SphereGeometry(1.085, 96, 64), atmoMat);
+atmoMesh.renderOrder = 3;
+planetGroup.add(atmoMesh);
+
+/* ---------- Ring system ---------- */
+const ringFrag = `
+varying vec3 vObjPos;
+varying vec3 vWorldNormal;
+varying vec3 vWorldPos;
+
+uniform vec3 uSunDirWorld;
+
+void main() {
+  float r = length(vObjPos.xy);
+  const float INNER = 1.42;
+  const float OUTER = 2.78;
+  float t = (r - INNER) / (OUTER - INNER);
+
+  float b = 0.0;
+  b += 0.50 * sin(r * 43.0);
+  b += 0.30 * sin(r * 91.0 + 1.7);
+  b += 0.20 * sin(r * 19.0 + 0.4);
+  b = 0.5 + 0.5 * b;
+
+  float alpha = smoothstep(0.0, 0.06, t) * (1.0 - smoothstep(0.82, 1.0, t));
+  alpha *= mix(0.16, 0.78, b);
+
+  // Cassini-like gap
+  float gap = (t - 0.63) / 0.035;
+  alpha *= 1.0 - 0.88 * exp(-gap * gap);
+
+  // outer faint wisp
+  alpha *= 1.0 - 0.35 * smoothstep(0.86, 1.0, t);
+
+  vec3 N = normalize(vWorldNormal);
+  vec3 L = normalize(uSunDirWorld);
+  float sunAlt = abs(dot(N, L));
+  float lightAmt = 0.22 + 0.78 * sunAlt;
+
+  vec3 col = mix(vec3(0.72, 0.66, 0.56), vec3(0.98, 0.95, 0.88), b);
+  col *= lightAmt;
+  col += vec3(0.30, 0.45, 0.85) * (1.0 - sunAlt) * 0.25;
+
+  gl_FragColor = vec4(col, alpha);
+}
+`;
+
+const ringMat = new THREE.ShaderMaterial({
+  uniforms: Object.assign({}, shared),
+  vertexShader: VERT_COMMON,
+  fragmentShader: ringFrag,
+  transparent: true,
+  depthWrite: false,
+  side: THREE.DoubleSide
+});
+const ringMesh = new THREE.Mesh(new THREE.RingGeometry(1.42, 2.78, 320, 6), ringMat);
+ringMesh.rotation.x = -Math.PI / 2;
+ringMesh.renderOrder = 2;
+planetGroup.add(ringMesh);
+
+/* ============================================================
+   Moon
+   ============================================================ */
+const moonFrag = `
+varying vec3 vObjPos;
+varying vec3 vWorldNormal;
+varying vec3 vWorldPos;
+
+uniform vec3 uSunDirWorld;
+uniform float uEclipse;
+
+${NOISE_GLSL}
+
+void main() {
+  vec3 p = normalize(vObjPos);
+  vec3 N = normalize(vWorldNormal);
+  vec3 V = normalize(cameraPosition - vWorldPos);
+  vec3 L = normalize(uSunDirWorld);
+
+  float n = fbm(p * 3.5);
+  float cr = fbm(p * 12.0 + 7.0);
+
+  vec3 base = mix(vec3(0.26, 0.25, 0.24), vec3(0.68, 0.66, 0.61), 0.5 + 0.5 * n);
+  base *= 0.84 + 0.32 * (0.5 + 0.5 * cr);
+
+  float diff = max(dot(N, L), 0.0);
+  vec3 col = base * (0.02 + 1.15 * diff);
+
+  float fres = pow(1.0 - max(dot(N, V), 0.0), 4.0);
+  col += vec3(0.40, 0.60, 1.00) * fres * 0.10;
+
+  // planet shadow on the moon -> deep red "blood moon"
+  vec3 ecl = col * vec3(0.50, 0.11, 0.05) + vec3(0.015, 0.002, 0.0);
+  col = mix(col, ecl, uEclipse);
+
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+const moonMat = new THREE.ShaderMaterial({
+  uniforms: Object.assign({}, shared, { uEclipse: { value: 0 } }),
+  vertexShader: VERT_COMMON,
+  fragmentShader: moonFrag
+});
+
+const MOON_R = 0.16;
+const MOON_ORBIT = 2.35;
+const MOON_PERIOD = 24.0;
+const MOON_THETA0 = Math.PI * 0.5 - (2 * Math.PI * 8.0) / MOON_PERIOD;
+
+const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(MOON_R, 48, 32), moonMat);
+scene.add(moonMesh);
+
+// Orbit basis: plane contains the sun direction (so eclipses happen), tilted a bit
+// so the shadow sweeps across the planet instead of hitting dead centre.
+const orbitP = new THREE.Vector3().crossVectors(sunDir, new THREE.Vector3(0, 1, 0)).normalize();
+const orbitSun = sunDir.clone().applyAxisAngle(orbitP, 0.32);
+
+/* ============================================================
+   Lens flare overlay
+   ============================================================ */
+const flareQuadGeo = new THREE.PlaneGeometry(1, 1);
+const flareElements = [];
+
+function makeFlareMesh(def) {
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uColor: { value: new THREE.Color(def.color) },
+      uIntensity: { value: def.intensity },
+      uPower: { value: def.power }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec2 vUv;
+      uniform vec3 uColor;
+      uniform float uIntensity;
+      uniform float uPower;
+      void main() {
+        float d = length(vUv - 0.5) * 2.0;
+        float a = pow(max(0.0, 1.0 - d), uPower);
+        gl_FragColor = vec4(uColor * a * uIntensity, a);
+      }
+    `,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthTest: false,
+    depthWrite: false
+  });
+  const m = new THREE.Mesh(flareQuadGeo, mat);
+  m.scale.set(def.sx, def.sy, 1);
+  return m;
+}
+
+const flareGroup = new THREE.Group();
+overlayScene.add(flareGroup);
+
+[
+  { k: 0.00, sx: 0.085, sy: 0.085, color: 0xfff6e2, power: 2.2, intensity: 2.0 },
+  { k: 0.00, sx: 0.300, sy: 0.300, color: 0xffdca8, power: 4.0, intensity: 0.55 },
+  { k: 0.00, sx: 1.900, sy: 0.010, color: 0xffeec8, power: 1.8, intensity: 0.55 },
+  { k: 0.00, sx: 0.010, sy: 0.550, color: 0xcfe0ff, power: 1.8, intensity: 0.26 },
+  { k: 0.50, sx: 0.050, sy: 0.050, color: 0x7effc8, power: 2.5, intensity: 0.45 },
+  { k: 0.78, sx: 0.100, sy: 0.100, color: 0xff8a55, power: 2.2, intensity: 0.30 },
+  { k: 1.12, sx: 0.140, sy: 0.140, color: 0x5599ff, power: 2.6, intensity: 0.28 },
+  { k: 1.50, sx: 0.060, sy: 0.060, color: 0xffcc55, power: 2.0, intensity: 0.35 },
+  { k: 1.95, sx: 0.200, sy: 0.200, color: 0xaa77ff, power: 3.0, intensity: 0.20 }
+].forEach(def => {
+  const mesh = makeFlareMesh(def);
+  flareGroup.add(mesh);
+  flareElements.push(Object.assign({}, def, { mesh }));
+});
+
+/* ============================================================
+   Camera drift basis
+   ============================================================ */
+const camBase = sunDir.clone().negate().normalize();
+const worldUp = new THREE.Vector3(0, 1, 0);
+const camRight = new THREE.Vector3().crossVectors(worldUp, camBase).normalize();
+const camUpPerp = new THREE.Vector3().crossVectors(camBase, camRight).normalize();
+
+/* ============================================================
+   Resize
+   ============================================================ */
+function onResize() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  renderer.setSize(w, h, false);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+
+  const aspect = w / h;
+  overlayCam.left = -aspect;
+  overlayCam.right = aspect;
+  overlayCam.top = 1;
+  overlayCam.bottom = -1;
+  overlayCam.updateProjectionMatrix();
+}
+window.addEventListener('resize', onResize);
+onResize();
+
+/* ============================================================
+   Animation
+   ============================================================ */
+const _q = new THREE.Quaternion();
+const _v = new THREE.Vector3();
+const _v2 = new THREE.Vector3();
+const _sunWorld = new THREE.Vector3();
+const _camSpace = new THREE.Vector3();
+const _ndc = new THREE.Vector3();
+const _dirToCam = new THREE.Vector3();
+
+function smoothstep(a, b, x) {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+
+function frame(now) {
+  requestAnimationFrame(frame);
+
+  const time = now * 0.001;
+
+  /* ---- camera drift ---- */
+  const off = 0.62 + 0.28 * Math.sin(time * 0.11 - 2.67);
+  const elev = 0.22 * Math.sin(time * 0.077 + 1.0);
+  const dist = 4.55 + 0.55 * Math.sin(time * 0.053 + 0.4);
+
+  _dirToCam.copy(camBase).multiplyScalar(Math.cos(off) * Math.cos(elev))
+    .addScaledVector(camRight, Math.sin(off) * Math.cos(elev))
+    .addScaledVector(camUpPerp, Math.sin(elev))
+    .normalize();
+
+  camera.position.copy(_dirToCam).multiplyScalar(dist);
+  camera.lookAt(0, 0, 0);
+  camera.updateMatrixWorld();
+
+  /* ---- rotations ---- */
+  planetMesh.rotation.y = time * 0.035;
+  cloudMesh.rotation.y = time * 0.055;
+
+  /* ---- moon orbit ---- */
+  const theta = MOON_THETA0 + (2 * Math.PI * time) / MOON_PERIOD;
+  moonMesh.position.set(0, 0, 0)
+    .addScaledVector(orbitP, Math.cos(theta) * MOON_ORBIT)
+    .addScaledVector(orbitSun, Math.sin(theta) * MOON_ORBIT);
+  moonMesh.rotation.y = theta * 0.6 + 1.3;
+
+  scene.updateMatrixWorld(true);
+
+  /* ---- update shared uniforms ---- */
+  planetMesh.getWorldQuaternion(_q).invert();
+  shared.uSunDirObj.value.copy(sunDir).applyQuaternion(_q);
+  shared.uMoonPosObj.value.copy(planetMesh.worldToLocal(_v.copy(moonMesh.position)));
+  shared.uTime.value = time;
+
+  /* ---- moon eclipse (planet's shadow) ---- */
+  const along = moonMesh.position.dot(sunDir);
+  const perp = _v2.copy(moonMesh.position).addScaledVector(sunDir, -along).length();
+  let eclipse = 0;
+  if (along < 0) eclipse = 1 - smoothstep(0.80, 1.25, perp);
+  moonMat.uniforms.uEclipse.value = eclipse;
+
+  /* ---- render ---- */
+  renderer.clear();
+
+  renderer.render(scene, camera);
+
+  /* ---- lens flare overlay ---- */
+  _sunWorld.copy(sunDir).multiplyScalar(600);
+  _camSpace.copy(_sunWorld).applyMatrix4(camera.matrixWorldInverse);
+
+  const behind = _camSpace.z > 0;
+  flareGroup.visible = !behind;
+
+  if (!behind) {
+    _ndc.copy(_sunWorld).project(camera);
+    const aspect = window.innerWidth / window.innerHeight;
+    const px = _ndc.x * aspect;
+    const py = _ndc.y;
+
+    for (let i = 0; i < flareElements.length; i++) {
+      const el = flareElements[i];
+      const f = 1 - el.k;
+      el.mesh.position.set(px * f, py * f, 0);
+    }
+
+    renderer.render(overlayScene, overlayCam);
+  }
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

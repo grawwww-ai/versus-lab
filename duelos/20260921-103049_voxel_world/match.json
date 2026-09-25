@@ -1,0 +1,486 @@
+{
+  "id": "20260921-103049_voxel_world",
+  "challenge": {
+    "id": "voxel_world",
+    "category": "3d",
+    "title_es": "Mundo tipo Minecraft",
+    "title_en": "Minecraft-style World",
+    "prompt": "Using three.js, build a Minecraft-style voxel world and show it off with a cinematic flythrough. Requirements: a procedurally generated terrain of cube blocks (at least 128x128 columns) using layered noise, with grass-topped hills, snowy mountain peaks, sandy beaches, a lake or sea with semi-transparent water, and trees made of wood and leaf blocks; blocks must have per-face shading so the cube shapes read clearly (draw the block textures procedurally on a canvas, pixel-art style); a sky with a sun, soft distance fog and fluffy block clouds that drift slowly. Use InstancedMesh or merged geometry so it runs smoothly. The camera flies automatically over and between the hills on a smooth path, looking around the landscape. Use the requestAnimationFrame timestamp for animation time. Full-window canvas that handles resizing. Starts automatically, no interaction needed. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.",
+    "rubric": [
+      {
+        "id": "terreno",
+        "c": "Terreno continuo",
+        "es": "Hay un terreno amplio hecho de bloques cúbicos (no islas sueltas flotando en el vacío)",
+        "w": 3
+      },
+      {
+        "id": "bloques",
+        "c": "Cubos definidos",
+        "es": "Los bloques se distinguen como cubos (caras con sombreado distinto)",
+        "w": 1
+      },
+      {
+        "id": "texturas",
+        "c": "Texturas pixel art",
+        "es": "Los bloques tienen textura pixelada tipo Minecraft (no colores planos)",
+        "w": 1
+      },
+      {
+        "id": "biomas",
+        "c": "Hierba, nieve y arena",
+        "es": "Se ven varios tipos de terreno: hierba, montaña con nieve y arena o playa",
+        "w": 2
+      },
+      {
+        "id": "agua",
+        "c": "Agua transparente",
+        "es": "Hay agua (lago o mar) semitransparente",
+        "w": 1
+      },
+      {
+        "id": "arboles",
+        "c": "Árboles",
+        "es": "Hay árboles hechos de bloques (tronco y hojas)",
+        "w": 1
+      },
+      {
+        "id": "cielo",
+        "c": "Cielo, sol y nubes",
+        "es": "Hay cielo con sol, niebla en la distancia y nubes de bloques",
+        "w": 1
+      },
+      {
+        "id": "camara",
+        "c": "Vuelo de cámara",
+        "es": "La cámara vuela sobre el paisaje mostrando zonas distintas sin atravesar los bloques",
+        "w": 2
+      },
+      {
+        "id": "fluido",
+        "c": "Fluido (30+ fps)",
+        "es": "Va fluido (al menos 30 fotogramas por segundo)",
+        "probe": "fps",
+        "arg": 30,
+        "w": 1
+      }
+    ],
+    "excelente": "Un mundo tipo Minecraft creíble: terreno amplio de bloques con texturas pixeladas, varios biomas, agua translúcida, árboles de bloques, cielo con sol, niebla y nubes, y una cámara que sobrevuela sin atravesar nada."
+  },
+  "prompt": "Using three.js, build a Minecraft-style voxel world and show it off with a cinematic flythrough. Requirements: a procedurally generated terrain of cube blocks (at least 128x128 columns) using layered noise, with grass-topped hills, snowy mountain peaks, sandy beaches, a lake or sea with semi-transparent water, and trees made of wood and leaf blocks; blocks must have per-face shading so the cube shapes read clearly (draw the block textures procedurally on a canvas, pixel-art style); a sky with a sun, soft distance fog and fluffy block clouds that drift slowly. Use InstancedMesh or merged geometry so it runs smoothly. The camera flies automatically over and between the hills on a smooth path, looking around the landscape. Use the requestAnimationFrame timestamp for animation time. Full-window canvas that handles resizing. Starts automatically, no interaction needed. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.\n\nthree.js (r186) is available as an ES module: use `import * as THREE from 'three'` and addons from 'three/addons/...' (e.g. 'three/addons/controls/OrbitControls.js') inside <script type=\"module\">. An import map is provided for you: do not add your own import map or any CDN URL.\n\nRequirements: deliver everything in ONE self-contained HTML file (inline CSS and JavaScript; no external resources, CDNs, fonts or images). Reply with the complete file in a single ```html code block.",
+  "contestants": [
+    {
+      "contestant": "or:deepseek/deepseek-v4.1-flash",
+      "first_token_s": 1.748,
+      "first_answer_s": 1907.028,
+      "total_s": 2158.24,
+      "prompt_tokens": 355,
+      "completion_tokens": 60631,
+      "reasoning_tokens": 51750,
+      "cost": 0.0364496,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 384000,
+      "cuts": [],
+      "side": "a",
+      "dir": "a-or-deepseek-deepseek-v4-1-flash",
+      "tokens_per_s": 28.1,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.5,
+        "visual": {
+          "contrast": 41.32,
+          "detail_pct": 10.2,
+          "box": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ]
+        },
+        "motion": [
+          565684,
+          710758,
+          764966,
+          644146,
+          365232,
+          542713,
+          618530,
+          718532,
+          467986,
+          643995,
+          635357,
+          311283,
+          733118,
+          725510,
+          732931,
+          362593
+        ],
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 89,
+        "raw": 88.8,
+        "base_score": 100,
+        "requirements": {
+          "ok": 9,
+          "total": 9,
+          "pct": 100
+        },
+        "quality": 7.5,
+        "fps": 60.5,
+        "faults": [
+          "(leve) Las nubes son bloques blancos planos y muy simples, sin volumen ni detalle, lo que resta realismo al cielo."
+        ],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "terreno",
+            "es": "Hay un terreno amplio hecho de bloques cúbicos (no islas sueltas flotando en el vacío)",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 11 y 12 muestran un paisaje montañoso extenso y continuo, no islas flotantes."
+          },
+          {
+            "id": "bloques",
+            "es": "Los bloques se distinguen como cubos (caras con sombreado distinto)",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 4 y 8 muestran claramente los cubos con sombreado en las caras laterales (ej. la cara norte más oscura)."
+          },
+          {
+            "id": "texturas",
+            "es": "Los bloques tienen textura pixelada tipo Minecraft (no colores planos)",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 7 y 9 muestran texturas procedurales pixeladas (tierra, arena, hierba) y no colores planos."
+          },
+          {
+            "id": "biomas",
+            "es": "Se ven varios tipos de terreno: hierba, montaña con nieve y arena o playa",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 4 y 13 muestran la transición de nieve (montaña) a roca, arena (playa) y hierba."
+          },
+          {
+            "id": "agua",
+            "es": "Hay agua (lago o mar) semitransparente",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 8 muestra el agua con transparencia, permitiendo ver los bloques de arena bajo la superficie."
+          },
+          {
+            "id": "arboles",
+            "es": "Hay árboles hechos de bloques (tronco y hojas)",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 4, 5 y 13 muestran árboles con tronco marrón y copa verde en forma de bloques."
+          },
+          {
+            "id": "cielo",
+            "es": "Hay cielo con sol, niebla en la distancia y nubes de bloques",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 9 y 10 muestran el sol, la niebla en el horizonte y nubes volumétricas de bloques."
+          },
+          {
+            "id": "camara",
+            "es": "La cámara vuela sobre el paisaje mostrando zonas distintas sin atravesar los bloques",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Las capturas muestran una secuencia de vuelo suave sobre el paisaje, variando de la nieve a la playa y el mar sin atravesar geometría."
+          },
+          {
+            "id": "fluido",
+            "es": "Va fluido (al menos 30 fotogramas por segundo)",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "grade": 2,
+            "prueba": "fps: 60.5"
+          }
+        ],
+        "probe": {
+          "fps": 60.5,
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png",
+          "evidence/15.png"
+        ]
+      }
+    },
+    {
+      "contestant": "or:z-ai/glm-5.3-flash",
+      "first_token_s": 1.081,
+      "first_answer_s": 704.644,
+      "total_s": 748.286,
+      "prompt_tokens": 329,
+      "completion_tokens": 91097,
+      "reasoning_tokens": 80838,
+      "cost": 0.04559785,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 131072,
+      "cuts": [
+        "1803 s: {'code': 502, 'message': 'Upstream error from Relace: The model stopped before completing the response.', 'metadata': {'"
+      ],
+      "side": "b",
+      "dir": "b-or-z-ai-glm-5-3-flash",
+      "tokens_per_s": 121.9,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.44,
+        "visual": {
+          "contrast": 64.24,
+          "detail_pct": 11.28,
+          "box": [
+            0.0,
+            0.053,
+            1.0,
+            0.947
+          ]
+        },
+        "motion": [
+          318964,
+          257618,
+          257685,
+          342479,
+          477823,
+          415519,
+          360934,
+          414158,
+          601351,
+          681990,
+          425564,
+          469309,
+          373591,
+          176383,
+          288021,
+          158028
+        ],
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 74,
+        "raw": 74.2,
+        "base_score": 100,
+        "requirements": {
+          "ok": 9,
+          "total": 9,
+          "pct": 88
+        },
+        "quality": 7.0,
+        "fps": 60.5,
+        "faults": [
+          "(leve) La cámara se acerca demasiado a los objetos (captura 12), perdiendo la perspectiva de vuelo cinematográfico.",
+          "(leve) Falta un sol visible en el cielo.",
+          "(leve) El terreno parece una única isla grande en medio del mar en lugar de un mundo amplio de 128x128 con variedad continua."
+        ],
+        "penalty": 6,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "terreno",
+            "es": "Hay un terreno amplio hecho de bloques cúbicos (no islas sueltas flotando en el vacío)",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Se observa un terreno continuo y extenso con colinas y playa (captura 1, 7, 8)."
+          },
+          {
+            "id": "bloques",
+            "es": "Los bloques se distinguen como cubos (caras con sombreado distinto)",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Los cubos son claramente distinguibles con sombreado en las caras (captura 11, detalle de los árboles)."
+          },
+          {
+            "id": "texturas",
+            "es": "Los bloques tienen textura pixelada tipo Minecraft (no colores planos)",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Las texturas de hierba, tierra, arena y nieve son pixeladas y detalladas (captura 9)."
+          },
+          {
+            "id": "biomas",
+            "es": "Se ven varios tipos de terreno: hierba, montaña con nieve y arena o playa",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Se ven claramente biomas de playa (arena), bosque (hierba/árboles) y montaña (roca/nieve) (captura 8, 14)."
+          },
+          {
+            "id": "agua",
+            "es": "Hay agua (lago o mar) semitransparente",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Hay una gran extensión de agua azul con textura pixelada, que parece translúcida en el borde (captura 1, 16)."
+          },
+          {
+            "id": "arboles",
+            "es": "Hay árboles hechos de bloques (tronco y hojas)",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Hay numerosos árboles con troncos de madera y copas de hojas verdes (captura 10)."
+          },
+          {
+            "id": "cielo",
+            "es": "Hay cielo con sol, niebla en la distancia y nubes de bloques",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "Hay cielo azul y nubes de bloques, pero no se ve un sol definido en ninguna captura (captura 1)."
+          },
+          {
+            "id": "camara",
+            "es": "La cámara vuela sobre el paisaje mostrando zonas distintas sin atravesar los bloques",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "La cámara vuela, pero en la captura 12 se ve muy pegada a los bloques de hojas, perdiendo la perspectiva cinematográfica del paisaje."
+          },
+          {
+            "id": "fluido",
+            "es": "Va fluido (al menos 30 fotogramas por segundo)",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "grade": 2,
+            "prueba": "fps: 60.5"
+          }
+        ],
+        "probe": {
+          "fps": 60.5,
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png",
+          "evidence/15.png"
+        ]
+      }
+    }
+  ],
+  "winner": "or:deepseek/deepseek-v4.1-flash",
+  "winner_side": "a",
+  "decided_by": "score",
+  "comparison": {
+    "winner": null,
+    "margin": null,
+    "items": {
+      "terreno": null,
+      "bloques": null,
+      "texturas": null,
+      "biomas": null,
+      "agua": null,
+      "arboles": null,
+      "cielo": null,
+      "camara": null
+    },
+    "why": [
+      "El Resultado 1 incluye un sol visible en el cielo que el Resultado 2 omite, cumpliendo mejor con los requisitos visuales.",
+      "Ambas implementaciones muestran un mundo voxel funcional con los biomas, texturas y elementos requeridos de forma competente, sin que ninguna destaque claramente sobre la otra en calidad o cumplimiento."
+    ],
+    "raw": {
+      "a_izquierda": "1",
+      "b_izquierda": "igual"
+    },
+    "judged_by": [
+      "local-gpu"
+    ]
+  }
+}

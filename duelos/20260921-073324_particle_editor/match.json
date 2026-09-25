@@ -1,0 +1,358 @@
+{
+  "id": "20260921-073324_particle_editor",
+  "challenge": {
+    "id": "particle_editor",
+    "category": "web",
+    "title_es": "Editor de Partículas",
+    "title_en": "Particle Editor",
+    "prompt": "Generate a single HTML file with a canvas-based particle system editor. A central canvas displays particles emitting from a source point. Controls: Sliders for emission rate, particle speed, and lifetime. A color picker for particle color. A button to toggle gravity on/off. Particles fade out over time. Display FPS counter. All UI elements styled with CSS. No external libraries. Vanilla JS for logic and rendering. Auto-start with default values.",
+    "rubric": [
+      {
+        "id": "particulas",
+        "c": "Partículas",
+        "es": "Salen partículas de un punto del lienzo de forma continua",
+        "w": 2
+      },
+      {
+        "id": "sliders",
+        "c": "Controles",
+        "es": "Hay controles deslizantes de ritmo, velocidad y vida, y un selector de color",
+        "w": 2
+      },
+      {
+        "id": "gravedad",
+        "c": "Botón de gravedad",
+        "es": "Hay un botón para activar o quitar la gravedad",
+        "w": 1
+      },
+      {
+        "id": "fundido",
+        "c": "Se desvanecen",
+        "es": "Las partículas se desvanecen con el tiempo",
+        "w": 1
+      },
+      {
+        "id": "fps",
+        "c": "Contador de fotogramas",
+        "es": "Se muestra un contador de fotogramas por segundo",
+        "w": 1
+      },
+      {
+        "id": "acabado",
+        "c": "Interfaz cuidada",
+        "es": "La interfaz está bien diseñada y alineada, sin controles sin estilo ni solapados",
+        "w": 2
+      }
+    ],
+    "excelente": "Un editor que da gusto usar: miles de partículas fluidas, controles bien diseñados que cambian el efecto al instante (ritmo, velocidad, vida, color, gravedad), desvanecimiento suave y contador de fotogramas. Parece una herramienta profesional."
+  },
+  "prompt": "Generate a single HTML file with a canvas-based particle system editor. A central canvas displays particles emitting from a source point. Controls: Sliders for emission rate, particle speed, and lifetime. A color picker for particle color. A button to toggle gravity on/off. Particles fade out over time. Display FPS counter. All UI elements styled with CSS. No external libraries. Vanilla JS for logic and rendering. Auto-start with default values.\n\nRequirements: deliver everything in ONE self-contained HTML file (inline CSS and JavaScript; no external resources, CDNs, fonts or images). Reply with the complete file in a single ```html code block.",
+  "contestants": [
+    {
+      "contestant": "or:deepseek/deepseek-v4.1-flash",
+      "first_token_s": 4.286,
+      "first_answer_s": 313.912,
+      "total_s": 421.993,
+      "prompt_tokens": 161,
+      "completion_tokens": 12516,
+      "reasoning_tokens": 6247,
+      "cost": 0.00652925,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 384000,
+      "cuts": [],
+      "side": "a",
+      "dir": "a-or-deepseek-deepseek-v4-1-flash",
+      "tokens_per_s": 30.0,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.37,
+        "visual": {
+          "contrast": 20.33,
+          "detail_pct": 2.79,
+          "box": [
+            0.013,
+            0.025,
+            0.988,
+            0.978
+          ]
+        },
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 91,
+        "raw": 91.0,
+        "base_score": 100,
+        "requirements": {
+          "ok": 6,
+          "total": 6,
+          "pct": 100
+        },
+        "quality": 8.0,
+        "fps": null,
+        "faults": [],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "particulas",
+            "es": "Salen partículas de un punto del lienzo de forma continua",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "En todas las capturas se observa un flujo continuo de partículas emitidas desde el centro del lienzo, con una nube densa en la fuente y dispersión hacia abajo."
+          },
+          {
+            "id": "sliders",
+            "es": "Hay controles deslizantes de ritmo, velocidad y vida, y un selector de color",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "El panel derecho muestra tres sliders claramente etiquetados (EMISION RATE, PARTICLE SPEED, LIFETIME) y un selector de color (PARTICLE COLOR) con la barra visual correspondiente."
+          },
+          {
+            "id": "gravedad",
+            "es": "Hay un botón para activar o quitar la gravedad",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Se visualiza un botón 'Gravity' con estado 'ON' en el panel lateral, indicando que la funcionalidad está presente."
+          },
+          {
+            "id": "fundido",
+            "es": "Las partículas se desvanecen con el tiempo",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Las partículas se ven brillantes cerca del origen de emisión y se van desvaneciendo gradualmente a medida que se alejan, hasta desaparecer."
+          },
+          {
+            "id": "fps",
+            "es": "Se muestra un contador de fotogramas por segundo",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "En la esquina superior izquierda del lienzo se lee 'FPS 60' junto al contador de partículas."
+          },
+          {
+            "id": "acabado",
+            "es": "La interfaz está bien diseñada y alineada, sin controles sin estilo ni solapados",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "La interfaz tiene un diseño moderno y oscuro, con paneles redondeados, tipografía consistente y espaciado correcto, sin elementos solapados."
+          }
+        ],
+        "probe": {
+          "page_height": 900,
+          "screens": 1.0,
+          "sticky": 0,
+          "scroll_anim": 0,
+          "sections": 2,
+          "errors": [],
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/v00.png",
+          "evidence/v01.png",
+          "evidence/v02.png",
+          "evidence/v03.png",
+          "evidence/v04.png",
+          "evidence/v05.png",
+          "evidence/v06.png"
+        ]
+      }
+    },
+    {
+      "contestant": "or:z-ai/glm-5.3-flash",
+      "first_token_s": 1.045,
+      "first_answer_s": 192.76,
+      "total_s": 223.771,
+      "prompt_tokens": 140,
+      "completion_tokens": 33170,
+      "reasoning_tokens": 25772,
+      "cost": 0.016606,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 131072,
+      "cuts": [],
+      "side": "b",
+      "dir": "b-or-z-ai-glm-5-3-flash",
+      "tokens_per_s": 148.9,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.36,
+        "visual": {
+          "contrast": 17.59,
+          "detail_pct": 2.09,
+          "box": [
+            0.011,
+            0.014,
+            0.992,
+            1.0
+          ]
+        },
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 96,
+        "raw": 95.5,
+        "base_score": 100,
+        "requirements": {
+          "ok": 6,
+          "total": 6,
+          "pct": 100
+        },
+        "quality": 9.0,
+        "fps": null,
+        "faults": [],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "particulas",
+            "es": "Salen partículas de un punto del lienzo de forma continua",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Se observa una fuente central emitiendo un flujo continuo y denso de partículas hacia abajo."
+          },
+          {
+            "id": "sliders",
+            "es": "Hay controles deslizantes de ritmo, velocidad y vida, y un selector de color",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Panel lateral con deslizadores claros para 'RATE', 'SPEED', 'LIFETIME' y un selector de color hexadecimales."
+          },
+          {
+            "id": "gravedad",
+            "es": "Hay un botón para activar o quitar la gravedad",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Sección 'FORCES' con un interruptor 'GRAVITY' activado (ON)."
+          },
+          {
+            "id": "fundido",
+            "es": "Las partículas se desvanecen con el tiempo",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Las partículas pierden opacidad a medida que se alejan de la fuente, mostrando un desvanecimiento progresivo."
+          },
+          {
+            "id": "fps",
+            "es": "Se muestra un contador de fotogramas por segundo",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Contador 'FPS' visible en la esquina superior derecha, mostrando el valor 60."
+          },
+          {
+            "id": "acabado",
+            "es": "La interfaz está bien diseñada y alineada, sin controles sin estilo ni solapados",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Interfaz oscura, tipografía monoespaciada coherente, controles alineados y estética profesional."
+          }
+        ],
+        "probe": {
+          "page_height": 900,
+          "screens": 1.0,
+          "sticky": 0,
+          "scroll_anim": 0,
+          "sections": 6,
+          "errors": [],
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/v00.png",
+          "evidence/v01.png",
+          "evidence/v02.png",
+          "evidence/v03.png",
+          "evidence/v04.png",
+          "evidence/v05.png",
+          "evidence/v06.png"
+        ]
+      }
+    }
+  ],
+  "winner": "or:z-ai/glm-5.3-flash",
+  "winner_side": "b",
+  "decided_by": "score",
+  "comparison": {
+    "winner": null,
+    "margin": null,
+    "items": {
+      "particulas": null,
+      "sliders": null,
+      "gravedad": null,
+      "fundido": null,
+      "fps": null,
+      "acabado": null
+    },
+    "why": [
+      "Ambos sistemas son visualmente y funcionalmente idénticos, mostrando el mismo código y diseño con la única variación natural en la posición aleatoria de las partículas.",
+      "Ambos cumplen la función, pero el resultado 1 ofrece un diseño de interfaz más pulido, con tipografía y espaciado más profesionales y estéticos, mientras que el 2 se ve más genérico."
+    ],
+    "raw": {
+      "a_izquierda": "igual",
+      "b_izquierda": "1"
+    },
+    "judged_by": [
+      "local-gpu"
+    ]
+  }
+}
