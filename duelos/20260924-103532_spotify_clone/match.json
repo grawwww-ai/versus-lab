@@ -1,0 +1,365 @@
+{
+  "id": "20260924-103532_spotify_clone",
+  "challenge": {
+    "id": "spotify_clone",
+    "category": "web",
+    "cerebro": "diseno",
+    "tema": "webs",
+    "nivel": 3,
+    "title_es": "Clon de Spotify",
+    "title_en": "Spotify Clone",
+    "prompt": "Build a convincing clone of the Spotify web player in one HTML file: dark sidebar with library and playlists, a main area with rows of albums and covers, a search bar, a now-playing bar at the bottom with cover, title, progress bar, controls and volume, and an animated audio visualiser. Album covers are generated procedurally in code (gradients, shapes, typography), each one different, no external images. A track plays by itself: the progress bar advances, the visualiser moves, the cover animates, and the view changes between home, a playlist and the artist page. Careful typography, hover states and spacing like the real thing.",
+    "excelente": "Se confunde con el original: barra lateral, filas de portadas distintas y bonitas, reproductor abajo con la barra avanzando y un visualizador que se mueve. Tipografía y espaciado cuidados.",
+    "rubric": [
+      {
+        "id": "estructura",
+        "c": "Barra lateral y filas",
+        "es": "Hay barra lateral con biblioteca y filas de álbumes",
+        "w": 3
+      },
+      {
+        "id": "portadas",
+        "c": "Portadas distintas",
+        "es": "Las portadas están dibujadas y son distintas entre sí",
+        "w": 2
+      },
+      {
+        "id": "reproductor",
+        "c": "Reproductor abajo",
+        "es": "Hay una barra de reproducción con portada, controles y volumen",
+        "w": 3
+      },
+      {
+        "id": "progreso",
+        "c": "Progreso que avanza",
+        "es": "La barra de progreso avanza sola",
+        "w": 2
+      },
+      {
+        "id": "visualizador",
+        "c": "Visualizador",
+        "es": "Hay un visualizador de audio en movimiento",
+        "w": 2
+      },
+      {
+        "id": "acabado",
+        "c": "Acabado profesional",
+        "es": "Tipografía, espaciado y colores parecen los de una app real",
+        "w": 2
+      }
+    ]
+  },
+  "prompt": "Build a convincing clone of the Spotify web player in one HTML file: dark sidebar with library and playlists, a main area with rows of albums and covers, a search bar, a now-playing bar at the bottom with cover, title, progress bar, controls and volume, and an animated audio visualiser. Album covers are generated procedurally in code (gradients, shapes, typography), each one different, no external images. A track plays by itself: the progress bar advances, the visualiser moves, the cover animates, and the view changes between home, a playlist and the artist page. Careful typography, hover states and spacing like the real thing.\n\nRequirements: deliver everything in ONE self-contained HTML file (inline CSS and JavaScript; no external resources, CDNs, fonts or images). Reply with the complete file in a single ```html code block.",
+  "contestants": [
+    {
+      "contestant": "or:deepseek/deepseek-v4.1-flash",
+      "first_token_s": 0.895,
+      "first_answer_s": 77.001,
+      "total_s": 118.165,
+      "prompt_tokens": 206,
+      "completion_tokens": 44816,
+      "reasoning_tokens": 25996,
+      "cost": 0.053841,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 131072,
+      "cuts": [],
+      "side": "a",
+      "dir": "a-or-deepseek-deepseek-v4-1-flash",
+      "tokens_per_s": 382.2,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.41,
+        "visual": {
+          "contrast": 40.31,
+          "detail_pct": 7.29,
+          "box": [
+            0.006,
+            0.011,
+            0.994,
+            0.975
+          ],
+          "color": 8.82
+        },
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 96,
+        "raw": 95.5,
+        "base_score": 100,
+        "requirements": {
+          "ok": 6,
+          "total": 6,
+          "pct": 100
+        },
+        "quality": 9.0,
+        "fps": null,
+        "faults": [],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "estructura",
+            "es": "Hay barra lateral con biblioteca y filas de álbumes",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Se ve claramente la barra lateral con 'Your Library' y la zona principal con filas de álbumes tipo 'Made for you'."
+          },
+          {
+            "id": "portadas",
+            "es": "Las portadas están dibujadas y son distintas entre sí",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Las portadas son procedurales (círculos, montañas, espirales, puntos) y todas son distintas entre sí, con buen diseño."
+          },
+          {
+            "id": "reproductor",
+            "es": "Hay una barra de reproducción con portada, controles y volumen",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: La barra inferior incluye portada, título, controles de reproducción, barra de progreso y control de volumen."
+          },
+          {
+            "id": "progreso",
+            "es": "La barra de progreso avanza sola",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1 (0:02) y Captura 2 (0:01) muestran el avance de la barra y los tiempos."
+          },
+          {
+            "id": "visualizador",
+            "es": "Hay un visualizador de audio en movimiento",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Se observa un visualizador de barras verdes en la esquina inferior derecha de la barra de reproducción."
+          },
+          {
+            "id": "acabado",
+            "es": "Tipografía, espaciado y colores parecen los de una app real",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: La tipografía y el espaciado son limpios y profesionales, muy similares a la estética real de Spotify."
+          }
+        ],
+        "probe": {
+          "page_height": 900,
+          "screens": 1.0,
+          "sticky": 0,
+          "scroll_anim": 1,
+          "sections": 6,
+          "errors": [],
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/v00.png",
+          "evidence/v01.png",
+          "evidence/v02.png",
+          "evidence/v03.png",
+          "evidence/v04.png",
+          "evidence/v05.png",
+          "evidence/v06.png"
+        ]
+      }
+    },
+    {
+      "contestant": "or:openai/gpt-6-luna-pro",
+      "first_token_s": 177.6,
+      "first_answer_s": 178.661,
+      "total_s": 178.788,
+      "prompt_tokens": 40174,
+      "completion_tokens": 40584,
+      "reasoning_tokens": 4304,
+      "cost": 0.0243094,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 128000,
+      "cuts": [],
+      "side": "b",
+      "dir": "b-or-openai-gpt-6-luna-pro",
+      "tokens_per_s": 34161.6,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.02,
+        "visual": {
+          "contrast": 50.44,
+          "detail_pct": 7.04,
+          "box": [
+            0.006,
+            0.011,
+            0.994,
+            0.978
+          ],
+          "color": 6.18
+        },
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 91,
+        "raw": 91.0,
+        "base_score": 100,
+        "requirements": {
+          "ok": 6,
+          "total": 6,
+          "pct": 100
+        },
+        "quality": 8.0,
+        "fps": null,
+        "faults": [
+          "(leve) Los nombres de los álbumes en la fila 'Made for you' se ven solapados o recortados sobre la imagen de la portada (ej. 'Hurry Up, We're ...' en Captura 8), lo que resta limpieza visual."
+        ],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "estructura",
+            "es": "Hay barra lateral con biblioteca y filas de álbumes",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Se ve claramente la barra lateral con 'Home', 'Search', 'Your Library' y listas de playlists, además del área principal con filas de contenido."
+          },
+          {
+            "id": "portadas",
+            "es": "Las portadas están dibujadas y son distintas entre sí",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Todas las portadas (Daily Mix, Late Night Drives, etc.) son visuales generados (gradientes, formas geométricas) y son distintos entre sí."
+          },
+          {
+            "id": "reproductor",
+            "es": "Hay una barra de reproducción con portada, controles y volumen",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: Barra inferior presente con portada de la canción, título, controles de reproducción (play/pausa, anterior/siguiente) e icono de volumen."
+          },
+          {
+            "id": "progreso",
+            "es": "La barra de progreso avanza sola",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Comparando Captura 1 (0:38) y Captura 8 (2:30), la barra de progreso avanza de forma consistente y el tiempo cambia."
+          },
+          {
+            "id": "visualizador",
+            "es": "Hay un visualizador de audio en movimiento",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1 y 2: Se observa un pequeño ecualizador de barras verdes junto al título de la canción en la barra inferior que cambia de altura entre capturas."
+          },
+          {
+            "id": "acabado",
+            "es": "Tipografía, espaciado y colores parecen los de una app real",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1: El diseño general, tipografía, espaciado y colores oscuros imitan con gran fidelidad la interfaz real de Spotify."
+          }
+        ],
+        "probe": {
+          "page_height": 900,
+          "screens": 1.0,
+          "sticky": 0,
+          "scroll_anim": 1,
+          "sections": 6,
+          "errors": [],
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/v00.png",
+          "evidence/v01.png",
+          "evidence/v02.png",
+          "evidence/v03.png",
+          "evidence/v04.png",
+          "evidence/v05.png",
+          "evidence/v06.png"
+        ]
+      }
+    }
+  ],
+  "comparison": {
+    "winner": null,
+    "margin": null,
+    "items": {
+      "estructura": null,
+      "portadas": null,
+      "reproductor": null,
+      "progreso": null,
+      "visualizador": null,
+      "acabado": null
+    },
+    "why": [
+      "Ambos cumplen con la estructura y funcionalidad solicitada de forma idéntica, presentando una calidad visual y de diseño muy similar.",
+      "Ambos resultados presentan una ejecución impecable del reto, con la misma calidad en la tipografía, las portadas procedurales y la funcionalidad solicitada, haciendo imposible distinguir un ganador."
+    ],
+    "raw": {
+      "a_izquierda": "igual",
+      "b_izquierda": "igual"
+    },
+    "judged_by": [
+      "local-gpu"
+    ]
+  },
+  "winner": "or:deepseek/deepseek-v4.1-flash",
+  "winner_side": "a",
+  "decided_by": "score"
+}

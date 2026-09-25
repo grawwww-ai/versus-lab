@@ -1,0 +1,340 @@
+{
+  "id": "20260924-140938_bl_perfume_estudio",
+  "challenge": {
+    "id": "bl_perfume_estudio",
+    "category": "blender",
+    "cerebro": "diseno",
+    "title_es": "Anuncio de perfume",
+    "title_en": "Perfume commercial",
+    "nivel": 2,
+    "tema": "realismo",
+    "prompt": "Create a luxury perfume commercial shot in a photo studio. A faceted crystal-glass perfume bottle filled with amber liquid, with a polished gold cap, stands on a slowly rotating round black marble pedestal. Studio lighting like a real product shoot: a large soft key light, a rim light that outlines the glass edges and a subtle coloured backdrop gradient. The glass must refract and the liquid must glow where the light passes through it; the gold must reflect the studio. Over the 5 seconds the camera slowly orbits and gently pushes in towards the bottle, ending on a close-up of the cap.",
+    "excelente": "Parece un anuncio de verdad: un frasco de cristal tallado que refracta la luz con el líquido ámbar brillando por dentro, un tapón dorado que refleja el plató, luz de estudio con un contraluz que dibuja los bordes del cristal, el pedestal girando y la cámara acercándose hasta el tapón.",
+    "rubric": [
+      {
+        "id": "frasco",
+        "c": "El frasco de cristal",
+        "es": "Hay un frasco de perfume de cristal tallado, con facetas, que refracta lo que tiene detrás",
+        "w": 3
+      },
+      {
+        "id": "liquido",
+        "c": "Líquido ámbar",
+        "es": "Dentro hay un líquido de color ámbar que brilla donde lo atraviesa la luz",
+        "w": 2
+      },
+      {
+        "id": "oro",
+        "c": "Tapón dorado",
+        "es": "El tapón es dorado y pulido, con reflejos del estudio",
+        "w": 2
+      },
+      {
+        "id": "estudio",
+        "c": "Luz de estudio",
+        "es": "La iluminación parece de estudio fotográfico, con un contraluz que dibuja los bordes del cristal",
+        "w": 2
+      },
+      {
+        "id": "realista",
+        "c": "Parece una foto",
+        "es": "El conjunto parece un anuncio fotografiado, no un render de juguete",
+        "w": 3
+      },
+      {
+        "id": "camara",
+        "c": "La cámara se mueve",
+        "es": "La cámara sigue moviéndose hasta el final (se mide en el vídeo)",
+        "probe": "sigue_moviendose",
+        "w": 2
+      }
+    ]
+  },
+  "prompt": "Create a luxury perfume commercial shot in a photo studio. A faceted crystal-glass perfume bottle filled with amber liquid, with a polished gold cap, stands on a slowly rotating round black marble pedestal. Studio lighting like a real product shoot: a large soft key light, a rim light that outlines the glass edges and a subtle coloured backdrop gradient. The glass must refract and the liquid must glow where the light passes through it; the gold must reflect the studio. Over the 5 seconds the camera slowly orbits and gently pushes in towards the bottle, ending on a close-up of the cap.\n\nRequirements: write ONE Python script for Blender 4.5 LTS (bpy) that builds the whole scene from scratch when run in background mode (blender -b --factory-startup --python script.py): delete the default objects and create every object, material, light, the world and a camera (set it as scene.camera), animated over frames 1 to 120 at 24 fps (5 seconds). Do NOT render, do not set the render engine, resolution, samples or output path, and do not save any file: we render your scene ourselves with Cycles on a GPU (1280x720, 128 samples, denoised, at most 3 seconds per frame), with exactly the same settings for both contestants. Use only bpy, mathutils, math and the Python standard library: no add-ons, no external files, images, textures or downloads (build materials procedurally with shader nodes). Reply with the complete script in a single ```python code block.",
+  "contestants": [
+    {
+      "contestant": "or:deepseek/deepseek-v4.1-flash",
+      "first_token_s": 1.29,
+      "first_answer_s": 266.752,
+      "total_s": 285.735,
+      "prompt_tokens": 353,
+      "completion_tokens": 48995,
+      "reasoning_tokens": 44541,
+      "cost": 0.032394945,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 131072,
+      "cuts": [],
+      "side": "a",
+      "dir": "a-or-deepseek-deepseek-v4-1-flash",
+      "tokens_per_s": 172.2,
+      "validation": {
+        "checks": {
+          "ejecuta": false,
+          "tiene_camara": true,
+          "renders": false,
+          "completo": false
+        },
+        "errors": [
+          "python: Traceback (most recent call last):",
+          "python:   File \"/work/escena.py\", line 365, in <module>",
+          "python:     cam_data.dof.aperture_f = 16.0",
+          "python:     ^^^^^^^^^^^^^^^^^^^^^^^",
+          "python: AttributeError: 'CameraDOFSettings' object has no attribute 'aperture_f'"
+        ],
+        "score": 17,
+        "blender": {
+          "codigo": 1,
+          "colgado": false,
+          "segundos_render": 1.1,
+          "fotogramas": 0,
+          "esperados": 120,
+          "sin_camara": false
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": false,
+        "score": 3,
+        "raw": 0.0,
+        "base_score": 17,
+        "requirements": {
+          "ok": 0,
+          "total": 6,
+          "pct": 0
+        },
+        "quality": 0,
+        "fps": null,
+        "faults": [],
+        "penalty": 0,
+        "judged_by": [],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "frasco",
+            "es": "Hay un frasco de perfume de cristal tallado, con facetas, que refracta lo que tiene detrás",
+            "w": 3,
+            "how": "vision",
+            "ok": false,
+            "grade": 0,
+            "prueba": "no funciona"
+          },
+          {
+            "id": "liquido",
+            "es": "Dentro hay un líquido de color ámbar que brilla donde lo atraviesa la luz",
+            "w": 2,
+            "how": "vision",
+            "ok": false,
+            "grade": 0,
+            "prueba": "no funciona"
+          },
+          {
+            "id": "oro",
+            "es": "El tapón es dorado y pulido, con reflejos del estudio",
+            "w": 2,
+            "how": "vision",
+            "ok": false,
+            "grade": 0,
+            "prueba": "no funciona"
+          },
+          {
+            "id": "estudio",
+            "es": "La iluminación parece de estudio fotográfico, con un contraluz que dibuja los bordes del cristal",
+            "w": 2,
+            "how": "vision",
+            "ok": false,
+            "grade": 0,
+            "prueba": "no funciona"
+          },
+          {
+            "id": "realista",
+            "es": "El conjunto parece un anuncio fotografiado, no un render de juguete",
+            "w": 3,
+            "how": "vision",
+            "ok": false,
+            "grade": 0,
+            "prueba": "no funciona"
+          },
+          {
+            "id": "camara",
+            "es": "La cámara sigue moviéndose hasta el final (se mide en el vídeo)",
+            "w": 2,
+            "how": "probe",
+            "ok": false,
+            "grade": 0,
+            "prueba": "no funciona"
+          }
+        ],
+        "probe": {
+          "movimiento": []
+        },
+        "evidence": []
+      }
+    },
+    {
+      "contestant": "or:openai/gpt-6-luna-pro",
+      "first_token_s": 226.079,
+      "first_answer_s": 241.9,
+      "total_s": 242.037,
+      "prompt_tokens": 26065,
+      "completion_tokens": 29494,
+      "reasoning_tokens": 18166,
+      "cost": 0.0173535,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 128000,
+      "cuts": [],
+      "side": "b",
+      "dir": "b-or-openai-gpt-6-luna-pro",
+      "tokens_per_s": 1848.2,
+      "validation": {
+        "checks": {
+          "ejecuta": true,
+          "tiene_camara": true,
+          "renders": true,
+          "completo": true,
+          "has_content": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "blender": {
+          "codigo": 0,
+          "colgado": false,
+          "segundos_render": 175.5,
+          "fotogramas": 120,
+          "esperados": 120,
+          "sin_camara": false
+        },
+        "visual": {
+          "contrast": 34.96,
+          "detail_pct": 3.37,
+          "color": 37.84
+        },
+        "motion": [
+          52419,
+          84104,
+          118020,
+          168866,
+          202085,
+          242803,
+          270084,
+          247287,
+          194811
+        ]
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 91,
+        "raw": 91.0,
+        "base_score": 100,
+        "requirements": {
+          "ok": 6,
+          "total": 6,
+          "pct": 100
+        },
+        "quality": 8.0,
+        "fps": null,
+        "faults": [
+          "(leve) El texto 'PARFUM - 01' en la etiqueta (captura 3, 5, 6) tiene caracteres un poco toscos y el número '01' parece algo deformado."
+        ],
+        "penalty": 0,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "frasco",
+            "es": "Hay un frasco de perfume de cristal tallado, con facetas, que refracta lo que tiene detrás",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 1 y 7 muestran claramente las facetas del cristal que refractan la luz y el fondo."
+          },
+          {
+            "id": "liquido",
+            "es": "Dentro hay un líquido de color ámbar que brilla donde lo atraviesa la luz",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "En todas las capturas el líquido ámbar se ve nítido y brillante, especialmente en la 4 y 8."
+          },
+          {
+            "id": "oro",
+            "es": "El tapón es dorado y pulido, con reflejos del estudio",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 13 y 15: el tapón dorado muestra un pulido espejo con reflejos de los focos del estudio."
+          },
+          {
+            "id": "estudio",
+            "es": "La iluminación parece de estudio fotográfico, con un contraluz que dibuja los bordes del cristal",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 12: se aprecia un contraluz que dibuja los bordes del cristal y una iluminación suave de plató."
+          },
+          {
+            "id": "realista",
+            "es": "El conjunto parece un anuncio fotografiado, no un render de juguete",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "El acabado de las texturas (cristal, oro, fondo) es muy alto y simula una fotografía de producto real."
+          },
+          {
+            "id": "camara",
+            "es": "La cámara sigue moviéndose hasta el final (se mide en el vídeo)",
+            "w": 2,
+            "how": "probe",
+            "ok": true,
+            "grade": 2,
+            "prueba": "sigue_moviendose: "
+          }
+        ],
+        "probe": {
+          "movimiento": [
+            52419,
+            84104,
+            118020,
+            168866,
+            202085,
+            242803,
+            270084,
+            247287,
+            194811
+          ]
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png",
+          "evidence/15.png"
+        ]
+      }
+    }
+  ],
+  "winner": "or:openai/gpt-6-luna-pro",
+  "winner_side": "b",
+  "decided_by": "score"
+}
