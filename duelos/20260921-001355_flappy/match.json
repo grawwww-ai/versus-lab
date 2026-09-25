@@ -1,0 +1,109 @@
+{
+  "id": "20260921-001355_flappy",
+  "challenge": {
+    "id": "flappy",
+    "category": "game",
+    "title_es": "Gravedad Flappy",
+    "title_en": "Gravity Flappy",
+    "prompt": "Generate a single HTML file containing a Flappy Bird clone using HTML5 Canvas. A bird icon must be controlled by the player. Physics: constant downward gravity, upward impulse on input. Obstacles are vertical pipes with random gaps. Collision detection must be precise. Score increases when passing pipes. Game over on collision with pipes or ground. Display score prominently. Controls: Space key for jump. Auto-start on load. No external assets, images, or libraries. All graphics drawn via Canvas API. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.",
+    "keys": [
+      "Space"
+    ]
+  },
+  "prompt": "Generate a single HTML file containing a Flappy Bird clone using HTML5 Canvas. A bird icon must be controlled by the player. Physics: constant downward gravity, upward impulse on input. Obstacles are vertical pipes with random gaps. Collision detection must be precise. Score increases when passing pipes. Game over on collision with pipes or ground. Display score prominently. Controls: Space key for jump. Auto-start on load. No external assets, images, or libraries. All graphics drawn via Canvas API. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.\n\nAlso include an autoplay demo mode toggled with the P key, in which the game plays itself competently (an AI controls the player) so a viewer can watch a good run.\n\nRequirements: deliver everything in ONE self-contained HTML file (inline CSS and JavaScript; no external resources, CDNs, fonts or images). Reply with the complete file in a single ```html code block.",
+  "contestants": [
+    {
+      "contestant": "or:z-ai/glm-5.2:free",
+      "first_token_s": null,
+      "first_answer_s": null,
+      "total_s": 0.492,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost": 0.0,
+      "finish_reason": null,
+      "error": "HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"z-ai/glm-5.2:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Decart\",\"is_byok\":false,\"provider_error_code\":\"overloaded\",\"limit_source\":\"upstream_provider_shared_pool\",\"remedy_hint\":\"Retry shortly, add your own provider key (https://openrouter.ai/settings/integrations), or route to another pro",
+      "max_tokens": 29491,
+      "cuts": [],
+      "side": "a",
+      "dir": "a-or-z-ai-glm-5-2-free",
+      "tokens_per_s": null,
+      "validation": {
+        "checks": {},
+        "errors": [
+          "modelo: HTTP 429: {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"z-ai/glm-5.2:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations\",\"provider_name\":\"Decart\",\"is_byok\":false,\"provider_error_code\":\"overloaded\",\"limit_source\":\"upstream_provider_shared_pool\",\"remedy_hint\":\"Retry shortly, add your own provider key (https://openrouter.ai/settings/integrations), or route to another pro"
+        ],
+        "score": 0
+      },
+      "judge": null
+    },
+    {
+      "contestant": "or:nvidia/nemotron-3-ultra-550b-a55b:free",
+      "first_token_s": 0.555,
+      "first_answer_s": 3.163,
+      "total_s": 126.147,
+      "prompt_tokens": 226,
+      "completion_tokens": 6980,
+      "reasoning_tokens": 305,
+      "cost": 0,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 65536,
+      "cuts": [],
+      "side": "b",
+      "dir": "b-or-nvidia-nemotron-3-ultra-550b-a55b-free",
+      "tokens_per_s": 55.6,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.02,
+        "visual": {
+          "contrast": 19.91,
+          "detail_pct": 2.28,
+          "box": [
+            0.344,
+            0.025,
+            0.986,
+            0.917
+          ]
+        },
+        "motion": [
+          19962,
+          37202,
+          240069,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          485,
+          486,
+          411,
+          0,
+          0,
+          0,
+          486
+        ],
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": null
+    }
+  ],
+  "winner": "or:nvidia/nemotron-3-ultra-550b-a55b:free",
+  "winner_side": "b",
+  "decided_by": "score"
+}

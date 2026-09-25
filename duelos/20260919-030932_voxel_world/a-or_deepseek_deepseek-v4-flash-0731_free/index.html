@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head><script type="importmap">{"imports":{"three":"/vendor/three/three.module.js","three/addons/":"/vendor/three/addons/"}}</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>体素地形 + 摄像机环绕</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #eee;
+            font-family: "Segoe UI", Arial, sans-serif;
+            font-size: 15px;
+            background: rgba(30,30,30,0.55);
+            padding: 6px 14px;
+            border-radius: 6px;
+            user-select: none;
+            pointer-events: none;
+            white-space: nowrap;
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body>
+<div id="info">🛸 体素地形 · 摄像机自动环绕</div>
+
+<!-- 使用 three.js r128 全局版本 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+// ============================================================
+// 0. 工具：数据、噪声
+// ============================================================
+const WORLD_SIZE = 100;        // 世界宽/深
+const MAX_HEIGHT = 64;         // 最大高度
+const SEA_LEVEL = 20;          // 海平面
+const SNOW_LEVEL = 48;         // 雪线
+
+const BLOCK = {
+    AIR: 0,
+    GRASS: 1,
+    DIRT: 2,
+    STONE: 3,
+    SAND: 4,
+    SNOW: 5,
+    WOOD: 6,
+    LEAVES: 7,
+    WATER: 8,
+    COUNT: 9
+};
+
+// 扁平世界数组, 索引: (x * WORLD_SIZE + z) * MAX_HEIGHT + y
+function worldIndex(x, y, z) {
+    return (x * WORLD_SIZE + z) * MAX_HEIGHT + y;
+}
+const world = new Uint8Array(WORLD_SIZE * WORLD_SIZE * MAX_HEIGHT);
+
+function inBounds(x, y, z) {
+    return x >= 0 && y >= 0 && z >= 0 && x < WORLD_SIZE && y < MAX_HEIGHT && z < WORLD_SIZE;
+}
+function getBlock(x, y, z) {
+    return inBounds(x, y, z) ? world[worldIndex(x, y, z)] : BLOCK.AIR;
+}
+function setBlock(x, y, z, t) {
+    if (inBounds(x, y, z)) world[worldIndex(x, y, z)] = t;
+}
+
+// ---- 简单整数哈希 ----
+function hash2D(x, z, seed) {
+    let h = x * 374761393 + z * 668265263 + seed * 974711;
+    h = (h ^ (h >> 14)) | 0;
+    h = (h + 0x4f5ae9ff) | 0;
+    h = (h ^ (h >> 13)) | 0;
+    h = ((h & 0xffff) ^ ((h >> 16) & 0xffff));
+    return (h & 0xffff) / 65535;
+}
+
+// ---- 值噪声 + FBM ----
+function valueNoise(x, z, seed) {
+    const xi = Math.floor(x), zi = Math.floor(z);
+    const xf = x - xi, zf = z - zi;
+    const v00 = hash2D(xi, zi, seed);
+    const v10 = hash2D(xi+1, zi, seed);
+    const v01 = hash2D(xi, zi+1, seed);
+    const v11 = hash2D(xi+1, zi+1, seed);
+    const sx = xf * xf * (3 - 2 * xf);
+    const sz = zf * zf * (3 - 2 * zf);
+    return (v00 + (v10 - v00) * sx) * (1 - sz) +
+           (v01 + (v11 - v01) * sx) * sz;
+}
+function fbm(x, z, seed, oct) {
+    let amp = 1, freq = 1, sum = 0, norm = 0;
+    for (let i = 0; i < oct; i++) {
+        sum += amp * valueNoise(x * freq, z * freq, seed + i * 137);
+        norm += amp;
+        amp *= 0.5;
+        freq *= 2;
+    }
+    return sum / norm;           // 0..1
+}
+
+// 高度图
+function genHeight(x, z) {
+    const base = fbm(x / 90, z / 90, 10, 5);      // 大陆
+    const detail = fbm(x / 40, z / 40, 30, 4);     // 细节
+    let h = base * 42 + detail * 18 + 4;
+    // 边缘降低, 避免竖直切面
+    const margin = 14;
+    if (x < margin || z < margin || x >= WORLD_SIZE - margin || z >= WORLD_SIZE - margin) {
+        const dx = Math.min(x, z, WORLD_SIZE - 1 - x, WORLD_SIZE - 1 - z);
+        const t = Math.min(1, (dx / margin));
+        h *= t * 0.7 + 0.3;
+    }
+    return Math.max(0, Math.min(MAX_HEIGHT - 1, h));
+}
+
+// ============================================================
+// 1. 生成世界
+// ============================================================
+// 先生成高度图
+const heights = new Float32Array(WORLD_SIZE * WORLD_SIZE);
+for (let x = 0; x < WORLD_SIZE; x++) {
+    for (let z = 0; z < WORLD_SIZE; z++) {
+        heights[z * WORLD_SIZE + x] = genHeight(x, z);
+    }
+}
+
+// 填入方块
+for (let x = 0; x < WORLD_SIZE; x++) {
+    for (let z = 0; z < WORLD_SIZE; z++) {
+        const h = Math.floor(heights[z * WORLD_SIZE + x]);
+        for (let y = 0; y <= h; y++) {
+            let t;
+            if (y === h) {
+                // 表面
+                if (h < SEA_LEVEL + 1) t = BLOCK.SAND;
+                else if (h < SEA_LEVEL + 3) t = BLOCK.GRASS;
+                else if (h < SNOW_LEVEL - 4) t = BLOCK.GRASS;
+                else if (h < SNOW_LEVEL + 3) t = BLOCK.GRASS;
+                else t = BLOCK.SNOW;
+            } else if (y >= h - 4 && y < h) {
+                t = BLOCK.DIRT;
+            } else {
+                t = BLOCK.STONE;
+            }
+            setBlock(x, y, z, t);
+        }
+        // 海水
+        if (h < SEA_LEVEL) {
+            for (let y = h + 1; y <= SEA_LEVEL; y++) {
+                setBlock(x, y, z, BLOCK.WATER);
+            }
+        }
+    }
+}
+
+// 树木
+function placeTree(cx, cy, cz) {
+    const trunkH = 4 + (Math.random() * 3 | 0);
+    for (let i = 0; i < trunkH; i++) {
+        setBlock(cx, cy + i, cz, BLOCK.WOOD);
+    }
+    const topY = cy + trunkH;
+    for (let dy = -2; dy <= 1; dy++) {
+        const r = dy < 0 ? 2 : (dy === 0 ? 2 : 1);
+        for (let dx = -r; dx <= r; dx++) {
+            for (let dz = -r; dz <= r; dz++) {
+                if (Math.abs(dx) === r && Math.abs(dz) === r && Math.random() < 0.35) continue;
+                const lx = cx + dx, ly = topY + dy, lz = cz + dz;
+                if (getBlock(lx, ly, lz) === BLOCK.AIR) {
+                    setBlock(lx, ly, lz, BLOCK.LEAVES);
+                }
+            }
+        }
+    }
+}
+for (let x = 3; x < WORLD_SIZE - 3; x++) {
+    for (let z = 3; z < WORLD_SIZE - 3; z++) {
+        const h = Math.floor(heights[z * WORLD_SIZE + x]);
+        if (h >= SEA_LEVEL + 2 && h < SNOW_LEVEL - 2) {
+            if (hash2D(x, z, 777) < 0.0056) {      // 约 0.56% -> ~44 棵树 (100x100)
+                // 检查是否在草地上
+                if (getBlock(x, h, z) === BLOCK.GRASS && getBlock(x, h + 1, z) === BLOCK.AIR) {
+                    placeTree(x, h + 1, z);
+                }
+            }
+        }
+    }
+}
+
+// ============================================================
+// 2. Three.js 基础
+// ============================================================
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87CEEB);    // 天空蓝
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// 灯光
+const ambient = new THREE.AmbientLight(0xffffff, 0.65);
+scene.add(ambient);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(45, 90, 35);
+scene.add(dirLight);
+
+// ============================================================
+// 3. 纹理生成
+// ============================================================
+function createCanvasTexture(draw) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 16;
+    const ctx = c.getContext('2d');
+    draw(ctx);
+    const tex = new THREE.CanvasTexture(c);
+    tex.magFilter = THREE.NearestFilter;
+    tex.minFilter = THREE.NearestFilter;
+    tex.generateMipmaps = false;
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+}
+
+// 简单噪点填充
+function noiseFill(ctx, r, g, b, variance) {
+    for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+            const v = (Math.random() - 0.5) * variance;
+            ctx.fillStyle = `rgb(${r + v | 0}, ${g + v | 0}, ${b + v | 0})`;
+            ctx.fillRect(x, y, 1, 1);
+        }
+    }
+}
+
+const grassTopTex = createCanvasTexture(ctx => {
+    for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+            const g = 120 + (Math.random()*60|0) - 30;
+            ctx.fillStyle = `rgb(50, ${g}, 30)`;
+            ctx.fillRect(x, y, 1, 1);
+        }
+    }
+});
+const grassSideTex = createCanvasTexture(ctx => {
+    for (let i = 0; i < 16; i++) {
+        ctx.fillStyle = `rgb(60, 110, 35)`;
+        ctx.fillRect(i, 12, 1, 4);  // 草皮
+        noiseFill(ctx, 90, 70, 30, 30);
+    }
+});
+
+// 一种更快的填充方式：直接用图片数据？ 这里简化为纯色 + 噪点
+function plainTex(hex, noise) {
+    return createCanvasTexture(ctx => {
+        for (let y = 0; y < 16; y++) {
+            for (let x = 0; x < 16; x++) {
+                const v = (Math.random() - 0.5) * noise;
+                const c = new THREE.Color(hex);
+                c.r += v / 255;
+                c.g += v / 255;
+                c.b += v / 255;
+                ctx.fillStyle = `rgb(${c.r*255|0},${c.g*255|0},${c.b*255|0})`;
+                ctx.fillRect(x, y, 1, 1);
+            }
+        }
+    });
+}
+
+const dirtTex = plainTex(0x9B6B38, 20);
+const stoneTex = plainTex(0x888888, 15);
+const sandTex = plainTex(0xC2B280, 20);
+const snowTex = plainTex(0xFFFFFF, 10);
+const woodSideTex = plainTex(0x6B4E2B, 10);
+const woodTopTex = plainTex(0xC29F72, 10);
+const leavesTex = createCanvasTexture(ctx => {
+    for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+            const g = 50 + Math.random() * 80 | 0;
+            ctx.fillStyle = `rgb(${20 + Math.random()*30|0}, ${g}, 20)`;
+            ctx.fillRect(x, y, 1, 1);
+        }
+    }
+});
+const waterTex = createCanvasTexture(ctx => {
+    for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+            const v = 60 + Math.random()*30|0;
+            ctx.fillStyle = `rgb(${v-20|0}, ${v+20|0}, ${v+80|0})`;
+            ctx.fillRect(x, y, 1, 1);
+        }
+    }
+});
+
+// ============================================================
+// 4. 方块材质
+// ============================================================
+const materials = {
+    grassSide: new THREE.MeshLambertMaterial({ map: grassSideTex }),
+    grassTop:  new THREE.MeshLambertMaterial({ map: grassTopTex }),
+    dirt:      new THREE.MeshLambertMaterial({ map: dirtTex }),
+    stone:     new THREE.MeshLambertMaterial({ map: stoneTex }),
+    sand:      new THREE.MeshLambertMaterial({ map: sandTex }),
+    snow:      new THREE.MeshLambertMaterial({ map: snowTex }),
+    woodSide:  new THREE.MeshLambertMaterial({ map: woodSideTex }),
+    woodTop:   new THREE.MeshLambertMaterial({ map: woodTopTex }),
+    leaves:    new THREE.MeshLambertMaterial({ map: leavesTex }),
+    water:     new THREE.MeshLambertMaterial({
+        map: waterTex,
+        color: 0x88aaff,
+        transparent: true,
+        opacity: 0.75,
+        side: THREE.DoubleSide,
+        depthWrite: false
+    })
+};
+
+// 根据方块类型获取 6 面材质 ( +X, -X, +Y, -Y, +Z, -Z )
+function getFaceMaterials(blockType) {
+    switch (blockType) {
+        case BLOCK.GRASS:
+            return [materials.grassSide, materials.grassSide,
+                    materials.grassTop, materials.dirt,
+                    materials.grassSide, materials.grassSide];
+        case BLOCK.DIRT:
+            return [materials.dirt, materials.dirt, materials.dirt, materials.dirt,
+                    materials.dirt, materials.dirt];
+        case BLOCK.STONE:
+            return [materials.stone, materials.stone, materials.stone, materials.stone,
+                    materials.stone, materials.stone];
+        case BLOCK.SAND:
+            return [materials.sand, materials.sand, materials.sand, materials.sand,
+                    materials.sand, materials.sand];
+        case BLOCK.SNOW:
+            return [materials.snow, materials.snow, materials.snow, materials.snow,
+                    materials.snow, materials.snow];
+        case BLOCK.WOOD:
+            return [materials.woodSide, materials.woodSide,
+                    materials.woodTop,  materials.woodTop,
+                    materials.woodSide, materials.woodSide];
+        case BLOCK.LEAVES:
+            return [materials.leaves, materials.leaves, materials.leaves, materials.leaves,
+                    materials.leaves, materials.leaves];
+        case BLOCK.WATER:
+            return [materials.water, materials.water, materials.water, materials.water,
+                    materials.water, materials.water];
+        default:
+            return [materials.dirt, materials.dirt, materials.dirt, materials.dirt,
+                    materials.dirt, materials.dirt];
+    }
+}
+
+// ============================================================
+// 5. 构建 InstancedMesh
+// ============================================================
+function isVisible(x, y, z, type) {
+    if (type === BLOCK.WATER) {
+        // 只显示水邻居不是水的方块
+        return getBlock(x-1, y, z) !== BLOCK.WATER ||
+               getBlock(x+1, y, z) !== BLOCK.WATER ||
+               getBlock(x, y-1, z) !== BLOCK.WATER ||
+               getBlock(x, y+1, z) !== BLOCK.WATER ||
+               getBlock(x, y, z-1) !== BLOCK.WATER ||
+               getBlock(x, y, z+1) !== BLOCK.WATER;
+    } else {
+        // 任何相邻面是空气或水 → 可视
+        return getBlock(x-1, y, z) === BLOCK.AIR ||
+               getBlock(x+1, y, z) === BLOCK.AIR ||
+               getBlock(x, y-1, z) === BLOCK.AIR ||
+               getBlock(x, y+1, z) === BLOCK.AIR ||
+               getBlock(x, y, z-1) === BLOCK.AIR ||
+               getBlock(x, y, z+1) === BLOCK.AIR ||
+               getBlock(x-1, y, z) === BLOCK.WATER ||
+               getBlock(x+1, y, z) === BLOCK.WATER ||
+               getBlock(x, y-1, z) === BLOCK.WATER ||
+               getBlock(x, y+1, z) === BLOCK.WATER ||
+               getBlock(x, y, z-1) === BLOCK.WATER ||
+               getBlock(x, y, z+1) === BLOCK.WATER;
+    }
+}
+
+const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
+const matrix = new THREE.Matrix4();
+const position = new THREE.Vector3();
+const quaternion = new THREE.Quaternion();
+const scale = new THREE.Vector3(1, 1, 1);
+
+const meshes = [];
+
+// 第一遍预计算每个类型的数量
+const typeCounts = new Array(BLOCK.COUNT).fill(0);
+for (let x = 0; x < WORLD_SIZE; x++) {
+    for (let z = 0; z < WORLD_SIZE; z++) {
+        for (let y = 0; y < MAX_HEIGHT; y++) {
+            const t = getBlock(x, y, z);
+            if (t && isVisible(x, y, z, t)) typeCounts[t]++;
+        }
+    }
+}
+
+// 第二遍填充实例
+for (let type = 1; type < BLOCK.COUNT; type++) {
+    const count = typeCounts[type];
+    if (!count) continue;
+
+    const faceMats = getFaceMaterials(type);
+    const mesh = new THREE.InstancedMesh(blockGeometry, faceMats, count);
+    let idx = 0;
+
+    for (let x = 0; x < WORLD_SIZE; x++) {
+        for (let z = 0; z < WORLD_SIZE; z++) {
+            for (let y = 0; y < MAX_HEIGHT; y++) {
+                if (getBlock(x, y, z) !== type) continue;
+                if (!isVisible(x, y, z, type)) continue;
+                position.set(x + 0.5, y + 0.5, z + 0.5);
+                matrix.compose(position, quaternion, scale);
+                mesh.setMatrixAt(idx++, matrix);
+            }
+        }
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.count = idx;   // 确保实际数量
+    scene.add(mesh);
+    meshes.push(mesh);
+}
+
+// ============================================================
+// 6. 场景装饰（云、太阳）
+// ============================================================
+const cloudGroup = new THREE.Group();
+scene.add(cloudGroup);
+
+function makeCloud() {
+    const g = new THREE.Group();
+    const mat = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.8,
+        depthWrite: false
+    });
+    for (let i = 0; i < 6; i++) {
+        const box = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), mat);
+        const s = 4 + Math.random() * 6;
+        box.scale.set(s, 1.2 + Math.random() * 0.8, s * 0.7);
+        box.position.set(
+            (Math.random() - 0.5) * 16,
+            (Math.random() - 0.5) * 2,
+            (Math.random() - 0.5) * 10
+        );
+        g.add(box);
+    }
+    return g;
+}
+for (let i = 0; i < 18; i++) {
+    const cloud = makeCloud();
+    cloud.position.set(
+        Math.random() * 180 - 20,
+        70 + Math.random() * 15,
+        Math.random() * 180 - 20
+    );
+    cloudGroup.add(cloud);
+}
+
+// 太阳光晕 (sprite)
+function createSunSprite() {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    grad.addColorStop(0, 'rgba(255,255,240,1)');
+    grad.addColorStop(0.4, 'rgba(255,240,100,0.7)');
+    grad.addColorStop(1, 'rgba(255,200,50,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 128, 128);
+    const tex = new THREE.CanvasTexture(canvas);
+    const mat = new THREE.SpriteMaterial({
+        map: tex,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+    });
+    return new THREE.Sprite(mat);
+}
+const sun = createSunSprite();
+sun.position.set(40, 95, -30);
+sun.scale.set(40, 40, 1);
+scene.add(sun);
+
+// ============================================================
+// 7. 摄像机动画
+// ============================================================
+const curvePoints = [
+    new THREE.Vector3(8, 18, 8),
+    new THREE.Vector3(25, 20, 35),
+    new THREE.Vector3(50, 35, 70),
+    new THREE.Vector3(75, 22, 80),
+    new THREE.Vector3(85, 16, 45),
+    new THREE.Vector3(60, 14, 22),
+    new THREE.Vector3(25, 15, 12),
+    new THREE.Vector3(8, 18, 8)
+];
+const curve = new THREE.CatmullRomCurve3(curvePoints, false, 'catmullrom', 0.5);
+const flyTime = 22;   // 秒
+let tFly = 0;
+let prevTime = performance.now() / 1000;
+
+// 可选线框用于调试曲线
+// const helper = new THREE.CatmullRomCurve3(curvePoints).getPoints(100);
+// const line = new THREE.Line(
+//     new THREE.BufferGeometry().setFromPoints(helper),
+//     new THREE.LineBasicMaterial({color: 0xffffff})
+// );
+// scene.add(line);
+
+function animate() {
+    requestAnimationFrame(animate);
+    const now = performance.now() / 1000;
+    const delta = Math.min(0.05, now - prevTime);
+    prevTime = now;
+
+    // 摄像机路径
+    tFly += delta / flyTime;
+    if (tFly >= 1) tFly = 0;
+    const pos = curve.getPoint(tFly);
+    camera.position.copy(pos);
+    const target = curve.getPoint(Math.min(tFly + 0.05, 1));
+    camera.lookAt(target);
+
+    // 云移动
+    cloudGroup.children.forEach(c => {
+        c.position.x += 1.0 * delta;
+        if (c.position.x > 170) c.position.x = -30;
+    });
+
+    // 太阳始终面向相机
+    sun.position.copy(camera.position.clone().add(new THREE.Vector3(100, 50, -60)));
+
+    renderer.render(scene, camera);
+}
+animate();
+
+// 窗口大小调整
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// 帮助文本
+console.log('Voxel world loaded with', meshes.length, 'InstancedMeshes');
+</script>
+</body>
+</html>

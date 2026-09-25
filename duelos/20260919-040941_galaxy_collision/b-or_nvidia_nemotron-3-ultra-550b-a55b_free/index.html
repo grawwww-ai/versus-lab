@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script type="importmap">{"imports":{"three":"/vendor/three/three.module.js","three/addons/":"/vendor/three/addons/"}}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Galaxy Collision Simulation</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  #canvas { display: block; }
+  #timeLabel {
+    position: fixed; top: 20px; left: 20px; z-index: 10;
+    background: rgba(0, 0, 0, 0.7); color: #e8e8e8;
+    padding: 12px 20px; border-radius: 8px;
+    font-size: 1.1rem; font-weight: 500; letter-spacing: 0.5px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    font-variant-numeric: tabular-nums;
+  }
+  #info {
+    position: fixed; bottom: 20px; left: 20px; z-index: 10;
+    color: rgba(255, 255, 255, 0.5); font-size: 0.8rem; line-height: 1.5;
+    max-width: 300px;
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="timeLabel">Time: 0.0 Myr</div>
+<div id="info">Two spiral galaxies on a collision course. Tidal forces pull streams of stars into dramatic tails and bridges. Simulation uses a restricted N-body approximation with 40,000 test particles in the combined potential of two Plummer spheres.</div>
+<script type="module">
+import * as THREE from 'three';
+
+// ============ CONFIGURATION ============
+const CONFIG = {
+  starsPerGalaxy: 20000,
+  backgroundStars: 5000,
+  galaxyMass: 1000,          // Code units
+  G: 1,                      // Gravitational constant
+  softening: 2.5,            // Plummer softening length (kpc)
+  diskScaleRadius: 5,        // Exponential disk scale radius (kpc)
+  diskScaleHeight: 0.4,      // Disk scale height (kpc)
+  spiralArms: 2,             // Number of spiral arms
+  spiralStrength: 0.6,       // Spiral perturbation amplitude
+  spiralWinding: 0.3,        // Logarithmic spiral winding rate
+  velocityDispersion: 0.15,  // Fraction of circular velocity
+  initialSeparation: 80,     // Initial galaxy separation (kpc)
+  approachVelocity: 0.25,    // Initial relative velocity
+  impactParameter: 8,        // Pericenter offset (kpc)
+  dt: 0.08,                  // Time step (code units)
+  timeScale: 12,             // Myr per code time unit
+  cameraDistance: 180,       // Camera orbit radius
+  cameraHeight: 60,          // Camera orbit height
+  cameraPeriod: 180,         // Camera orbit period (seconds)
+  pointSizeBase: 1.8,        // Base point size (pixels)
+  pointSizeScale: 120,       // Point size scaling factor
+  coreRadius: 2.5,           // Core radius for color transition
+};
+
+// ============ UTILITY FUNCTIONS ============
+const rand = () => Math.random();
+const randNormal = () => {
+  let u = 0, v = 0;
+  while (u === 0) u = rand();
+  while (v === 0) v = rand();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+};
+
+// ============ GALAXY INITIALIZATION ============
+function createGalaxyStars(galaxyIndex, centerPos, centerVel, galaxyMass) {
+  const N = CONFIG.starsPerGalaxy;
+  const positions = new Float32Array(N * 3);
+  const velocities = new Float32Array(N * 3);
+  const colors = new Float32Array(N * 3);
+  const sizes = new Float32Array(N);
+  const galaxyData = { mass: galaxyMass, pos: new THREE.Vector3().copy(centerPos), vel: new THREE.Vector3().copy(centerVel) };
+
+  // Precompute circular velocity curve for Plummer sphere
+  // M(r) = M * r^3 / (r^2 + eps^2)^(3/2)
+  // v_circ^2 = G * M(r) / r = G * M * r^2 / (r^2 + eps^2)^(3/2)
+  const GM = CONFIG.G * galaxyMass;
+  const eps2 = CONFIG.softening * CONFIG.softening;
+
+  for (let i = 0; i < N; i++) {
+    // Exponential disk radius sampling: p(r) ~ r * exp(-r/h)
+    // CDF: 1 - (1 + r/h) * exp(-r/h) -> r = -h * ln(1 - u) approx for large r, but use rejection or inverse
+    // Use inverse transform for r * exp(-r/h): r = -h * (1 + W(-u/e)) but simpler: sample r^2 uniform? No.
+    // Use: r = -h * ln(1 - u) for surface density exp(-r/h), but that gives p(r) ~ exp(-r/h).
+    // For p(r) ~ r * exp(-r/h), use r = h * ( -ln(1-u) + ... )? Just use rejection or Box-Muller style.
+    // Simple approximation: r = h * sqrt(-2 * ln(1 - u)) gives roughly exponential disk.
+    const u1 = rand();
+    const u2 = rand();
+    const r = CONFIG.diskScaleRadius * Math.sqrt(-2 * Math.log(1 - u1)); // Rough exponential
+    const theta = u2 * Math.PI * 2;
+
+    // Spiral arm perturbation (logarithmic spiral)
+    const armPhase = (galaxyIndex === 0 ? 0 : Math.PI) + CONFIG.spiralWinding * Math.log(1 + r / CONFIG.diskScaleRadius);
+    const spiralPerturb = CONFIG.spiralStrength * Math.sin(CONFIG.spiralArms * theta + armPhase);
+    const thetaSpiral = theta + spiralPerturb * Math.exp(-r / (CONFIG.diskScaleRadius * 2));
+
+    // Vertical distribution (sech^2 approx by Gaussian)
+    const z = randNormal() * CONFIG.diskScaleHeight * Math.exp(-r / (CONFIG.diskScaleRadius * 3));
+
+    // Position relative to galaxy center
+    const x = r * Math.cos(thetaSpiral);
+    const y = r * Math.sin(thetaSpiral);
+
+    // Circular velocity at this radius
+    const r2 = r * r;
+    const denom = Math.pow(r2 + eps2, 1.5);
+    const vCirc = Math.sqrt(GM * r2 / denom);
+
+    // Velocity dispersion
+    const vDisp = vCirc * CONFIG.velocityDispersion;
+    const vTan = vCirc + randNormal() * vDisp;
+    const vRad = randNormal() * vDisp * 0.5;
+    const vVert = randNormal() * vDisp * 0.3;
+
+    // Velocity in disk plane (tangential + radial)
+    const vxDisk = -vTan * Math.sin(thetaSpiral) + vRad * Math.cos(thetaSpiral);
+    const vyDisk = vTan * Math.cos(thetaSpiral) + vRad * Math.sin(thetaSpiral);
+
+    // Global position
+    const gx = centerPos.x + x;
+    const gy = centerPos.y + y;
+    const gz = centerPos.z + z;
+
+    // Global velocity
+    const gvx = centerVel.x + vxDisk;
+    const gvy = centerVel.y + vyDisk;
+    const gvz = centerVel.z + vVert;
+
+    positions[i * 3] = gx;
+    positions[i * 3 + 1] = gy;
+    positions[i * 3 + 2] = gz;
+
+    velocities[i * 3] = gvx;
+    velocities[i * 3 + 1] = gvy;
+    velocities[i * 3 + 2] = gvz;
+
+    // Color: core (warm yellow) to arms (blue-white)
+    // Core if r < coreRadius, else arm color modulated by spiral phase
+    let cr, cg, cb;
+    if (r < CONFIG.coreRadius) {
+      const t = r / CONFIG.coreRadius;
+      cr = 1.0;
+      cg = 0.9 - 0.2 * t;
+      cb = 0.5 - 0.3 * t;
+    } else {
+      // Arm color with spiral phase variation
+      const armPhaseNorm = (Math.sin(CONFIG.spiralArms * thetaSpiral + armPhase) + 1) * 0.5;
+      cr = 0.6 + 0.3 * armPhaseNorm;
+      cg = 0.75 + 0.2 * armPhaseNorm;
+      cb = 1.0;
+    }
+    colors[i * 3] = cr;
+    colors[i * 3 + 1] = cg;
+    colors[i * 3 + 2] = cb;
+
+    // Size: larger for brighter stars (core stars slightly larger)
+    sizes[i] = 0.8 + 0.6 * Math.exp(-r / CONFIG.coreRadius) + 0.2 * rand();
+  }
+
+  return { positions, velocities, colors, sizes, galaxyData };
+}
+
+// ============ BACKGROUND STARFIELD ============
+function createBackgroundStars(count) {
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const sizes = new Float32Array(count);
+  const radius = 500;
+
+  for (let i = 0; i < count; i++) {
+    // Uniform on sphere
+    const u = rand();
+    const v = rand();
+    const theta = 2 * Math.PI * u;
+    const phi = Math.acos(2 * v - 1);
+    const r = radius * (0.7 + 0.3 * Math.pow(rand(), 0.33));
+
+    positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+    positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+    positions[i * 3 + 2] = r * Math.cos(phi);
+
+    // Subtle color variation
+    const t = rand();
+    if (t < 0.6) { colors[i * 3] = 1; colors[i * 3 + 1] = 0.95; colors[i * 3 + 2] = 0.9; }
+    else if (t < 0.9) { colors[i * 3] = 1; colors[i * 3 + 1] = 1; colors[i * 3 + 2] = 1; }
+    else { colors[i * 3] = 0.9; colors[i * 3 + 1] = 0.95; colors[i * 3 + 2] = 1; }
+
+    sizes[i] = 0.3 + 0.7 * rand();
+  }
+  return { positions, colors, sizes };
+}
+
+// ============ PHYSICS: LEAPFROG INTEGRATION ============
+function computeAcceleration(pos, gal1, gal2, accOut) {
+  // Acceleration from two Plummer spheres
+  const GM1 = CONFIG.G * gal1.mass;
+  const GM2 = CONFIG.G * gal2.mass;
+  const eps2 = CONFIG.softening * CONFIG.softening;
+
+  const dx1 = pos.x - gal1.pos.x;
+  const dy1 = pos.y - gal1.pos.y;
+  const dz1 = pos.z - gal1.pos.z;
+  const r2_1 = dx1 * dx1 + dy1 * dy1 + dz1 * dz1 + eps2;
+  const invR3_1 = GM1 / (r2_1 * Math.sqrt(r2_1));
+
+  const dx2 = pos.x - gal2.pos.x;
+  const dy2 = pos.y - gal2.pos.y;
+  const dz2 = pos.z - gal2.pos.z;
+  const r2_2 = dx2 * dx2 + dy2 * dy2 + dz2 * dz2 + eps2;
+  const invR3_2 = GM2 / (r2_2 * Math.sqrt(r2_2));
+
+  accOut.x = -invR3_1 * dx1 - invR3_2 * dx2;
+  accOut.y = -invR3_1 * dy1 - invR3_2 * dy2;
+  accOut.z = -invR3_1 * dz1 - invR3_2 * dz2;
+}
+
+function integrateGalaxyCenters(gal1, gal2, dt) {
+  // Leapfrog kick-drift-kick for galaxy centers (mutual interaction only)
+  const dx = gal2.pos.x - gal1.pos.x;
+  const dy = gal2.pos.y - gal1.pos.y;
+  const dz = gal2.pos.z - gal1.pos.z;
+  const r2 = dx * dx + dy * dy + dz * dz + CONFIG.softening * CONFIG.softening;
+  const invR3 = CONFIG.G / (r2 * Math.sqrt(r2));
+
+  const ax1 = invR3 * gal2.mass * dx;
+  const ay1 = invR3 * gal2.mass * dy;
+  const az1 = invR3 * gal2.mass * dz;
+  const ax2 = -invR3 * gal1.mass * dx;
+  const ay2 = -invR3 * gal1.mass * dy;
+  const az2 = -invR3 * gal1.mass * dz;
+
+  // Kick half step
+  gal1.vel.x += ax1 * dt * 0.5;
+  gal1.vel.y += ay1 * dt * 0.5;
+  gal1.vel.z += az1 * dt * 0.5;
+  gal2.vel.x += ax2 * dt * 0.5;
+  gal2.vel.y += ay2 * dt * 0.5;
+  gal2.vel.z += az2 * dt * 0.5;
+
+  // Drift
+  gal1.pos.x += gal1.vel.x * dt;
+  gal1.pos.y += gal1.vel.y * dt;
+  gal1.pos.z += gal1.vel.z * dt;
+  gal2.pos.x += gal2.vel.x * dt;
+  gal2.pos.y += gal2.vel.y * dt;
+  gal2.pos.z += gal2.vel.z * dt;
+
+  // Recompute acceleration at new positions
+  const dx2 = gal2.pos.x - gal1.pos.x;
+  const dy2 = gal2.pos.y - gal1.pos.y;
+  const dz2 = gal2.pos.z - gal1.pos.z;
+  const r2_2 = dx2 * dx2 + dy2 * dy2 + dz2 * dz2 + CONFIG.softening * CONFIG.softening;
+  const invR3_2 = CONFIG.G / (r2_2 * Math.sqrt(r2_2));
+
+  const ax1_2 = invR3_2 * gal2.mass * dx2;
+  const ay1_2 = invR3_2 * gal2.mass * dy2;
+  const az1_2 = invR3_2 * gal2.mass * dz2;
+  const ax2_2 = -invR3_2 * gal1.mass * dx2;
+  const ay2_2 = -invR3_2 * gal1.mass * dy2;
+  const az2_2 = -invR3_2 * gal1.mass * dz2;
+
+  // Kick half step
+  gal1.vel.x += ax1_2 * dt * 0.5;
+  gal1.vel.y += ay1_2 * dt * 0.5;
+  gal1.vel.z += az1_2 * dt * 0.5;
+  gal2.vel.x += ax2_2 * dt * 0.5;
+  gal2.vel.y += ay2_2 * dt * 0.5;
+  gal2.vel.z += az2_2 * dt * 0.5;
+}
+
+function integrateStars(positions, velocities, gal1, gal2, dt, N) {
+  const acc = new THREE.Vector3();
+  for (let i = 0; i < N; i++) {
+    const ix = i * 3;
+    const pos = { x: positions[ix], y: positions[ix + 1], z: positions[ix + 2] };
+    computeAcceleration(pos, gal1, gal2, acc);
+
+    // Kick half step
+    velocities[ix] += acc.x * dt * 0.5;
+    velocities[ix + 1] += acc.y * dt * 0.5;
+    velocities[ix + 2] += acc.z * dt * 0.5;
+
+    // Drift
+    positions[ix] += velocities[ix] * dt;
+    positions[ix + 1] += velocities[ix + 1] * dt;
+    positions[ix + 2] += velocities[ix + 2] * dt;
+
+    // Recompute acceleration at new position
+    pos.x = positions[ix];
+    pos.y = positions[ix + 1];
+    pos.z = positions[ix + 2];
+    computeAcceleration(pos, gal1, gal2, acc);
+
+    // Kick half step
+    velocities[ix] += acc.x * dt * 0.5;
+    velocities[ix + 1] += acc.y * dt * 0.5;
+    velocities[ix + 2] += acc.z * dt * 0.5;
+  }
+}
+
+// ============ THREE.JS SETUP ============
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0x000000, 1);
+
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
+camera.position.set(0, CONFIG.cameraHeight, CONFIG.cameraDistance);
+
+// ============ SHADERS ============
+const starVertexShader = `
+  attribute float pSize;
+  attribute vec3 pColor;
+  varying vec3 vColor;
+  varying float vSize;
+  void main() {
+    vColor = pColor;
+    vSize = pSize;
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    gl_PointSize = pSize * (${CONFIG.pointSizeScale.toFixed(1)} / -mvPosition.z) * (${renderer.getPixelRatio().toFixed(1)});
+    gl_Position = projectionMatrix * mvPosition;
+  }
+`;
+
+const starFragmentShader = `
+  varying vec3 vColor;
+  varying float vSize;
+  void main() {
+    vec2 center = gl_PointCoord - 0.5;
+    float dist = length(center);
+    float alpha = smoothstep(0.5, 0.0, dist);
+    // Additive glow: brighter core, softer edges
+    alpha = pow(alpha, 0.7);
+    gl_FragColor = vec4(vColor * alpha, alpha);
+  }
+`;
+
+const bgVertexShader = `
+  attribute float pSize;
+  attribute vec3 pColor;
+  varying vec3 vColor;
+  void main() {
+    vColor = pColor;
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    gl_PointSize = pSize * (50.0 / -mvPosition.z);
+    gl_Position = projectionMatrix * mvPosition;
+  }
+`;
+
+const bgFragmentShader = `
+  varying vec3 vColor;
+  void main() {
+    vec2 center = gl_PointCoord - 0.5;
+    float dist = length(center);
+    float alpha = smoothstep(0.5, 0.0, dist);
+    gl_FragColor = vec4(vColor * alpha * 0.6, alpha * 0.6);
+  }
+`;
+
+// ============ CREATE OBJECTS ============
+// Galaxy 1: left, moving right/up
+const gal1Pos = new THREE.Vector3(-CONFIG.initialSeparation * 0.5, -CONFIG.impactParameter * 0.5, 0);
+const gal1Vel = new THREE.Vector3(CONFIG.approachVelocity * 0.5, CONFIG.approachVelocity * 0.5, 0);
+const gal1 = createGalaxyStars(0, gal1Pos, gal1Vel, CONFIG.galaxyMass);
+
+// Galaxy 2: right, moving left/down
+const gal2Pos = new THREE.Vector3(CONFIG.initialSeparation * 0.5, CONFIG.impactParameter * 0.5, 0);
+const gal2Vel = new THREE.Vector3(-CONFIG.approachVelocity * 0.5, -CONFIG.approachVelocity * 0.5, 0);
+const gal2 = createGalaxyStars(1, gal2Pos, gal2Vel, CONFIG.galaxyMass);
+
+// Combine star data for single draw call (better performance)
+const totalStars = CONFIG.starsPerGalaxy * 2;
+const allPositions = new Float32Array(totalStars * 3);
+const allVelocities = new Float32Array(totalStars * 3);
+const allColors = new Float32Array(totalStars * 3);
+const allSizes = new Float32Array(totalStars);
+
+allPositions.set(gal1.positions, 0);
+allPositions.set(gal2.positions, CONFIG.starsPerGalaxy * 3);
+allVelocities.set(gal1.velocities, 0);
+allVelocities.set(gal2.velocities, CONFIG.starsPerGalaxy * 3);
+allColors.set(gal1.colors, 0);
+allColors.set(gal2.colors, CONFIG.starsPerGalaxy * 3);
+allSizes.set(gal1.sizes, 0);
+allSizes.set(gal2.sizes, CONFIG.starsPerGalaxy * 3);
+
+// Star geometry
+const starGeometry = new THREE.BufferGeometry();
+starGeometry.setAttribute('position', new THREE.BufferAttribute(allPositions, 3));
+starGeometry.setAttribute('pColor', new THREE.BufferAttribute(allColors, 3));
+starGeometry.setAttribute('pSize', new THREE.BufferAttribute(allSizes, 1));
+starGeometry.computeBoundingSphere();
+
+const starMaterial = new THREE.ShaderMaterial({
+  vertexShader: starVertexShader,
+  fragmentShader: starFragmentShader,
+  transparent: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+  vertexColors: true,
+});
+
+const stars = new THREE.Points(starGeometry, starMaterial);
+scene.add(stars);
+
+// Background stars
+const bgData = createBackgroundStars(CONFIG.backgroundStars);
+const bgGeometry = new THREE.BufferGeometry();
+bgGeometry.setAttribute('position', new THREE.BufferAttribute(bgData.positions, 3));
+bgGeometry.setAttribute('pColor', new THREE.BufferAttribute(bgData.colors, 3));
+bgGeometry.setAttribute('pSize', new THREE.BufferAttribute(bgData.sizes, 1));
+
+const bgMaterial = new THREE.ShaderMaterial({
+  vertexShader: bgVertexShader,
+  fragmentShader: bgFragmentShader,
+  transparent: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+});
+
+const bgStars = new THREE.Points(bgGeometry, bgMaterial);
+scene.add(bgStars);
+
+// ============ ANIMATION LOOP ============
+let simTime = 0; // Code time units
+let lastTimestamp = 0;
+const timeLabel = document.getElementById('timeLabel');
+const cameraStartTime = performance.now() / 1000;
+
+function animate(timestamp) {
+  const deltaTime = (timestamp - lastTimestamp) / 1000; // seconds
+  lastTimestamp = timestamp;
+
+  // --- Physics step (fixed dt for stability) ---
+  const stepsPerFrame = Math.max(1, Math.min(4, Math.round(deltaTime / 0.016))); // Adaptive sub-stepping
+  const subDt = CONFIG.dt / stepsPerFrame;
+
+  for (let s = 0; s < stepsPerFrame; s++) {
+    integrateGalaxyCenters(gal1.galaxyData, gal2.galaxyData, subDt);
+    integrateStars(allPositions, allVelocities, gal1.galaxyData, gal2.galaxyData, subDt, totalStars);
+    simTime += subDt;
+  }
+
+  // Update GPU buffers
+  starGeometry.attributes.position.needsUpdate = true;
+
+  // --- Camera animation ---
+  const camTime = (timestamp / 1000 - cameraStartTime) * (2 * Math.PI / CONFIG.cameraPeriod);
+  const camRadius = CONFIG.cameraDistance * (0.85 + 0.15 * Math.sin(camTime * 0.3));
+  const camHeight = CONFIG.cameraHeight * (1 + 0.2 * Math.cos(camTime * 0.5));
+  camera.position.x = camRadius * Math.cos(camTime);
+  camera.position.z = camRadius * Math.sin(camTime);
+  camera.position.y = camHeight;
+  camera.lookAt(0, 0, 0);
+
+  // --- Render ---
+  renderer.render(scene, camera);
+
+  // --- Update time label ---
+  const timeMyr = simTime * CONFIG.timeScale;
+  timeLabel.textContent = `Time: ${timeMyr.toFixed(1)} Myr`;
+
+  requestAnimationFrame(animate);
+}
+
+// ============ RESIZE HANDLER ============
+window.addEventListener('resize', () => {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+});
+
+// ============ START ============
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

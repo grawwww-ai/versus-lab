@@ -1,0 +1,139 @@
+{
+  "id": "20260921-003107_shader_ocean",
+  "challenge": {
+    "id": "shader_ocean",
+    "category": "shader",
+    "title_es": "Océano en tormenta",
+    "title_en": "Stormy Ocean",
+    "prompt": "Create a full-window WebGL2 animation of a stormy ocean at sunset, written as a single raymarching fragment shader on a full-screen quad (raw WebGL2, no libraries). Requirements: large rolling waves built from several octaves of noise, foam on the crests, a dramatic sky with dark clouds and a low orange sun, sun reflection and fresnel on the water, subtle fog near the horizon, and a camera that gently bobs as if on a boat. Use the requestAnimationFrame timestamp for time. The canvas must always fill the window and handle resizing. Starts automatically, no interaction needed. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that."
+  },
+  "prompt": "Create a full-window WebGL2 animation of a stormy ocean at sunset, written as a single raymarching fragment shader on a full-screen quad (raw WebGL2, no libraries). Requirements: large rolling waves built from several octaves of noise, foam on the crests, a dramatic sky with dark clouds and a low orange sun, sun reflection and fresnel on the water, subtle fog near the horizon, and a camera that gently bobs as if on a boat. Use the requestAnimationFrame timestamp for time. The canvas must always fill the window and handle resizing. Starts automatically, no interaction needed. The animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.\n\nRequirements: deliver everything in ONE self-contained HTML file (inline CSS and JavaScript; no external resources, CDNs, fonts or images). Reply with the complete file in a single ```html code block.",
+  "contestants": [
+    {
+      "contestant": "or:z-ai/glm-5.2:free",
+      "first_token_s": 1.492,
+      "first_answer_s": 143.298,
+      "total_s": 175.115,
+      "prompt_tokens": 202,
+      "completion_tokens": 10616,
+      "reasoning_tokens": 7726,
+      "cost": 0,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 29491,
+      "cuts": [],
+      "side": "a",
+      "dir": "a-or-z-ai-glm-5-2-free",
+      "tokens_per_s": 61.1,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.36,
+        "visual": {
+          "contrast": 33.46,
+          "detail_pct": 8.57,
+          "box": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ]
+        },
+        "motion": [
+          153234,
+          158308,
+          149608,
+          116552,
+          123852,
+          141701,
+          126091,
+          139341,
+          159369,
+          145868,
+          160965,
+          185621,
+          187923,
+          191332,
+          199194,
+          113163
+        ],
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": null
+    },
+    {
+      "contestant": "or:nvidia/nemotron-3-ultra-550b-a55b:free",
+      "first_token_s": 1.325,
+      "first_answer_s": 12.39,
+      "total_s": 70.896,
+      "prompt_tokens": 217,
+      "completion_tokens": 5130,
+      "reasoning_tokens": 608,
+      "cost": 0,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 65536,
+      "cuts": [],
+      "side": "b",
+      "dir": "b-or-nvidia-nemotron-3-ultra-550b-a55b-free",
+      "tokens_per_s": 73.7,
+      "validation": {
+        "checks": {
+          "renders": false,
+          "no_js_errors": false,
+          "no_freeze": true,
+          "has_content": false,
+          "self_contained": true,
+          "moves": false
+        },
+        "errors": [
+          "console: ERROR: 0:17: '^' : wrong operand types - no operation '^' exists that takes a left-hand operand of type 'highp float' and a right operand of type 'highp float' (or there is no acceptable conversion)\n",
+          "pageerror: Failed to execute 'attachShader' on 'WebGL2RenderingContext': parameter 2 is not of type 'WebGLShader'."
+        ],
+        "score": 25,
+        "load_s": 0.37,
+        "visual": {
+          "contrast": 0.0,
+          "detail_pct": 0.0,
+          "box": null
+        },
+        "motion": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "external_requests": []
+      },
+      "judge": null
+    }
+  ],
+  "winner": "or:z-ai/glm-5.2:free",
+  "winner_side": "a",
+  "decided_by": "score"
+}

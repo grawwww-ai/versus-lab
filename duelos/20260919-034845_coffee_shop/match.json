@@ -1,0 +1,365 @@
+{
+  "id": "20260919-034845_coffee_shop",
+  "challenge": {
+    "id": "coffee_shop",
+    "category": "web",
+    "title_es": "Tienda online con carrito",
+    "title_en": "Online Shop with Cart",
+    "prompt": "Build a polished online shop page for a specialty coffee brand, \"Tostadores del Sur\", with a working cart. Products (id, name, price in euros): grinder \"Molinillo manual\" 49.90; espresso \"Cafetera espresso\" 89.00; beans \"Café de Etiopía 250 g\" 12.50; mug \"Taza de cerámica\" 8.90; kettle \"Hervidor cuello de cisne\" 39.00; filters \"Filtros de papel x100\" 5.50.\nBusiness rules: a 10% discount on the whole order when the subtotal is 100.00 € or more; shipping costs 4.95 € when the order (after the discount) is below 60.00 €, otherwise shipping is free; prices already include VAT; round the final total to cents.\nRequirements: an attractive header and hero, a product grid with a drawn illustration of each product (inline SVG or CSS, no images), \"Añadir\" buttons, a cart panel that lists items with + / − quantity controls and shows subtotal, discount, shipping and total (the total inside an element with id=\"cart-total\"); micro-animations when adding to the cart. When the page loads, run a short automatic demo that adds a few products and changes a quantity so a viewer sees the cart working. Also expose a test API as window.shopTest = { reset(), add(id, qty), total() } where total() returns the final total in euros as a number, applying the same rules and updating the visible cart. All texts in Spanish. No external resources.",
+    "rubric": [
+      {
+        "id": "totales",
+        "c": "Totales correctos",
+        "es": "El carrito calcula bien el total con descuento y envío en 4 pedidos de prueba",
+        "probe": "js",
+        "after": 6,
+        "arg": "() => {\n  const S = window.shopTest;\n  if (!S || typeof S.reset !== 'function' || typeof S.add !== 'function' || typeof S.total !== 'function')\n    return {ok: null, detalle: 'no expuso window.shopTest: no se puede comprobar por código'};\n  const cases = [\n    [[['grinder', 1]], 54.85, 'molinillo solo: 49,90 + envío 4,95'],\n    [[['espresso', 1], ['beans', 2]], 102.60, 'cafetera + 2 cafés: 114,00 - 10 % = 102,60, envío gratis'],\n    [[['mug', 3]], 31.65, '3 tazas: 26,70 + envío 4,95'],\n    [[['espresso', 1], ['mug', 1]], 97.90, 'cafetera + taza: 97,90 (sin descuento, envío gratis)'],\n  ];\n  for (const [items, want, label] of cases) {\n    S.reset(); for (const [id, q] of items) S.add(id, q);\n    const got = Math.round(Number(S.total()) * 100) / 100;\n    if (Math.abs(got - want) > 0.005) return {ok: false, detalle: `${label}: da ${got} y debería dar ${want}`};\n  }\n  return {ok: true, detalle: 'los 4 pedidos de prueba dan el total correcto (descuento y envío incluidos)'};\n}",
+        "w": 3
+      },
+      {
+        "id": "total_visible",
+        "c": "Total visible correcto",
+        "es": "El total que se ve en pantalla coincide con el cálculo",
+        "probe": "js",
+        "after": 7,
+        "arg": "() => {\n  const S = window.shopTest; if (!S) return {ok: false, detalle: 'sin window.shopTest'};\n  S.reset(); S.add('espresso', 1); S.add('beans', 2);\n  return new Promise((ok) => setTimeout(() => {\n    const el = document.getElementById('cart-total');\n    const txt = el ? el.textContent.replace(/\\s/g, '') : '';\n    ok({ok: /102[.,]60/.test(txt), detalle: el ? `el total visible dice «${el.textContent.trim()}» (debería ser 102,60)` : 'no hay #cart-total'});\n  }, 600));\n}",
+        "w": 2
+      },
+      {
+        "id": "productos",
+        "c": "Seis productos dibujados",
+        "es": "Se ven los productos con su ilustración, nombre y precio",
+        "w": 2
+      },
+      {
+        "id": "carrito",
+        "c": "Carrito con desglose",
+        "es": "Hay un carrito con artículos, cantidades, subtotal, descuento, envío y total",
+        "w": 1
+      },
+      {
+        "id": "demo",
+        "c": "Demo automática",
+        "es": "Se ve el carrito llenándose solo (cambia entre capturas)",
+        "w": 1
+      },
+      {
+        "id": "diseno",
+        "c": "Diseño cuidado",
+        "es": "El diseño es atractivo y profesional, con tema de café",
+        "w": 2
+      },
+      {
+        "id": "reserva",
+        "c": "Botón de compra",
+        "es": "Hay un botón para finalizar la compra",
+        "probe": "text",
+        "arg": "finalizar|comprar|pagar|checkout|tramitar",
+        "w": 1
+      }
+    ]
+  },
+  "prompt": "Build a polished online shop page for a specialty coffee brand, \"Tostadores del Sur\", with a working cart. Products (id, name, price in euros): grinder \"Molinillo manual\" 49.90; espresso \"Cafetera espresso\" 89.00; beans \"Café de Etiopía 250 g\" 12.50; mug \"Taza de cerámica\" 8.90; kettle \"Hervidor cuello de cisne\" 39.00; filters \"Filtros de papel x100\" 5.50.\nBusiness rules: a 10% discount on the whole order when the subtotal is 100.00 € or more; shipping costs 4.95 € when the order (after the discount) is below 60.00 €, otherwise shipping is free; prices already include VAT; round the final total to cents.\nRequirements: an attractive header and hero, a product grid with a drawn illustration of each product (inline SVG or CSS, no images), \"Añadir\" buttons, a cart panel that lists items with + / − quantity controls and shows subtotal, discount, shipping and total (the total inside an element with id=\"cart-total\"); micro-animations when adding to the cart. When the page loads, run a short automatic demo that adds a few products and changes a quantity so a viewer sees the cart working. Also expose a test API as window.shopTest = { reset(), add(id, qty), total() } where total() returns the final total in euros as a number, applying the same rules and updating the visible cart. All texts in Spanish. No external resources.\n\nRequirements: deliver everything in ONE self-contained HTML file (inline CSS and JavaScript; no external resources, CDNs, fonts or images). Reply with the complete file in a single ```html code block.",
+  "contestants": [
+    {
+      "contestant": "or:deepseek/deepseek-v4-flash-0731:free",
+      "first_token_s": 0.889,
+      "first_answer_s": 704.718,
+      "total_s": 933.541,
+      "prompt_tokens": 473,
+      "completion_tokens": 33168,
+      "reasoning_tokens": 25223,
+      "cost": 0,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 393216,
+      "side": "a",
+      "dir": "a-or-deepseek-deepseek-v4-flash-0731-free",
+      "tokens_per_s": 35.6,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.03,
+        "visual": {
+          "contrast": 101.63,
+          "detail_pct": 5.27,
+          "box": [
+            0.0,
+            0.019,
+            1.0,
+            1.0
+          ]
+        },
+        "external_requests": [],
+        "capture": {
+          "frames": 900,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "works": true,
+        "score": 72,
+        "base_score": 100,
+        "requirements": {
+          "ok": 4,
+          "total": 7,
+          "pct": 62
+        },
+        "quality": 8.0,
+        "fps": null,
+        "faults": [
+          "Fila inferior de productos (Taza, Hervidor, Filtros) queda parcialmente recortada en la captura, aunque se intuyen.",
+          "Las ilustraciones SVG son algo simples/crudas (especialmente la taza y los filtros) comparadas con las superiores.",
+          "El subtotal mostrado (138,90 €) coincide con 49,90 + 89,00, pero los productos del carrito no dejan claro si se añadieron de forma secuencial para demostrar el flujo completo.",
+          "Icono de carrito en 'Tu carrito' aparece como carácter □ (caja) en vez de icono correcto",
+          "Fila inferior de productos (Taza, Hervidor, Filtros) queda parcialmente cortada en el viewport"
+        ],
+        "judged_by": [
+          "inclusionai/ling-3.0-flash-vl:free"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "totales",
+            "es": "El carrito calcula bien el total con descuento y envío en 4 pedidos de prueba",
+            "w": 3,
+            "how": "probe",
+            "ok": null,
+            "prueba": "no expuso window.shopTest: no se puede comprobar por código"
+          },
+          {
+            "id": "total_visible",
+            "es": "El total que se ve en pantalla coincide con el cálculo",
+            "w": 2,
+            "how": "probe",
+            "ok": false,
+            "prueba": "sin window.shopTest"
+          },
+          {
+            "id": "productos",
+            "es": "Se ven los productos con su ilustración, nombre y precio",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "prueba": "Captura 1: se ven 6 productos (Molinillo manual 49,90 €, Cafetera espresso 89,00 €, Café de Etiopía 250 g 12,50 €, Taza de cerámica, Hervidor cuello de cisne, Filtros de papel) con ilustraciones SVG, nombre y precio."
+          },
+          {
+            "id": "carrito",
+            "es": "Hay un carrito con artículos, cantidades, subtotal, descuento, envío y total",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "prueba": "Captura 1: panel 'Tu carrito' con Molinillo manual x1 (49,90 €) y Cafetera espresso x1 (89,00 €), controles +/−, Subtotal 138,90 €, Descuento −13,89 €, Envío Gratis, Total 125,01 €."
+          },
+          {
+            "id": "demo",
+            "es": "Se ve el carrito llenándose solo (cambia entre capturas)",
+            "w": 1,
+            "how": "vision",
+            "ok": true,
+            "prueba": "Captura 1: carrito ya llenado con 2 artículos, badge 'Carrito 2' y toast 'Añadido: Cafetera espresso' visible en la esquina inferior derecha."
+          },
+          {
+            "id": "diseno",
+            "es": "El diseño es atractivo y profesional, con tema de café",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "prueba": "Captura 1: paleta marrón/tostada coherente con tema café, hero con título y CTA, grid de productos con tarjetas y panel de carrito; diseño limpio y profesional."
+          },
+          {
+            "id": "reserva",
+            "es": "Hay un botón para finalizar la compra",
+            "w": 1,
+            "how": "probe",
+            "ok": false,
+            "prueba": "finalizar|comprar|pagar|checkout|tramitar"
+          }
+        ],
+        "probe": {
+          "page_height": 1077,
+          "screens": 1.2,
+          "sticky": 1,
+          "scroll_anim": 1,
+          "sections": 3,
+          "errors": [],
+          "js": {
+            "totales": {
+              "ok": null,
+              "detalle": "no expuso window.shopTest: no se puede comprobar por código"
+            },
+            "total_visible": {
+              "ok": false,
+              "detalle": "sin window.shopTest"
+            }
+          }
+        },
+        "evidence": [
+          "evidence/00.png"
+        ]
+      }
+    },
+    {
+      "contestant": "or:nvidia/nemotron-3-ultra-550b-a55b:free",
+      "first_token_s": 1.899,
+      "first_answer_s": 11.916,
+      "total_s": 148.408,
+      "prompt_tokens": 428,
+      "completion_tokens": 10454,
+      "reasoning_tokens": 397,
+      "cost": 0,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 65536,
+      "side": "b",
+      "dir": "b-or-nvidia-nemotron-3-ultra-550b-a55b-free",
+      "tokens_per_s": 71.4,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.03,
+        "visual": {
+          "contrast": 30.91,
+          "detail_pct": 5.23,
+          "box": [
+            0.017,
+            0.025,
+            1.0,
+            1.0
+          ]
+        },
+        "external_requests": [],
+        "capture": {
+          "frames": 900,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "works": true,
+        "score": 59,
+        "base_score": 100,
+        "requirements": {
+          "ok": 2,
+          "total": 7,
+          "pct": 42
+        },
+        "quality": 7.5,
+        "fps": null,
+        "faults": [
+          "Los precios de los productos no son visibles en la captura (cortados por el borde inferior).",
+          "El panel del carrito no se muestra; no se puede verificar su contenido ni funcionalidad.",
+          "La ilustración SVG de 'Taza de cerámica' se asemeja más a una lámpara de techo que a una taza.",
+          "Solo se visualizan 4 de los 6 productos esperados (corte por viewport).",
+          "El panel del carrito no es visible (no se puede verificar que muestre subtotal, descuento, envío y total)",
+          "Los precios de los productos no se ven en la captura (posiblemente fuera del encuadre)"
+        ],
+        "judged_by": [
+          "inclusionai/ling-3.0-flash-vl:free"
+        ],
+        "doubtful": [
+          "productos",
+          "carrito",
+          "demo"
+        ],
+        "items": [
+          {
+            "id": "totales",
+            "es": "El carrito calcula bien el total con descuento y envío en 4 pedidos de prueba",
+            "w": 3,
+            "how": "probe",
+            "ok": false,
+            "prueba": "molinillo solo: 49,90 + envío 4,95: da 0 y debería dar 54.85"
+          },
+          {
+            "id": "total_visible",
+            "es": "El total que se ve en pantalla coincide con el cálculo",
+            "w": 2,
+            "how": "probe",
+            "ok": false,
+            "prueba": "el total visible dice «126,72 €» (debería ser 102,60)"
+          },
+          {
+            "id": "productos",
+            "es": "Se ven los productos con su ilustración, nombre y precio",
+            "w": 2,
+            "how": "vision",
+            "ok": null,
+            "prueba": "1ª: dudoso (Captura 1: se ven 4 tarjetas de producto con ilustraciones SVG y nombres (Molinillo manual, Cafetera espresso, Café de Etiopía 250 g, Taza de cerámica), pero los precios están cortados por el borde inferior de la captura.) · 2ª: dudoso (Captura 1: se ven 4 productos con ilustración SVG inline y nombre (Molinillo manual, Cafetera espresso, Café de Etiopía 250 g, Taza de cerámica), pero los precios no son visibles (cortados al final de la captura))"
+          },
+          {
+            "id": "carrito",
+            "es": "Hay un carrito con artículos, cantidades, subtotal, descuento, envío y total",
+            "w": 1,
+            "how": "vision",
+            "ok": null,
+            "prueba": "1ª: dudoso (Captura 1: el botón 'Carrito' muestra un badge con '4', pero el panel del carrito no es visible en la captura (podría estar colapsado o fuera de pantalla), por lo que no se puede confirmar que lista artículos, cantidades, subtotal, descuento, envío y total.) · 2ª: no (Captura 1: no se muestra el panel del carrito desplegado; solo se ve el botón 'Carrito 4' en la cabecera)"
+          },
+          {
+            "id": "demo",
+            "es": "Se ve el carrito llenándose solo (cambia entre capturas)",
+            "w": 1,
+            "how": "vision",
+            "ok": null,
+            "prueba": "1ª: dudoso (Solo se proporciona una captura; no se pueden observar cambios entre capturas para verificar que el carrito se llena solo.) · 2ª: dudoso (Solo hay una captura; no se puede observar el carrito llenándose entre capturas)"
+          },
+          {
+            "id": "diseno",
+            "es": "El diseño es atractivo y profesional, con tema de café",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "prueba": "Captura 1: diseño limpio con paleta cálida de tonos café, header con logo 'Tostadores del Sur', hero con badge 'TU RITUAL DE CAFÉ, ELEVADO', titular grande 'Descubre el arte del café de especialidad', párrafo descriptivo y grid de productos con ilustraciones SVG."
+          },
+          {
+            "id": "reserva",
+            "es": "Hay un botón para finalizar la compra",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "prueba": "finalizar|comprar|pagar|checkout|tramitar"
+          }
+        ],
+        "probe": {
+          "page_height": 1562,
+          "screens": 1.7,
+          "sticky": 2,
+          "scroll_anim": 4,
+          "sections": 4,
+          "errors": [],
+          "js": {
+            "totales": {
+              "ok": false,
+              "detalle": "molinillo solo: 49,90 + envío 4,95: da 0 y debería dar 54.85"
+            },
+            "total_visible": {
+              "ok": false,
+              "detalle": "el total visible dice «126,72 €» (debería ser 102,60)"
+            }
+          }
+        },
+        "evidence": [
+          "evidence/00.png"
+        ]
+      }
+    }
+  ],
+  "winner": "or:deepseek/deepseek-v4-flash-0731:free",
+  "winner_side": "a",
+  "decided_by": "score"
+}

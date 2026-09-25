@@ -12,7 +12,7 @@
 | **A · or:deepseek/deepseek-v4.1-flash** | **B · or:openai/gpt-6-luna-pro** |
 | :---: | :---: |
 | *(Sin captura visual)* | <a href="b-or_openai_gpt-6-luna-pro/shot_end.png"><img src="b-or_openai_gpt-6-luna-pro/shot_end.png" alt="or:openai/gpt-6-luna-pro" width="420" /></a> |
-| ⭐ **Nota:** 17/100 · ⏱️ 285.735s | ⭐ **Nota:** 100/100 · ⏱️ 242.037s |
+| ⭐ **Nota:** 3/100 · ⏱️ 285.735s | ⭐ **Nota:** 91/100 · ⏱️ 242.037s |
 
 ---
 
@@ -27,8 +27,8 @@ Requirements: write ONE Python script for Blender 4.5 LTS (bpy) that builds the 
 
 | Modelo | Nota Juez | Tiempo | Tokens | Coste | Archivos |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **A · or:deepseek/deepseek-v4.1-flash** | 17 / 100 | 285.735 s | 48995 | 0.0324 $ | [Ver código](a-or_deepseek_deepseek-v4.1-flash/) |
-| **B · or:openai/gpt-6-luna-pro** | 100 / 100 | 242.037 s | 29494 | 0.0174 $ | [Ver código](b-or_openai_gpt-6-luna-pro/) |
+| **A · or:deepseek/deepseek-v4.1-flash** | 3 / 100 | 285.735 s | 48995 | 0.0324 $ | [Ver código](a-or_deepseek_deepseek-v4.1-flash/)  |
+| **B · or:openai/gpt-6-luna-pro** | 91 / 100 | 242.037 s | 29494 | 0.0174 $ | [Ver código](b-or_openai_gpt-6-luna-pro/)  |
 
 ---
 

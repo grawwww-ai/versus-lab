@@ -12,7 +12,7 @@
 | **A · or:deepseek/deepseek-v4.1-flash** | **B · or:openai/gpt-6-luna-pro** |
 | :---: | :---: |
 | <a href="a-or_deepseek_deepseek-v4.1-flash/shot_end.png"><img src="a-or_deepseek_deepseek-v4.1-flash/shot_end.png" alt="or:deepseek/deepseek-v4.1-flash" width="420" /></a> | <a href="b-or_openai_gpt-6-luna-pro/shot_end.png"><img src="b-or_openai_gpt-6-luna-pro/shot_end.png" alt="or:openai/gpt-6-luna-pro" width="420" /></a> |
-| ⭐ **Nota:** 100/100 · ⏱️ 737.809s | ⭐ **Nota:** 100/100 · ⏱️ 165.96s |
+| ⭐ **Nota:** 70/100 · ⏱️ 737.809s | ⭐ **Nota:** 60/100 · ⏱️ 165.96s |
 
 ---
 
@@ -37,8 +37,8 @@ Requirements: deliver everything in ONE self-contained HTML file (inline CSS and
 
 | Modelo | Nota Juez | Tiempo | Tokens | Coste | Archivos |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **A · or:deepseek/deepseek-v4.1-flash** | 100 / 100 | 737.809 s | 68142 | 0.0287 $ | [Ver código](a-or_deepseek_deepseek-v4.1-flash/) |
-| **B · or:openai/gpt-6-luna-pro** | 100 / 100 | 165.96 s | 26214 | 0.0156 $ | [Ver código](b-or_openai_gpt-6-luna-pro/) |
+| **A · or:deepseek/deepseek-v4.1-flash** | 70 / 100 | 737.809 s | 68142 | 0.0287 $ | [Ver código](a-or_deepseek_deepseek-v4.1-flash/) · [🎮 Jugar demo](https://pub-68274156337740f09cc8dc0055b40362.r2.dev/matches/20260924-022729_mini_rpg/a/index.html) |
+| **B · or:openai/gpt-6-luna-pro** | 60 / 100 | 165.96 s | 26214 | 0.0156 $ | [Ver código](b-or_openai_gpt-6-luna-pro/) · [🎮 Jugar demo](https://pub-68274156337740f09cc8dc0055b40362.r2.dev/matches/20260924-022729_mini_rpg/b/index.html) |
 
 ---
 
