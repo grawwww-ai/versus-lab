@@ -1,0 +1,564 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Night Shift — Three.js City</title>
+<style>
+  * { box-sizing: border-box }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #111820; }
+  body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #fff; }
+  canvas { display: block }
+  #hud { position: fixed; inset: 0; pointer-events: none; }
+  .brand { position: absolute; top: 22px; left: 25px; text-transform: uppercase; letter-spacing: .19em; font-weight: 800; font-size: 12px; color: #d7e5e9; text-shadow: 0 2px 9px #000; }
+  .brand span { color: #ffbd50 }
+  #speedBox { position: absolute; left: 25px; bottom: 25px; padding: 13px 18px; background: #07121cc9; border: 1px solid #ffffff27; border-radius: 9px; min-width: 145px; box-shadow: 0 8px 28px #0005; }
+  #speed { font-size: 36px; line-height: 1; font-weight: 750; letter-spacing: -.05em; }
+  #speed small { font-size: 12px; font-weight: 600; letter-spacing: .12em; color: #a9bbc2; margin-left: 5px; }
+  #driveState { margin-top: 8px; font-size: 10px; color: #9eb3ba; letter-spacing: .16em; text-transform: uppercase; }
+  #wanted { position: absolute; top: 23px; right: 214px; display: flex; gap: 5px; font-size: 19px; color: #ffb62f; text-shadow: 0 2px 8px #000; }
+  #clock { position: absolute; top: 25px; right: 25px; font: 700 11px ui-monospace, monospace; letter-spacing: .12em; color: #d8e4e7; text-shadow: 0 1px 8px #000; }
+  #mapWrap { position: absolute; right: 20px; bottom: 20px; width: 178px; height: 178px; border: 1px solid #ffffff4b; border-radius: 10px; background: #09131ddd; overflow: hidden; box-shadow: 0 8px 30px #0007; }
+  #map { display: block; width: 100%; height: 100%; }
+  #mapLabel { position: absolute; right: 20px; bottom: 203px; color: #dce8eb; font-size: 9px; letter-spacing: .18em; text-shadow: 0 1px 5px #000; }
+  #caption { position: absolute; left: 50%; bottom: 31px; transform: translateX(-50%); font-size: 10px; letter-spacing: .18em; color: #d2dfe2; text-transform: uppercase; opacity: .72; white-space: nowrap; }
+  #vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 52%, #050a10a8 100%); }
+</style>
+</head>
+<body>
+<div id="hud">
+  <div class="brand">NIGHT <span>SHIFT</span> &nbsp; / &nbsp; EAST DISTRICT</div>
+  <div id="wanted"></div>
+  <div id="clock">20:14 &nbsp; / &nbsp; CLEAR</div>
+  <div id="speedBox"><div id="speed">000<small>KM/H</small></div><div id="driveState">AUTOPILOT · ROUTE 01</div></div>
+  <div id="mapLabel">DISTRICT MAP</div>
+  <div id="mapWrap"><canvas id="map" width="220" height="220"></canvas></div>
+  <div id="caption">Traffic control active &nbsp; · &nbsp; autonomous city simulation</div>
+  <div id="vignette"></div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x9aa9ac);
+scene.fog = new THREE.Fog(0x9aa9ac, 100, 255);
+
+const camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 450);
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
+document.body.appendChild(renderer.domElement);
+
+const hemi = new THREE.HemisphereLight(0xe2efff, 0x344047, 1.3);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffe4bc, 2.3);
+sun.position.set(-55, 100, -35);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -150; sun.shadow.camera.right = 150;
+sun.shadow.camera.top = 150; sun.shadow.camera.bottom = -150;
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+const mat = (color, roughness = .85, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness, ...extra });
+const groundMat = mat(0x343c3d);
+const roadMat = mat(0x252b2e);
+const sidewalkMat = mat(0x85877f);
+const curbMat = mat(0xb2b2a6);
+const lineMat = mat(0xd5d2bb, .8, { emissive: 0x29271e });
+const concreteMat = mat(0x646866);
+const grassMat = mat(0x536b4a);
+const trunkMat = mat(0x574535);
+const leafMats = [mat(0x3c684b), mat(0x52784d), mat(0x60794a)];
+const poleMat = mat(0x343c40, .55, { metalness: .35 });
+const lampMat = new THREE.MeshStandardMaterial({ color: 0xffe3a1, emissive: 0xffbd56, emissiveIntensity: 1.8 });
+const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+const sphereGeo = new THREE.SphereGeometry(1, 10, 8);
+const cylinderGeo = new THREE.CylinderGeometry(.5, .5, 1, 10);
+
+function box(parent, x, y, z, sx, sy, sz, material, cast = false, receive = false) {
+  const m = new THREE.Mesh(boxGeo, material);
+  m.position.set(x, y, z);
+  m.scale.set(sx, sy, sz);
+  m.castShadow = cast;
+  m.receiveShadow = receive;
+  parent.add(m);
+  return m;
+}
+function cylinder(parent, x, y, z, radius, height, material, segments = 9) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, height, segments), material);
+  m.position.set(x, y, z);
+  parent.add(m);
+  return m;
+}
+
+const extent = 125;
+const streets = [-100, -50, 0, 50, 100];
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(270, 270), groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -.13;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Streets, sidewalks, curbs, and lane markings.
+for (const p of streets) {
+  box(scene, 0, -.035, p, 250, .1, 12, roadMat, false, true);
+  box(scene, p, -.034, 0, 12, .1, 250, roadMat, false, true);
+  for (const side of [-1, 1]) {
+    box(scene, 0, .015, p + side * 7.15, 250, .16, 2.15, sidewalkMat, false, true);
+    box(scene, p + side * 7.15, .016, 0, 2.15, .16, 250, sidewalkMat, false, true);
+    box(scene, 0, .105, p + side * 6.05, 250, .20, .22, curbMat);
+    box(scene, p + side * 6.05, .105, 0, .22, .20, 250, curbMat);
+  }
+  for (let v = -121; v < 121; v += 8) {
+    box(scene, v + 1.7, .025, p, 3.4, .025, .14, lineMat);
+    box(scene, p, .025, v + 1.7, .14, .025, 3.4, lineMat);
+  }
+}
+
+// Instanced facade windows keep the procedural district lightweight.
+const litMatrices = [], darkMatrices = [];
+const dummy = new THREE.Object3D();
+const facadeMats = [mat(0x77766e), mat(0x898477), mat(0x777f7e), mat(0x9a8e7d), mat(0x656d70), mat(0x8b776e)];
+const roofMat = mat(0x4d5556);
+function addWindow(x, y, z, sx, sz, lit) {
+  dummy.position.set(x, y, z);
+  dummy.rotation.set(0, 0, 0);
+  dummy.scale.set(sx, 1.22, sz);
+  dummy.updateMatrix();
+  (lit ? litMatrices : darkMatrices).push(dummy.matrix.clone());
+}
+function makeBuilding(cx, cz, w, d, h, seed) {
+  const color = facadeMats[seed % facadeMats.length];
+  const b = box(scene, cx, h / 2 + .12, cz, w, h, d, color, true, true);
+  b.castShadow = true;
+  box(scene, cx, h + .18, cz, w + .45, .28, d + .45, roofMat);
+  // Rooftop utility boxes and water tanks.
+  if (seed % 2 === 0) {
+    box(scene, cx - w * .19, h + .62, cz + d * .12, w * .23, .65, d * .22, mat(0x5d6260));
+    cylinder(scene, cx + w * .22, h + .63, cz - d * .17, .48, .78, mat(0x757773), 12);
+  }
+  const floors = Math.max(2, Math.floor((h - 1) / 3.1));
+  for (let f = 0; f < floors; f++) {
+    const y = 1.55 + f * 3.0;
+    for (let x = -w / 2 + 1.4; x < w / 2 - .5; x += 3.25) {
+      addWindow(cx + x, y, cz + d / 2 + .045, 1.08, .07, Math.random() < .28);
+      addWindow(cx + x, y, cz - d / 2 - .045, 1.08, .07, Math.random() < .23);
+    }
+    for (let z = -d / 2 + 1.4; z < d / 2 - .5; z += 3.25) {
+      addWindow(cx + w / 2 + .045, y, cz + z, .07, 1.08, Math.random() < .26);
+      addWindow(cx - w / 2 - .045, y, cz + z, .07, 1.08, Math.random() < .21);
+    }
+  }
+}
+function tree(x, z, size = 1) {
+  cylinder(scene, x, .85 * size, z, .19 * size, 1.7 * size, trunkMat, 7);
+  const crown = new THREE.Mesh(sphereGeo, leafMats[Math.floor(Math.random() * leafMats.length)]);
+  crown.position.set(x, 2.05 * size, z);
+  crown.scale.set(1.05 * size, 1.3 * size, 1.05 * size);
+  crown.castShadow = true;
+  scene.add(crown);
+}
+let buildingSeed = 0;
+for (let ix = 0; ix < streets.length - 1; ix++) {
+  for (let iz = 0; iz < streets.length - 1; iz++) {
+    const x0 = streets[ix] + 8.4, x1 = streets[ix + 1] - 8.4;
+    const z0 = streets[iz] + 8.4, z1 = streets[iz + 1] - 8.4;
+    const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    const w = x1 - x0, d = z1 - z0;
+    const park = (ix === 0 && iz === 2) || (ix === 3 && iz === 0) || (ix === 2 && iz === 3);
+    box(scene, cx, .035, cz, w, .12, d, park ? grassMat : concreteMat, false, true);
+    if (park) {
+      for (let i = 0; i < 10; i++) {
+        const tx = x0 + 3 + Math.random() * (w - 6);
+        const tz = z0 + 3 + Math.random() * (d - 6);
+        tree(tx, tz, .8 + Math.random() * .45);
+      }
+      // Park paths and a small play court.
+      box(scene, cx, .11, cz, 2.2, .04, d - 3, sidewalkMat);
+      box(scene, cx, .115, cz, w - 3, .04, 2.2, sidewalkMat);
+      box(scene, cx - 7, .13, cz + 6, 9, .08, 6, mat(0x8c7657));
+      continue;
+    }
+    const count = 2 + Math.floor(Math.random() * 3);
+    for (let n = 0; n < count; n++) {
+      const bw = 8 + Math.random() * 10, bd = 8 + Math.random() * 10;
+      const bx = x0 + 3 + Math.random() * Math.max(1, w - bw - 6);
+      const bz = z0 + 3 + Math.random() * Math.max(1, d - bd - 6);
+      const floors = 2 + Math.floor(Math.random() * 6);
+      makeBuilding(bx + bw / 2, bz + bd / 2, bw, bd, floors * 3.0, buildingSeed++);
+    }
+    // A few benches and bins along the block edges.
+    if (Math.random() < .72) {
+      const px = cx + (Math.random() - .5) * 20, pz = z0 + 1.7;
+      box(scene, px, .48, pz, 1.6, .16, .48, mat(0x725d43));
+      box(scene, px, .25, pz, .12, .5, .12, poleMat);
+      box(scene, px + .65, .25, pz, .12, .5, .12, poleMat);
+    }
+  }
+}
+if (darkMatrices.length) {
+  const im = new THREE.InstancedMesh(boxGeo, mat(0x25343c, .55), darkMatrices.length);
+  darkMatrices.forEach((m, i) => im.setMatrixAt(i, m));
+  scene.add(im);
+}
+if (litMatrices.length) {
+  const im = new THREE.InstancedMesh(boxGeo, new THREE.MeshStandardMaterial({ color: 0xe5c987, emissive: 0x9d6a28, emissiveIntensity: .45, roughness: .5 }), litMatrices.length);
+  litMatrices.forEach((m, i) => im.setMatrixAt(i, m));
+  scene.add(im);
+}
+
+// Street lamps and signal heads.
+const lampPosts = [];
+const signalHeads = [];
+for (const x of streets) for (const z of streets) {
+  const poleX = x + 7.3, poleZ = z + 7.3;
+  cylinder(scene, poleX, 2.5, poleZ, .075, 5, poleMat, 7);
+  const arm = box(scene, poleX - .55, 4.9, poleZ, 1.15, .09, .09, poleMat);
+  const bulb = new THREE.Mesh(sphereGeo, lampMat);
+  bulb.position.set(poleX - 1.05, 4.77, poleZ);
+  bulb.scale.set(.22, .12, .22);
+  scene.add(bulb);
+  lampPosts.push(bulb);
+
+  const sx = x + 5.1, sz = z + 5.1;
+  cylinder(scene, sx, 2.4, sz, .07, 4.8, poleMat, 7);
+  box(scene, sx, 4.45, sz, .46, 1.18, .38, mat(0x252a2b));
+  const red = new THREE.Mesh(sphereGeo, new THREE.MeshStandardMaterial({ color: 0x651b19, emissive: 0x220500 }));
+  const green = new THREE.Mesh(sphereGeo, new THREE.MeshStandardMaterial({ color: 0x174b31, emissive: 0x03190b }));
+  red.position.set(sx, 4.72, sz + .205); green.position.set(sx, 4.18, sz + .205);
+  red.scale.set(.14, .14, .09); green.scale.copy(red.scale);
+  scene.add(red, green);
+  signalHeads.push({ red, green, x, z });
+}
+
+// Vehicle constructor. Forward is local +Z.
+const tireMat = mat(0x161a1b, .95);
+const wheelGeo = new THREE.CylinderGeometry(.34, .34, .22, 12);
+const carMats = {
+  hero: mat(0xd73d27, .4, { metalness: .28 }),
+  traffic: [mat(0x458096, .4, { metalness: .25 }), mat(0xc4b481, .45, { metalness: .2 }), mat(0x596a78, .45, { metalness: .2 }), mat(0x83908b, .4), mat(0x9c4537, .4)],
+  police: mat(0xe2e4df, .35, { metalness: .18 })
+};
+const glassMat = new THREE.MeshStandardMaterial({ color: 0x142a34, roughness: .25, metalness: .22 });
+const headMat = new THREE.MeshStandardMaterial({ color: 0xfff0c6, emissive: 0xffd479, emissiveIntensity: 1.2 });
+const tailMat = new THREE.MeshStandardMaterial({ color: 0x8d1c16, emissive: 0xff1508, emissiveIntensity: .65 });
+function makeCar(type = "traffic", color = null) {
+  const root = new THREE.Group();
+  const bodyColor = color || (type === "hero" ? carMats.hero : type === "police" ? carMats.police : carMats.traffic[Math.floor(Math.random() * carMats.traffic.length)]);
+  box(root, 0, .62, 0, 1.85, .58, 4.05, bodyColor, true);
+  box(root, 0, 1.09, -.24, 1.47, .66, 2.0, glassMat, true);
+  box(root, 0, 1.43, -.2, 1.5, .12, 1.96, type === "police" ? mat(0xf0f1ed) : bodyColor);
+  for (const x of [-.93, .93]) for (const z of [-1.28, 1.28]) {
+    const wheel = new THREE.Mesh(wheelGeo, tireMat);
+    wheel.rotation.z = Math.PI / 2;
+    wheel.position.set(x, .4, z);
+    root.add(wheel);
+  }
+  for (const x of [-.62, .62]) {
+    const h = new THREE.Mesh(boxGeo, headMat);
+    h.position.set(x, .7, 2.04); h.scale.set(.32, .16, .07); root.add(h);
+    const t = new THREE.Mesh(boxGeo, tailMat);
+    t.position.set(x, .72, -2.04); t.scale.set(.32, .16, .07); root.add(t);
+  }
+  if (type === "police") {
+    box(root, 0, 1.57, -.18, .95, .12, .3, mat(0x2b3032));
+    const red = new THREE.Mesh(boxGeo, new THREE.MeshStandardMaterial({ color: 0xff3636, emissive: 0xff0800, emissiveIntensity: 2 }));
+    const blue = new THREE.Mesh(boxGeo, new THREE.MeshStandardMaterial({ color: 0x397dff, emissive: 0x002aff, emissiveIntensity: 2 }));
+    red.position.set(-.27, 1.62, -.18); red.scale.set(.38, .13, .24);
+    blue.position.set(.27, 1.62, -.18); blue.scale.set(.38, .13, .24);
+    root.add(red, blue);
+    root.userData.siren = [red.material, blue.material];
+  }
+  scene.add(root);
+  return root;
+}
+
+const hero = makeCar("hero");
+const heroState = { x: -100, z: -101.9, yaw: Math.PI / 2, speed: 0, drift: 0 };
+const route = [
+  [-50, -100], [0, -100], [50, -100], [100, -100],
+  [100, -50], [100, 0], [100, 50], [100, 100],
+  [50, 100], [0, 100], [-50, 100], [-100, 100],
+  [-100, 50], [-100, 0], [-100, -50], [-100, -100]
+];
+let routeIndex = 0;
+
+const traffic = [];
+for (let i = 0; i < 22; i++) {
+  const axis = Math.random() < .5 ? "x" : "z";
+  const dir = Math.random() < .5 ? 1 : -1;
+  const line = streets[Math.floor(Math.random() * streets.length)];
+  const car = makeCar("traffic");
+  const lane = dir > 0 ? -2.15 : 2.15;
+  traffic.push({ car, axis, dir, line, lane, s: -116 + Math.random() * 232, speed: 7 + Math.random() * 5, stopped: false });
+}
+const police = [];
+let wanted = false;
+function spawnPolice() {
+  if (police.length) return;
+  for (let i = 0; i < 2; i++) {
+    const car = makeCar("police");
+    const a = heroState.yaw + Math.PI + (i ? .38 : -.38);
+    const x = heroState.x + Math.sin(a) * (24 + i * 5);
+    const z = heroState.z + Math.cos(a) * (24 + i * 5);
+    police.push({ car, x, z, yaw: a, speed: 0 });
+  }
+}
+function greenFor(axis, time) {
+  return (Math.floor(time / 6) % 2 === 0) === (axis === "x");
+}
+function headingForVector(dx, dz) { return Math.atan2(dx, dz); }
+function angleDiff(a, b) { return Math.atan2(Math.sin(b - a), Math.cos(b - a)); }
+
+const walkers = [];
+const walkerColors = [0x344d61, 0x886b4e, 0x6e4c61, 0xb2a17a, 0x455b4a, 0x9a5143, 0x55565a];
+for (let i = 0; i < 44; i++) {
+  const g = new THREE.Group();
+  const shirt = mat(walkerColors[i % walkerColors.length], .85);
+  const legs = mat(0x343a3b);
+  const body = new THREE.Mesh(cylinderGeo, shirt);
+  body.scale.set(.22, .65, .22); body.position.y = .98; g.add(body);
+  const head = new THREE.Mesh(sphereGeo, mat(0xb98768));
+  head.scale.set(.19, .2, .19); head.position.y = 1.43; g.add(head);
+  const leg1 = new THREE.Mesh(cylinderGeo, legs), leg2 = new THREE.Mesh(cylinderGeo, legs);
+  leg1.scale.set(.075, .48, .075); leg2.scale.copy(leg1.scale);
+  leg1.position.set(-.11, .37, 0); leg2.position.set(.11, .37, 0);
+  g.add(leg1, leg2);
+  scene.add(g);
+  const axis = Math.random() < .5 ? "x" : "z";
+  const street = streets[Math.floor(Math.random() * streets.length)];
+  const side = Math.random() < .5 ? -1 : 1;
+  walkers.push({ g, axis, fixed: street + side * 8.15, s: -112 + Math.random() * 224, dir: Math.random() < .5 ? 1 : -1, speed: 1.0 + Math.random() * .7, phase: Math.random() * 6 });
+}
+
+const smokeMat = new THREE.MeshBasicMaterial({ color: 0xc5d1d2, transparent: true, opacity: .23, depthWrite: false });
+const smokePool = [];
+for (let i = 0; i < 34; i++) {
+  const m = new THREE.Mesh(sphereGeo, smokeMat.clone());
+  m.visible = false; m.scale.setScalar(.18); scene.add(m);
+  smokePool.push({ mesh: m, life: 0 });
+}
+let smokeCursor = 0, smokeClock = 0;
+function emitSmoke() {
+  const p = smokePool[smokeCursor++ % smokePool.length];
+  p.life = .75;
+  p.mesh.visible = true;
+  p.mesh.position.set(heroState.x - Math.sin(heroState.yaw) * 1.65, .35, heroState.z - Math.cos(heroState.yaw) * 1.65);
+  p.mesh.scale.setScalar(.15 + Math.random() * .14);
+  p.mesh.material.opacity = .22;
+}
+
+// A few low-detail street trees beyond the built-up blocks.
+for (let i = 0; i < 60; i++) {
+  const edge = Math.floor(Math.random() * 4), along = -115 + Math.random() * 230;
+  const x = edge < 2 ? (edge === 0 ? -121 : 121) : along;
+  const z = edge < 2 ? along : (edge === 2 ? -121 : 121);
+  tree(x, z, .7 + Math.random() * .5);
+}
+
+const mapCanvas = document.getElementById("map");
+const ctx = mapCanvas.getContext("2d");
+function drawMap() {
+  const w = mapCanvas.width, h = mapCanvas.height, s = w / 270;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#152128"; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = "#7e8987"; ctx.lineWidth = 5.5;
+  for (const p of streets) {
+    const q = (p + 135) * s;
+    ctx.beginPath(); ctx.moveTo(q, 0); ctx.lineTo(q, h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, q); ctx.lineTo(w, q); ctx.stroke();
+  }
+  ctx.fillStyle = "#5c795b";
+  for (const [x, z] of [[-25, 25], [75, -75], [25, 75]]) {
+    ctx.fillRect((x + 135) * s - 11, (z + 135) * s - 11, 22, 22);
+  }
+  for (const p of police) {
+    ctx.fillStyle = "#5caaff";
+    ctx.beginPath(); ctx.arc((p.x + 135) * s, (p.z + 135) * s, 4, 0, Math.PI * 2); ctx.fill();
+  }
+  const hx = (heroState.x + 135) * s, hz = (heroState.z + 135) * s;
+  ctx.save(); ctx.translate(hx, hz); ctx.rotate(-heroState.yaw);
+  ctx.fillStyle = "#ff6549"; ctx.beginPath(); ctx.moveTo(0, -7); ctx.lineTo(5, 6); ctx.lineTo(-5, 6); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+let mapTimer = 0;
+
+// Day/night transition with matching sky, fog, and street lamps.
+const dayColor = new THREE.Color(0x9aa9ac), duskColor = new THREE.Color(0x49394a), nightColor = new THREE.Color(0x111a2c);
+const clockEl = document.getElementById("clock");
+const speedEl = document.getElementById("speed");
+const stateEl = document.getElementById("driveState");
+const wantedEl = document.getElementById("wanted");
+let elapsed = 0, last = performance.now(), cinematic = 0;
+camera.position.set(-112, 8, -91);
+
+function animate(now) {
+  requestAnimationFrame(animate);
+  const dt = Math.min(.04, (now - last) / 1000);
+  last = now; elapsed += dt;
+
+  // Day-to-night loop: a full cycle every 72 seconds.
+  const cycle = (elapsed % 72) / 72;
+  const daylight = .5 + .5 * Math.cos(cycle * Math.PI * 2);
+  const dusk = Math.max(0, 1 - Math.abs(daylight - .25) * 4.2);
+  const sky = dayColor.clone().lerp(duskColor, Math.min(1, dusk)).lerp(nightColor, Math.max(0, (0.3 - daylight) * 2.7));
+  scene.background.copy(sky); scene.fog.color.copy(sky);
+  hemi.intensity = .33 + daylight * 1.12;
+  sun.intensity = .12 + daylight * 2.45;
+  sun.color.set(daylight > .42 ? 0xffe4bc : 0x8fa7df);
+  lampMat.emissiveIntensity = Math.max(.05, (1 - daylight) * 2.5);
+  for (const bulb of lampPosts) bulb.visible = daylight < .57;
+  const mins = Math.floor((elapsed * 1.1) % 60);
+  clockEl.textContent = `${daylight > .55 ? "17" : "22"}:${String(mins).padStart(2, "0")}  /  ${daylight < .24 ? "NIGHT" : daylight < .5 ? "DUSK" : "CLEAR"}`;
+
+  // Signals alternate directions; the bulbs in the junction heads follow the cycle.
+  for (const h of signalHeads) {
+    const xGreen = greenFor("x", elapsed);
+    h.green.material.emissive.setHex(xGreen ? 0x00c84a : 0x03190b);
+    h.green.material.color.setHex(xGreen ? 0x37ff8a : 0x174b31);
+    h.red.material.emissive.setHex(xGreen ? 0x220500 : 0xc90000);
+    h.red.material.color.setHex(xGreen ? 0x651b19 : 0xff3428);
+  }
+
+  // Hero follows a looping city route, slowing for signals and corners.
+  const target = route[routeIndex];
+  const dx = target[0] - heroState.x, dz = target[1] - heroState.z;
+  const distance = Math.hypot(dx, dz);
+  if (distance < 4.2) routeIndex = (routeIndex + 1) % route.length;
+  const next = route[routeIndex];
+  const ndx = next[0] - heroState.x, ndz = next[1] - heroState.z;
+  const desiredYaw = headingForVector(ndx, ndz);
+  const steer = angleDiff(heroState.yaw, desiredYaw);
+  heroState.yaw += THREE.MathUtils.clamp(steer, -2.15 * dt, 2.15 * dt);
+  const axis = Math.abs(ndx) >= Math.abs(ndz) ? "x" : "z";
+  const nearJunction = Math.min(Math.abs(ndx), Math.abs(ndz)) < 1 && Math.hypot(ndx, ndz) < 13;
+  const redStop = nearJunction && !greenFor(axis, elapsed) && Math.hypot(ndx, ndz) < 9;
+  const cornerSlow = Math.abs(steer) > .42;
+  let desiredSpeed = redStop ? 0 : (distance < 13 ? 9 : cornerSlow ? 13.5 : 20);
+  if (wanted) desiredSpeed = Math.min(desiredSpeed, 22);
+  heroState.speed = THREE.MathUtils.damp(heroState.speed, desiredSpeed, redStop ? 2.8 : 1.15, dt);
+  heroState.drift = THREE.MathUtils.damp(heroState.drift, cornerSlow ? Math.min(1, Math.abs(steer)) : 0, 4, dt);
+  heroState.x += Math.sin(heroState.yaw) * heroState.speed * dt;
+  heroState.z += Math.cos(heroState.yaw) * heroState.speed * dt;
+  hero.position.set(heroState.x, .02, heroState.z);
+  hero.rotation.y = heroState.yaw;
+  hero.rotation.z = -Math.sign(steer) * heroState.drift * .055;
+  smokeClock += dt;
+  if (heroState.drift > .48 && smokeClock > .075) { emitSmoke(); smokeClock = 0; }
+
+  // Civilian traffic cruises in lanes, braking for red lights at each crossing.
+  for (const t of traffic) {
+    let nextSignal, gap;
+    if (t.axis === "x") {
+      nextSignal = t.dir > 0 ? streets.find(v => v > t.s + .1) : [...streets].reverse().find(v => v < t.s - .1);
+      if (nextSignal === undefined) nextSignal = t.dir > 0 ? -100 : 100;
+      gap = (nextSignal - t.s) * t.dir;
+    } else {
+      nextSignal = t.dir > 0 ? streets.find(v => v > t.s + .1) : [...streets].reverse().find(v => v < t.s - .1);
+      if (nextSignal === undefined) nextSignal = t.dir > 0 ? -100 : 100;
+      gap = (nextSignal - t.s) * t.dir;
+    }
+    const stopping = gap < 8 && gap > 0 && !greenFor(t.axis, elapsed);
+    t.speed = THREE.MathUtils.damp(t.speed, stopping ? 0 : 9.5, stopping ? 2.7 : 1.5, dt);
+    t.s += t.dir * t.speed * dt;
+    if (t.s > 121) t.s = -121;
+    if (t.s < -121) t.s = 121;
+    if (t.axis === "x") {
+      t.car.position.set(t.s, .02, t.line + t.lane);
+      t.car.rotation.y = t.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+    } else {
+      t.car.position.set(t.line - t.lane, .02, t.s);
+      t.car.rotation.y = t.dir > 0 ? 0 : Math.PI;
+    }
+  }
+
+  // Wanted level starts after the world has had a moment to establish itself.
+  if (elapsed > 8 && !wanted) { wanted = true; spawnPolice(); }
+  for (let i = 0; i < police.length; i++) {
+    const p = police[i];
+    const tx = heroState.x - Math.sin(heroState.yaw) * (i * 5), tz = heroState.z - Math.cos(heroState.yaw) * (i * 5);
+    const pdx = tx - p.x, pdz = tz - p.z;
+    const pyaw = headingForVector(pdx, pdz);
+    p.yaw += THREE.MathUtils.clamp(angleDiff(p.yaw, pyaw), -1.8 * dt, 1.8 * dt);
+    p.speed = THREE.MathUtils.damp(p.speed, 23, 1.1, dt);
+    p.x += Math.sin(p.yaw) * p.speed * dt;
+    p.z += Math.cos(p.yaw) * p.speed * dt;
+    p.car.position.set(p.x, .02, p.z);
+    p.car.rotation.y = p.yaw;
+    const siren = p.car.userData.siren;
+    if (siren) {
+      const pulse = Math.sin(elapsed * 12 + i * Math.PI) > 0;
+      siren[0].emissiveIntensity = pulse ? 3 : .25;
+      siren[1].emissiveIntensity = pulse ? .25 : 3;
+    }
+  }
+
+  // Pedestrians stroll along the pavements and turn around at block edges.
+  for (const w of walkers) {
+    w.s += w.dir * w.speed * dt;
+    if (w.s > 116) w.dir = -1;
+    if (w.s < -116) w.dir = 1;
+    if (w.axis === "x") {
+      w.g.position.set(w.s, 0, w.fixed);
+      w.g.rotation.y = w.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+    } else {
+      w.g.position.set(w.fixed, 0, w.s);
+      w.g.rotation.y = w.dir > 0 ? 0 : Math.PI;
+    }
+    const step = Math.sin(elapsed * 8 * w.speed + w.phase) * .35;
+    w.g.children[2].rotation.x = step;
+    w.g.children[3].rotation.x = -step;
+  }
+
+  for (const p of smokePool) if (p.life > 0) {
+    p.life -= dt;
+    p.mesh.position.y += dt * .75;
+    p.mesh.scale.multiplyScalar(1 + dt * 1.7);
+    p.mesh.material.opacity = Math.max(0, p.life / .75 * .22);
+    if (p.life <= 0) p.mesh.visible = false;
+  }
+
+  // Smooth chase view with brief overhead cinematic cutaways.
+  const cycleCam = elapsed % 24;
+  const cinematicOn = cycleCam > 17 && cycleCam < 21;
+  const forward = new THREE.Vector3(Math.sin(heroState.yaw), 0, Math.cos(heroState.yaw));
+  let camPos, lookAt;
+  if (cinematicOn) {
+    const a = elapsed * .22;
+    camPos = new THREE.Vector3(heroState.x + Math.cos(a) * 17, 23, heroState.z + Math.sin(a) * 17);
+    lookAt = new THREE.Vector3(heroState.x, .4, heroState.z);
+  } else {
+    camPos = new THREE.Vector3(heroState.x, 0, heroState.z).addScaledVector(forward, -12);
+    camPos.y = 6.2;
+    lookAt = new THREE.Vector3(heroState.x, 1.0, heroState.z).addScaledVector(forward, 5);
+  }
+  camera.position.lerp(camPos, 1 - Math.exp(-dt * (cinematicOn ? 1.5 : 3.2)));
+  camera.lookAt(lookAt);
+  camera.fov = THREE.MathUtils.damp(camera.fov, cinematicOn ? 63 : 58, 2, dt);
+  camera.updateProjectionMatrix();
+
+  speedEl.innerHTML = `${String(Math.round(heroState.speed * 3.6)).padStart(3, "0")}<small>KM/H</small>`;
+  stateEl.textContent = redStop ? "BRAKING · SIGNAL" : heroState.drift > .48 ? "CORNERING · DRIFT" : wanted ? "PURSUIT · ROUTE 01" : "AUTOPILOT · ROUTE 01";
+  wantedEl.innerHTML = wanted ? '<span>★</span><span>★</span><span>☆</span>' : "";
+  mapTimer += dt;
+  if (mapTimer > .12) { drawMap(); mapTimer = 0; }
+
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(animate);
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>
+```

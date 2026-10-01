@@ -1,0 +1,13 @@
+**Designing Game Environment**
+
+I'm focusing on the block interiors which will have either greenery or concrete for the base plane. Roads will be overlaid, and I want to create a minimap canvas for rendering the map. The HUD will also have an overlay style. I’m thinking about how the lighting will change with the day cycle, including ambient and directional light. 
+
+The cinematic camera will have occasional overhead angles, especially in the first crucial 30 seconds. The transition between day and night should be smooth, taking around 90 seconds, and I need to write code to complete this without using external assets.**Calculating traffic light logic**
+
+I’m thinking about how cars approach a signal at each crossing and need to calculate the nearest grid coordinate in their direction. If the light is red and they’re less than 9 units away, they should stop. The light phases would alternate with the x-axis green in the first half and the z-axis in the second half. I’ll create light assemblies at intersections, with visible lenses for each axis, ensuring they're adequately positioned to guide the hero's route.**Setting hero movement parameters**
+
+I’m working on the hero's spawn point at (-100, -100) and targeting (0, -100), but the initial z-coordinate might be around -102. The lanes need clarification, starting at -100, -2.2, while centering the route at z = -100 works fine. Once the target is reached, I’ll increment appropriately. The steering will depend on the angular difference, with maximum rates for speed adjustments. When approaching a waypoint less than 12 units away, the hero will slow down, stopping near 9 units for a red signal, and I want a police chase initiated 9 seconds later.**Considering traffic light design**
+
+I'm thinking about how traffic lights should have bulbs that are made of emissive materials but still need to have the right colors. I might design each intersection with head boxes, and it could be useful to add two `SphereGeometry(.17,8,6)` shapes at the poles. I'll have red and green on one light. It's a bit technical, but I want to ensure everything is functional and visually effective!**Formulating a design concept**
+
+I'm visualizing green toggles and bulbs for an assembly with two heads, using a dark casing with red and green bulbs. The axis labels aren't apparent, which is interesting. I'm also considering pedestrians walking on sidewalks with simple waypoints lined up parallel to one another. I want to generate endpoints along the x or z axes to ensure safe positioning. It might be helpful to change direction when reaching the extents—all across the city, varying the design. Let's figure this out!

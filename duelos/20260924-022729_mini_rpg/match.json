@@ -1,0 +1,501 @@
+{
+  "id": "20260924-022729_mini_rpg",
+  "challenge": {
+    "id": "mini_rpg",
+    "category": "game",
+    "cerebro": "estrategia",
+    "nivel": 4,
+    "title_es": "RPG en miniatura",
+    "title_en": "Miniature RPG",
+    "prompt": "Create a miniature top-down RPG in one HTML file with pixel art drawn in code: a tiled world with village, forest and dungeon, NPCs with dialogue boxes, a hero with animated walk in four directions, monsters that patrol and chase, turn-based or action combat with damage numbers, experience and level-up, an inventory with a few items, and a quest ('find the amulet') with a visible objective. Include a day-night tint, music-free sound, and a minimap. Autoplay demo mode must be ON by default: the hero walks the world, talks to an NPC, fights a monster and completes a step of the quest by itself, so the whole loop is visible without touching anything.",
+    "excelente": "Un mundo pequeño pero vivo: aldea, bosque y mazmorra, personajes con los que se habla, combate con daño y subida de nivel, y una misión que avanza sola delante de la cámara.",
+    "rubric": [
+      {
+        "id": "mundo",
+        "c": "Mundo por zonas",
+        "es": "Hay un mapa con zonas distintas (aldea, bosque, mazmorra)",
+        "w": 2
+      },
+      {
+        "id": "heroe",
+        "c": "Héroe animado",
+        "es": "El héroe camina con animación en varias direcciones",
+        "w": 2
+      },
+      {
+        "id": "npcs",
+        "c": "Personajes con diálogo",
+        "es": "Hay personajes con los que se habla y sale un cuadro de texto",
+        "w": 2
+      },
+      {
+        "id": "combate",
+        "c": "Combate",
+        "es": "Hay enemigos y un combate con daño visible",
+        "w": 3
+      },
+      {
+        "id": "progreso",
+        "c": "Experiencia o nivel",
+        "es": "Se ve experiencia, subida de nivel o inventario",
+        "w": 2
+      },
+      {
+        "id": "mision",
+        "c": "Misión que avanza",
+        "es": "Hay una misión con objetivo visible que progresa",
+        "w": 2
+      },
+      {
+        "id": "solo",
+        "c": "Se juega solo",
+        "es": "El héroe se mueve, habla y pelea sin que nadie toque nada",
+        "w": 2
+      },
+      {
+        "id": "jugable",
+        "c": "Se puede jugar",
+        "es": "Se ve que se juega con el teclado: hay controles en pantalla y el jugador responde a las teclas",
+        "w": 2
+      },
+      {
+        "id": "fluido",
+        "c": "Fluido (30+ fps)",
+        "es": "Va fluido (al menos 30 fotogramas por segundo)",
+        "probe": "fps",
+        "arg": 30,
+        "w": 1
+      }
+    ],
+    "tema": "juegos",
+    "keys": [
+      "ArrowLeft",
+      "ArrowRight",
+      "ArrowUp",
+      "ArrowDown",
+      "Space"
+    ]
+  },
+  "prompt": "Create a miniature top-down RPG in one HTML file with pixel art drawn in code: a tiled world with village, forest and dungeon, NPCs with dialogue boxes, a hero with animated walk in four directions, monsters that patrol and chase, turn-based or action combat with damage numbers, experience and level-up, an inventory with a few items, and a quest ('find the amulet') with a visible objective. Include a day-night tint, music-free sound, and a minimap. Autoplay demo mode must be ON by default: the hero walks the world, talks to an NPC, fights a monster and completes a step of the quest by itself, so the whole loop is visible without touching anything.\n\nIt must be genuinely PLAYABLE by a human: the player is controlled with the keyboard (and mouse if it helps), the controls are shown on screen at the start, and the game reacts immediately to input. On top of that, include an autoplay demo mode toggled with the P key, in which the game plays itself competently (an AI controls the player) so a viewer can watch a good run; the demo must stop as soon as the player presses a control key, giving control back.\n\nThe animation should show everything important within the first 30 seconds (that is the window we record); it may loop or continue after that.\n\nRequirements: deliver everything in ONE self-contained HTML file (inline CSS and JavaScript; no external resources, CDNs, fonts or images). Reply with the complete file in a single ```html code block.",
+  "contestants": [
+    {
+      "contestant": "or:deepseek/deepseek-v4.1-flash",
+      "first_token_s": 1.269,
+      "first_answer_s": 582.368,
+      "total_s": 737.809,
+      "prompt_tokens": 346,
+      "completion_tokens": 68142,
+      "reasoning_tokens": 51682,
+      "cost": 0.02866808,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 131072,
+      "cuts": [],
+      "side": "a",
+      "dir": "a-or-deepseek-deepseek-v4-1-flash",
+      "tokens_per_s": 92.5,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.42,
+        "visual": {
+          "contrast": 33.71,
+          "detail_pct": 11.93,
+          "box": [
+            0.0,
+            0.0,
+            1.0,
+            1.0
+          ],
+          "color": 58.28
+        },
+        "motion": [
+          150608,
+          230064,
+          202240,
+          449664,
+          413264,
+          161392,
+          435328,
+          120496,
+          1792,
+          928,
+          320,
+          880,
+          816,
+          832,
+          2544,
+          5968
+        ],
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 70,
+        "raw": 69.9,
+        "base_score": 100,
+        "requirements": {
+          "ok": 9,
+          "total": 9,
+          "pct": 89
+        },
+        "quality": 6.0,
+        "fps": 60.5,
+        "faults": [
+          "(leve) El panel de controles (CONTROLS) permanece visible y opaco durante gran parte de la partida, obstruyendo la visión del juego.",
+          "(leve) El héroe se queda atascado en un bucle estático frente a un enemigo en el bosque en las últimas capturas, rompiendo el flujo de la demo.",
+          "(leve) El panel de 'CONTROLS' central es muy opaco y grande, obstruyendo la visión del mapa y de los personajes (Captura 11-16).",
+          "(leve) Los textos de la interfaz superior (HP, Nivel) se solapan ligeramente con el icono de la misión en la esquina izquierda."
+        ],
+        "penalty": 6,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "mundo",
+            "es": "Hay un mapa con zonas distintas (aldea, bosque, mazmorra)",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Se distinguen claramente zonas de aldea (casas con tejado rojo), bosque (arboledas densas) y la zona de mazmorra (cuadrado oscuro en el minimapa)."
+          },
+          {
+            "id": "heroe",
+            "es": "El héroe camina con animación en varias direcciones",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "El héroe se ve desplazándose por el mapa en las distintas capturas (1 a 6), con cambios de posición evidentes."
+          },
+          {
+            "id": "npcs",
+            "es": "Hay personajes con los que se habla y sale un cuadro de texto",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "Hay NPCs en la aldea, pero no se muestra ninguna caja de diálogo abierta con texto de conversación, solo la barra de misión actualiza."
+          },
+          {
+            "id": "combate",
+            "es": "Hay enemigos y un combate con daño visible",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "En la captura 4 se ve claramente el número de daño '2' y la ganancia '+9 XP' sobre un enemigo derrotado."
+          },
+          {
+            "id": "progreso",
+            "es": "Se ve experiencia, subida de nivel o inventario",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Se observa el cambio de nivel de 'LV1' a 'LV2' entre las capturas 3 y 4, además de la barra de HP y los puntos de experiencia."
+          },
+          {
+            "id": "mision",
+            "es": "Hay una misión con objetivo visible que progresa",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "La misión 'Quest: The Amulet' cambia su objetivo de 'Hablar al Anciano' a 'Buscar el Amuleto en la mazmorra' tras la interacción."
+          },
+          {
+            "id": "solo",
+            "es": "El héroe se mueve, habla y pelea sin que nadie toque nada",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "El héroe se mueve y pelea solo, pero en las capturas 7 a 16 se queda completamente inmóvil frente a un enemigo sin avanzar la demo."
+          },
+          {
+            "id": "jugable",
+            "es": "Se ve que se juega con el teclado: hay controles en pantalla y el jugador responde a las teclas",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Hay un panel 'CONTROLS' muy visible y una barra inferior con las teclas de movimiento y acción (WASD, Space, E, I)."
+          },
+          {
+            "id": "fluido",
+            "es": "Va fluido (al menos 30 fotogramas por segundo)",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "grade": 2,
+            "prueba": "fps: 60.5"
+          }
+        ],
+        "probe": {
+          "fps": 60.5,
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png",
+          "evidence/15.png"
+        ]
+      }
+    },
+    {
+      "contestant": "or:openai/gpt-6-luna-pro",
+      "first_token_s": 154.246,
+      "first_answer_s": 165.852,
+      "total_s": 165.96,
+      "prompt_tokens": 25073,
+      "completion_tokens": 26214,
+      "reasoning_tokens": 9721,
+      "cost": 0.0156143,
+      "finish_reason": "stop",
+      "error": null,
+      "max_tokens": 128000,
+      "cuts": [],
+      "side": "b",
+      "dir": "b-or-openai-gpt-6-luna-pro",
+      "tokens_per_s": 2237.8,
+      "validation": {
+        "checks": {
+          "renders": true,
+          "no_js_errors": true,
+          "no_freeze": true,
+          "has_content": true,
+          "self_contained": true,
+          "moves": true
+        },
+        "errors": [],
+        "score": 100,
+        "load_s": 0.03,
+        "visual": {
+          "contrast": 35.99,
+          "detail_pct": 8.63,
+          "box": [
+            0.105,
+            0.017,
+            0.891,
+            0.942
+          ],
+          "color": 32.61
+        },
+        "motion": [
+          52421,
+          52290,
+          104998,
+          119458,
+          42045,
+          5495,
+          285,
+          47169,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "external_requests": [],
+        "capture": {
+          "frames": 720,
+          "errors": [],
+          "external_requests": []
+        }
+      },
+      "judge": {
+        "formula": 2,
+        "works": true,
+        "score": 60,
+        "raw": 60.1,
+        "base_score": 100,
+        "requirements": {
+          "ok": 9,
+          "total": 9,
+          "pct": 81
+        },
+        "quality": 5.5,
+        "fps": 60.5,
+        "faults": [
+          "(leve) La mazmorra es un área vacía y monótona sin detalles visuales ni enemigos.",
+          "(leve) El héroe y los enemigos son sprites extremadamente pequeños y toscos, difíciles de distinguir.",
+          "(leve) La aldea tiene muy pocos elementos (solo 3 casas), haciendo el mundo parecer pobre.",
+          "(grave) Las capturas 1 a 8 son idénticas y muestran 'Demo run complete!', lo que sugiere que el bucle automático no se reinicia o se queda atascado tras finalizar.",
+          "(leve) La estética es muy básica y repetitiva, con texturas de suelo y árboles muy simples que no ofrecen una gran riqueza visual."
+        ],
+        "penalty": 9,
+        "judged_by": [
+          "local-gpu"
+        ],
+        "doubtful": [],
+        "items": [
+          {
+            "id": "mundo",
+            "es": "Hay un mapa con zonas distintas (aldea, bosque, mazmorra)",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "Capturas 1-16: Se ven tres zonas (aldea, bosque, mazmorra), pero la aldea es muy pequeña (3 casas) y la mazmorra es un rectángulo vacío y plano sin detalles."
+          },
+          {
+            "id": "heroe",
+            "es": "El héroe camina con animación en varias direcciones",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "Capturas 1-16: El héroe es un sprite muy pequeño (apenas unos pocos píxeles) y no se distinguen detalles de animación ni de las 4 direcciones."
+          },
+          {
+            "id": "npcs",
+            "es": "Hay personajes con los que se habla y sale un cuadro de texto",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 3: Se ve al héroe hablando con 'Elder Rowan' y aparece el cuadro de diálogo con el texto de la misión."
+          },
+          {
+            "id": "combate",
+            "es": "Hay enemigos y un combate con daño visible",
+            "w": 3,
+            "how": "vision",
+            "ok": true,
+            "grade": 1,
+            "prueba": "Captura 4: Se ve el mensaje 'MONSTER DEFEATED!' y el aumento de XP, pero no hay una escena de combate ni números de daño visibles en las capturas."
+          },
+          {
+            "id": "progreso",
+            "es": "Se ve experiencia, subida de nivel o inventario",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Capturas 1-16: El panel derecho muestra 'LEVEL 1' -> 'LEVEL 2', la barra de XP llena y el inventario con ítems (Poción, Amuleto)."
+          },
+          {
+            "id": "mision",
+            "es": "Hay una misión con objetivo visible que progresa",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Capturas 1-16: El panel 'QUEST' actualiza los objetivos (Hablar con Elder -> Derrotar monstruo -> Encontrar amuleto) y termina con 'COMPLETE'."
+          },
+          {
+            "id": "solo",
+            "es": "El héroe se mueve, habla y pelea sin que nadie toque nada",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Las capturas muestran la secuencia completa: el héroe se mueve, habla, pelea y completa la misión automáticamente (finaliza con 'Demo run complete!')."
+          },
+          {
+            "id": "jugable",
+            "es": "Se ve que se juega con el teclado: hay controles en pantalla y el jugador responde a las teclas",
+            "w": 2,
+            "how": "vision",
+            "ok": true,
+            "grade": 2,
+            "prueba": "Captura 2: El panel derecho cambia a 'PLAYER: IN CONTROL' y lista las teclas (WASD, E, I, etc.)."
+          },
+          {
+            "id": "fluido",
+            "es": "Va fluido (al menos 30 fotogramas por segundo)",
+            "w": 1,
+            "how": "probe",
+            "ok": true,
+            "grade": 2,
+            "prueba": "fps: 60.5"
+          }
+        ],
+        "probe": {
+          "fps": 60.5,
+          "js": {}
+        },
+        "evidence": [
+          "evidence/00.png",
+          "evidence/01.png",
+          "evidence/02.png",
+          "evidence/03.png",
+          "evidence/04.png",
+          "evidence/05.png",
+          "evidence/06.png",
+          "evidence/07.png",
+          "evidence/08.png",
+          "evidence/09.png",
+          "evidence/10.png",
+          "evidence/11.png",
+          "evidence/12.png",
+          "evidence/13.png",
+          "evidence/14.png",
+          "evidence/15.png"
+        ]
+      }
+    }
+  ],
+  "comparison": {
+    "winner": null,
+    "margin": null,
+    "items": {
+      "mundo": null,
+      "heroe": null,
+      "npcs": null,
+      "combate": null,
+      "progreso": null,
+      "mision": null,
+      "solo": null,
+      "jugable": null
+    },
+    "why": [
+      "Ambos resultados muestran el mismo juego con idéntica funcionalidad, estética y progreso en cada momento de la secuencia.",
+      "Ambos resultados son visualmente idénticos en cada fotograma, mostrando exactamente el mismo juego, la misma interfaz y el mismo progreso de la misión."
+    ],
+    "raw": {
+      "a_izquierda": "igual",
+      "b_izquierda": "igual"
+    },
+    "judged_by": [
+      "local-gpu"
+    ]
+  },
+  "winner": "or:deepseek/deepseek-v4.1-flash",
+  "winner_side": "a",
+  "decided_by": "score"
+}
